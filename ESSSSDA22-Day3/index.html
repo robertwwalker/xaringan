@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Day 3: Heterogeneity and Dynamics in Data</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Robert W. Walker" />
+    <meta name="date" content="2022-08-08" />
+    <script src="index_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Day 3: Heterogeneity and Dynamics in Data
+]
+.subtitle[
+## Dynamic Regression Models
+]
+.author[
+### Robert W. Walker
+]
+.date[
+### August 8, 2022
+]
+
+---
+
+
+
+
+
+
+
+
+# Outline for Day 3
+
+1. Dynamic Models  
+2. GLS vs. OLS and fixes
+
+---
+
+## Day 3: Dynamic Models
+
+The ARIMA approach is fundamentally inductive.  The workflow involves the use of empirical values of ACFs and PACFs to engage in model selection.  Dynamic models engage theory/structure to impose more stringent assumptions for producing estimates.
+
+---
+
+## Time Series Linear Models/Dynamic Models
+
+First, a result.  **Aitken Theorem**
+
+In a now-classic paper, Aitken generalized the Gauss-Markov theorem to the class of Generalized Least Squares estimators.  It is important to note that these are GLS and not FGLS estimators.  What is the difference?  The two GLS estimators considered by Stimson are not strictly speaking GLS.
+
+Definition `$$\hat{\beta}_{GLS} = (\mathbf{X}^{\prime}\Omega^{-1}\mathbf{X})^{-1}\mathbf{X}^{\prime}\Omega^{-1}\mathbf{y}$$`
+&gt; Properties 
+&gt;  
+&gt; (1) GLS is unbiased.  
+&gt; (2) Consistent.  
+&gt; (3) Asymptotically normal.  
+&gt; (4) MV(L)UE
+
+---
+
+## A Quick Example
+
+The variance/covariance matrix of the errors for a first-order autoregressive process is useful to derive.  
+
+1. The matrix is banded; observations separated by one point in time are correlated `\(\rho\)`.  Period two is `\(\rho^2\)`; the corners are `\(\rho^{T-1}\)`.  The diagonal is one.  
+
+--
+
+1. What I have actually described is the correlation; the relevant autocovariances are actually defined by `\(\frac{\sigma^{2}\rho^{s}}{1 - \rho^2}\)` where `\(s\)` denotes the time period separation.  
+
+--
+
+1. It is also straightforward to prove (tediously through induction) that this is invertible; it is square and the determinant is non-zero having assumed that `\(|\rho &lt; 1|\)`.  
+   -  The `\(2x2\)` determinant is `\(\frac{1}{1-\rho^2}\)`.  
+   -  The `\(3x3\)` is `\(1*(1-\rho^2) - \rho(\rho - \rho^3) + \rho^2(\rho^2 - \rho^2)\)`.  The first term is positive and the second term is non-zero so long as `\(\rho \neq 0\)`.  But even if `\(\rho=0\)`, we would have an identity matrix which is invertible.
+
+---
+
+`$$\Phi = \sigma^{2}\Psi = \sigma^{2}_{e}  \left(\begin{array}{ccccc}1 &amp; \rho^{1} &amp; \rho^{2} &amp; \ldots &amp; \rho^{T-1} \\ \rho^1 &amp; 1 &amp; \rho^1 &amp; \ldots &amp; \rho^{T-2} \\ \rho^{2} &amp; \rho^1 &amp; 1 &amp; \ldots &amp; \rho^{T-3} \\ \vdots &amp; \vdots &amp; \vdots &amp; \ddots &amp; \vdots \\ \rho^{T-1} &amp; \rho^{T-2} &amp; \rho^{T-3} &amp; \ldots &amp; 1 \end{array}\right)$$`
+
+given that `\(e_{t} = \rho e_{t-1} + \nu_{t}\)`.  A Toeplitz form....
+
+If the variance is stationary, we can rewrite,
+`$$\sigma^{2}_{e} = \frac{\sigma^{2}_{\nu}}{1 - \rho^{2}}$$`
+
+A comment on characteristic roots....
+
+---
+
+## Cochrane-Orcutt
+
+We have the two key elements to implement this except that we do not know `\(\rho\)`; we will have to estimate it and estimates have uncertainty.  But it is important to note this imposes exactly an AR(1).  If the process is incorrectly specified, then the optimal properties do not follow.  Indeed, the optimal properties also depend on an additional important feature.
+
+---
+
+## What does the feasible do?
+
+We need to estimate things to replace unknown covariance structures
+and coverage will depend on properties of the estimators of these
+covariances.  
+
+- Consistent estimators will work but there is
+euphemistically `considerable variation` in the class of consistent
+estimators.  
+
+- Contrasting the Beck and Katz/White approach with the GLS
+approach is a valid difference in philosophies.&lt;sup&gt;1&lt;/sup&gt;  One takes advantage of OLS and Basus Theorem; one goes full Aitken.
+
+.footnote[&lt;sup&gt;1&lt;/sup&gt; We will return to this when we look at Hausman because this is the essential issue.]
+
+---
+
+## Incremental Models
+
+`$$y_{t} = a_{1} y_{t-1} + \epsilon_{t}$$`
+
+is the simplest dynamic model but it cannot be estimated consistently, in general terms, in the presence of serial correlation.  .red[Why?]
+
+--
+The key condition for unbiasedness is violated because `\(\mathbb{E}(y_{t-1}\epsilon_{t}) \neq 0\)`.  OLS will not generally work.
+
+**A note on dynamic interpretation.**
+
+---
+
+## Incremental Models with Covariates
+
+`$$y_{t} = a_{1} y_{t-1} + \beta X_t + \epsilon_{t}$$`
+
+The problem is fitting and the key issue is white noise residuals post-estimation.  But we have to assume a structure and implement it.
+
+---
+
+## Distributed Lag Models
+
+`$$y_{t} = \alpha + \beta_{0} X_t + \beta_{1}x_{t-1} + \ldots + \epsilon_{t}$$`
+
+The impact of `\(x\)` occurs over multiple periods.  It relies on theory, or perhaps analysis using information criteria/F [owing to quasi-nesting and missing data].  OLS is a fine solution to this problem but the search space of models is often large.
+
+In response to this problem, we have structured distributed lag models; there are many such schemes.
+
+- Koyck/Geometric decay:  
+
+--
+short run and long-run effects are parametrically identified
+`$$y_t = \alpha + \beta(1-\lambda)\sum_{j=0}^{\infty}\lambda^{j}X_{t-j} + \epsilon$$`
+
+--
+- Almon (more arbitrary decay)
+`$$y_{it} = \sum_{t_{A}=0}^{T_{F}} \rho_{t_{A}}x_{t - t_{A}} + \epsilon_{t}$$` with coefficients that are ordinates of some general polynomial of degree `\(T_{F} &gt;&gt; q\)`.  The `\(\rho_{t_{A}} = \sum_{k=0}^{T_{F}} \gamma_{k}t^{k}\)`.
+
+
+---
+
+## Autoregressive Distributed Lag Models
+
+`$$y_{t} = \alpha + \gamma_{1}y_{t-1} + \beta_{0} X_t + \beta_{1}X_{t-1} + \beta_{2}X_{t-2} + \ldots + \epsilon_{t}$$`
+
+- OLS is often used if iid; `\(\epsilon_{t}\)` is unrelated to `\(y_{t-1}\)` is common if nonsensical.
+- If not iid: GLS is needed.
+- The authors argue that the lagged dependent variable often yields white noise for free.  As they also note, there is a deBoef and Keele paper showing the relationship between these models and a form of error correction models.  More on that tomorrow.
+- There is substance to the timing of impacts.
+
+---
+
+## Structural vs. Non-structural
+
+Data analysis can quite yield models comparisons among competing dynamic structures.  The key issue is that the analyst need divine the process; what is the relevant error process and what is the structure and timing of effects alongside the potential question of incremental adjustment.  We need good theory for that.
+
+Given such theory, we can take an equations as analysis approach, measure the variables, and derive reduced forms, and then recover parameter estimates deploying simultaneous equations methods.  Very large such systems were a core part of early empirical macroeconomics.  The failures of such systems led to the proposal of alternatives.
+
+Chris Sims suggested a more flexible approach: the VAR.  
+
+---
+
+## VAR: Vector AutoRegression
+
+- Choose a relevant set of lag lengths and write each variable in the system as a function of lags of itself and other variables to the chosen lengths.&lt;sup&gt;1&lt;/sup&gt; [For Stata](https://www.stata.com/manuals/tsvar.pdf) and [for R](https://otexts.com/fpp3/VAR.html)
+
+.footnote[&lt;sup&gt;1&lt;/sup&gt; A nice blog post with an extended example in R can be found on [towardsdatascience](https://towardsdatascience.com/a-deep-dive-on-vector-autoregression-in-r-58767ebb3f06).  Kit Baum has [a similar worked example in slides](http://fmwww.bc.edu/EC-C/S2016/8823/ECON8823.S2016.nn10.slides.pdf).]
+
+--
+
+- The key insight is that this VAR is the reduced form to some more complicated as yet unspecified structural form.  
+
+--
+
+- But if the goal is to specify how variables related to one another and to use data to discover Granger causality and responses to impulse injected in the system.
+
+---
+
+## A very simple example
+
+```
+library(forecast)
+mdeaths
+fdeaths
+save(mdeaths, fdeaths, file = "./img/LungDeaths.RData")
+```
+
+
+```r
+library(hrbrthemes)
+load(url("https://github.com/robertwwalker/Essex-Data/raw/main/LungDeaths.RData"))
+Males &lt;- mdeaths; Females &lt;- fdeaths
+Lung.Deaths &lt;- cbind(Males, Females) %&gt;% as_tsibble()
+Lung.Deaths %&gt;% autoplot() + theme_ipsum_rc()
+```
+
+---
+
+&lt;img src="index_files/figure-html/unnamed-chunk-3-1.svg" width="100%" /&gt;
+
+---
+
+.left-column[
+
+```r
+lung_deaths &lt;- cbind(mdeaths, fdeaths) %&gt;%
+  as_tsibble(pivot_longer = FALSE)
+fit &lt;- lung_deaths %&gt;%
+  model(VAR(vars(mdeaths, fdeaths) ~ AR(3)))
+report(fit)
+```
+]
+.right-column[
+
+```
+Series: mdeaths, fdeaths 
+Model: VAR(3) w/ mean 
+
+Coefficients for mdeaths:
+      lag(mdeaths,1)  lag(fdeaths,1)  lag(mdeaths,2)  lag(fdeaths,2)
+              0.6675          0.8074          0.3677         -1.4540
+s.e.          0.3550          0.8347          0.3525          0.8088
+      lag(mdeaths,3)  lag(fdeaths,3)  constant
+              0.2606         -1.1214  538.7817
+s.e.          0.3424          0.8143  137.1047
+
+Coefficients for fdeaths:
+      lag(mdeaths,1)  lag(fdeaths,1)  lag(mdeaths,2)  lag(fdeaths,2)
+              0.2138          0.4563          0.0937         -0.3984
+s.e.          0.1460          0.3434          0.1450          0.3328
+      lag(mdeaths,3)  lag(fdeaths,3)  constant
+              0.0250          -0.315  202.0027
+s.e.          0.1409           0.335   56.4065
+
+Residual covariance matrix:
+         mdeaths  fdeaths
+mdeaths 58985.95 22747.94
+fdeaths 22747.94  9983.95
+
+log likelihood = -812.35
+AIC = 1660.69	AICc = 1674.37	BIC = 1700.9
+```
+]
+
+---
+
+.left-column[
+
+```r
+fit2 &lt;- lung_deaths %&gt;%
+  model(VAR(vars(mdeaths, fdeaths) ~ AR(2)))
+report(fit2)
+```
+]
+.right-column[
+
+```
+Series: mdeaths, fdeaths 
+Model: VAR(2) w/ mean 
+
+Coefficients for mdeaths:
+      lag(mdeaths,1)  lag(fdeaths,1)  lag(mdeaths,2)  lag(fdeaths,2)
+              0.9610          0.3340          0.1149         -1.3379
+s.e.          0.3409          0.8252          0.3410          0.7922
+      constant
+      443.8492
+s.e.  124.4608
+
+Coefficients for fdeaths:
+      lag(mdeaths,1)  lag(fdeaths,1)  lag(mdeaths,2)  lag(fdeaths,2)
+              0.3391          0.2617         -0.0601         -0.2691
+s.e.          0.1450          0.3510          0.1450          0.3369
+      constant
+      145.0546
+s.e.   52.9324
+
+Residual covariance matrix:
+         mdeaths  fdeaths
+mdeaths 62599.51 24942.79
+fdeaths 24942.79 11322.70
+
+log likelihood = -833.17
+AIC = 1694.35	AICc = 1701.98	BIC = 1725.83
+```
+]
+
+
+---
+
+
+```r
+fit %&gt;%
+  fabletools::forecast(h=12) %&gt;%
+  autoplot(lung_deaths)
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-8-1.svg" width="100%" /&gt;
+
+
+---
+class: inverse
+
+### Female
+
+.left-column[
+
+```r
+lung_deaths %&gt;%
+model(VAR(vars(mdeaths, fdeaths) ~ AR(3))) %&gt;%
+  residuals() %&gt;% 
+  pivot_longer(., cols = c(mdeaths,fdeaths)) %&gt;% 
+  filter(name=="fdeaths") %&gt;% 
+  as_tsibble(index=index) %&gt;% 
+  gg_tsdisplay(plot_type = "partial") + labs(title="Female residuals
+```
+]
+.right-column[
+&lt;img src="index_files/figure-html/unnamed-chunk-10-1.svg" width="100%" /&gt;
+]
+
+---
+class: inverse
+
+### Male
+
+.left-column[
+
+```r
+lung_deaths %&gt;%
+model(VAR(vars(mdeaths, fdeaths) ~ AR(3))) %&gt;%
+  residuals() %&gt;% 
+  pivot_longer(., cols = c(mdeaths,fdeaths)) %&gt;% 
+  filter(name=="mdeaths") %&gt;% 
+  as_tsibble(index=index) %&gt;% 
+  gg_tsdisplay(plot_type = "partial") + labs(title="Male residuals
+```
+]
+.right-column[
+&lt;img src="index_files/figure-html/unnamed-chunk-12-1.svg" width="100%" /&gt;
+]
+
+---
+
+## Easy Impulse Response
+
+**What happens if I shock one of the series; how does it work through the system?**  
+
+The idea behind an impulse-response is core to counterfactual analysis with time series.  What does our future world look like and what predictions arise from it and the model we have deployed?
+
+--
+
+Whether VARs or dynamic linear models or ADL models, these are key to interpreting a model **in the real world**.
+
+---
+
+### Males
+
+.left-column[
+
+```r
+VARMF &lt;- cbind(Males,Females)
+mod1 &lt;- vars::VAR(VARMF, p=3, type="const")
+plot(vars::irf(mod1, boot=TRUE, impulse="Males"))
+```
+]
+.right-column[
+![](./img/MIRF.png)
+]
+
+---
+
+### Females
+
+.left-column[
+
+```r
+plot(vars::irf(mod1, boot=TRUE, impulse="Females"))
+```
+]
+.right-column[
+![](./img/FIRF.png)
+]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="https://platform.twitter.com/widgets.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "%current%",
+"highlightStyle": "github",
+"highlightLines": true,
+"ratio": "16:9",
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
