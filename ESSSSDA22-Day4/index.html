@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Day 4: Cointegration</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Robert W. Walker" />
+    <meta name="date" content="2022-08-11" />
+    <script src="index_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Day 4: Cointegration
+]
+.author[
+### Robert W. Walker
+]
+.date[
+### August 11, 2022
+]
+
+---
+
+
+
+
+
+
+
+
+## On Reduced and Structural Forms and Systems of Equations
+
+What are structural forms and what are reduced forms?
+Are we familiar with what the \emph{rank} and \emph{order} conditions are?
+
+---
+
+## Systems of Simultaneous Equations
+
+Which beg questions about identification as above.  Let's briefly discuss the system that they present.
+
+---
+
+## Vector AutoRegression
+
+Choose a relevant set of lag lengths and write each variable in the system as a function of lags of itself and other variables to the chosen lengths.  The key insight is that this VAR is the reduced form to some more complicated as yet unspecified structural form.  But if the goal is to specify how variables related to one another and to use data to discover Granger causality and responses to impulse injected in the system.
+
+---
+
+## On Granger Causation
+
+Granger causation\footnote{In the remainder of this discussion, when I use the word cause, I mean it in a Granger sense which may differ dramatically from more common understandings of causal.} in a panel data setting.  This is a rather complex topic because of heterogeneity.
+
+- An identical causal relationship could exist for each `\(i \in N\)`
+- No causal relationship could exist for any `\(i \in N\)`.
+- Something in between the above two extremes.
+
+Matching the theoretical claim and the empirical analysis here, like everywhere else, is absolutely crucial.  Also, in some ways, this is just our earliest ANOVA example but now we will use the lags of the dependent variable to establish the alternative hypotheses.
+
+---
+
+## Implementation
+
+
+- Look at stationarity.  We want to make certain that this holds.
+- Test a hypothesis, many forms can be implied.
+
+Conditional on stationarity, the procedure goes like this.  For example, to test the hypothesis that, for all `\(i\)`, `\(x\)` does not Granger cause `\(y\)`, we choose a lag length, call it `\(k\)`.  We then regress lags of `\(y\)` and `\(k\)` lags of `\(x\)` on `\(y\)` in a model with unit specific slopes and unit specific intercepts.  We do not include contemporaneous `\(x\)` because Granger causality is all about temporal priority.  This is the unrestricted model.  The hypothesis implies the restriction that all the coefficients on all of the lagged `\(x\)` are zero for each cross-section and for all `\(k\)` lags of `\(x\)`.
+
+---
+
+In other words, the unrestricted model is:
+`$$y_{it} = \rho_{i,1} y_{i,t-1} + \rho_{i,2} y_{i,t-2} + \ldots + \rho_{i,m} y_{i,t-m} + \beta_{i,1} x_{i,t-1} + \ldots + \beta_{i,k} x_{i,t-k} + \epsilon_{it}$$` while the restricted model is
+`$$y_{it} = \rho_{i,1} y_{i,t-1} + \rho_{i,2} y_{i,t-2} + \ldots + \rho_{i,m} y_{i,t-m} + \epsilon_{it}$$`
+because the null hypothesis implies that all the `\(\beta\)` are zero for all lags `\(t-1\)` to `\(t-k\)` lags of `\(x\)`.
+
+---
+
+## Backfilling the Lagged Dependent Variable problem
+
+Let's analyse this.  This will preview dynamic interpretation in panel settings also.  The long-run multiplier.
+
+---
+
+## Let's Talk about simultaneous equations and systems of equations.
+
+[Stationarity](https://rww.science/xaringan/ch9ha/#56)
+[Invertibility](https://rww.science/xaringan/ch9ha/#63)
+
+---
+
+## On Equilibrium
+
+What does equilibrium mean?  Equilibration?
+
+---
+
+## Cointegration
+
+- Is the alternative conjecture for simultaneously analysing the short run and the long-run.
+- Is premised on a dynamic system of sorts.
+- The idea was largely responsible for winning Clive Granger the Nobel.
+
+---
+
+## Cointegration: The Practice
+
+We begin with a need for nonstationary data.  If the data were stationary, they are **self-equilibrating**.
+
+---
+
+## Cointegration: The Criteria
+
+- Some linear combination must yield a stationary series.
+- Variables must be integrated of the same order.
+- With more than two variables, there can be multiple cointegrating vectors linking sets of variables.
+
+
+---
+
+## Cointegration: The Process
+
+The ECM is:
+
+- Pretest the variables for the order of integration.  If integrated, then
+- Perform a seemingly troubled regression: the spurious regression of `$$y_{t} = \beta_{0} + \beta_{1}x_{t} + \epsilon_{t}$$`
+
+- Is `\(\epsilon_{t}\)` stationary?  Check using `$$\Delta \hat{\epsilon}_{t} = \alpha_{1}\hat{\epsilon}_{t-1}$$`
+
+- If all complies, then estimate the ECM:
+
+`$$\Delta x_{t} = \alpha + \gamma_{xy} \hat{\epsilon_{t-1}} + G + \epsilon{Cx}$$`
+`$$\Delta y_{t} = \alpha + \gamma_{yx} \hat{\epsilon_{t-1}} + G + \epsilon{Cy}$$`
+
+where G is the set of appropriate lagged differences in an OLS VAR [an aside on instrumental variables here]
+- Assess model adequacy.
+
+---
+
+## Multiple Cointegrating Vectors: Johansen
+
+The VECM or Vector Error Correction Model
+
+---
+
+## Non-integrated ECM?
+
+de Boef and Keele [referenced in BFHP on p. 90] 
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="https://platform.twitter.com/widgets.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "%current%",
+"highlightStyle": "github",
+"highlightLines": true,
+"ratio": "16:9",
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

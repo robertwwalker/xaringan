@@ -1,0 +1,183 @@
+---
+title: "Day 4: Cointegration"
+author: "Robert W. Walker"
+date: "August 11, 2022"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: true
+      beforeInit: "https://platform.twitter.com/widgets.js"
+
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+  fig.width=9, fig.height=3.5, fig.retina=3,
+  out.width = "100%",
+  cache = FALSE,
+  echo = TRUE,
+  message = FALSE, 
+  warning = FALSE,
+  hiline = TRUE
+)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, comment=NA, prompt=FALSE, fig.height=6, fig.width=6.5, fig.retina = 3, dev = 'svg', dev.args = list(bg = "transparent"))
+library(xaringanthemer); library(kableExtra); library(tidyverse); library(skimr)
+# style_mono_accent(
+style_duo_accent(
+#style_solarized_light(
+primary_color = "#371142", 
+# header_color = "#ffffff",
+          secondary_color = "#1c5253", 
+          text_bold_color = "#FF00FF",
+          link_color = "#F97B64",
+          text_font_google   = google_font("EB Garamond"),
+          code_font_google   = google_font("Fira Mono")
+)
+```
+
+```{css, echo = FALSE, include=FALSE}
+.remark-slide-content p, il, ol, li {
+  font-size: 32px;
+  padding: 8px 16px 8px 16px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 24px;
+}
+.red { 
+  color: red; 
+}
+.green { 
+  color: green; 
+}
+```
+
+## On Reduced and Structural Forms and Systems of Equations
+
+What are structural forms and what are reduced forms?
+Are we familiar with what the \emph{rank} and \emph{order} conditions are?
+
+---
+
+## Systems of Simultaneous Equations
+
+Which beg questions about identification as above.  Let's briefly discuss the system that they present.
+
+---
+
+## Vector AutoRegression
+
+Choose a relevant set of lag lengths and write each variable in the system as a function of lags of itself and other variables to the chosen lengths.  The key insight is that this VAR is the reduced form to some more complicated as yet unspecified structural form.  But if the goal is to specify how variables related to one another and to use data to discover Granger causality and responses to impulse injected in the system.
+
+---
+
+## On Granger Causation
+
+Granger causation\footnote{In the remainder of this discussion, when I use the word cause, I mean it in a Granger sense which may differ dramatically from more common understandings of causal.} in a panel data setting.  This is a rather complex topic because of heterogeneity.
+
+- An identical causal relationship could exist for each $i \in N$
+- No causal relationship could exist for any $i \in N$.
+- Something in between the above two extremes.
+
+Matching the theoretical claim and the empirical analysis here, like everywhere else, is absolutely crucial.  Also, in some ways, this is just our earliest ANOVA example but now we will use the lags of the dependent variable to establish the alternative hypotheses.
+
+---
+
+## Implementation
+
+
+- Look at stationarity.  We want to make certain that this holds.
+- Test a hypothesis, many forms can be implied.
+
+Conditional on stationarity, the procedure goes like this.  For example, to test the hypothesis that, for all $i$, $x$ does not Granger cause $y$, we choose a lag length, call it $k$.  We then regress lags of $y$ and $k$ lags of $x$ on $y$ in a model with unit specific slopes and unit specific intercepts.  We do not include contemporaneous $x$ because Granger causality is all about temporal priority.  This is the unrestricted model.  The hypothesis implies the restriction that all the coefficients on all of the lagged $x$ are zero for each cross-section and for all $k$ lags of $x$.
+
+---
+
+In other words, the unrestricted model is:
+$$y_{it} = \rho_{i,1} y_{i,t-1} + \rho_{i,2} y_{i,t-2} + \ldots + \rho_{i,m} y_{i,t-m} + \beta_{i,1} x_{i,t-1} + \ldots + \beta_{i,k} x_{i,t-k} + \epsilon_{it}$$ while the restricted model is
+$$y_{it} = \rho_{i,1} y_{i,t-1} + \rho_{i,2} y_{i,t-2} + \ldots + \rho_{i,m} y_{i,t-m} + \epsilon_{it}$$
+because the null hypothesis implies that all the $\beta$ are zero for all lags $t-1$ to $t-k$ lags of $x$.
+
+---
+
+## Backfilling the Lagged Dependent Variable problem
+
+Let's analyse this.  This will preview dynamic interpretation in panel settings also.  The long-run multiplier.
+
+---
+
+## Let's Talk about simultaneous equations and systems of equations.
+
+[Stationarity](https://rww.science/xaringan/ch9ha/#56)
+[Invertibility](https://rww.science/xaringan/ch9ha/#63)
+
+---
+
+## On Equilibrium
+
+What does equilibrium mean?  Equilibration?
+
+---
+
+## Cointegration
+
+- Is the alternative conjecture for simultaneously analysing the short run and the long-run.
+- Is premised on a dynamic system of sorts.
+- The idea was largely responsible for winning Clive Granger the Nobel.
+
+---
+
+## Cointegration: The Practice
+
+We begin with a need for nonstationary data.  If the data were stationary, they are **self-equilibrating**.
+
+---
+
+## Cointegration: The Criteria
+
+- Some linear combination must yield a stationary series.
+- Variables must be integrated of the same order.
+- With more than two variables, there can be multiple cointegrating vectors linking sets of variables.
+
+
+---
+
+## Cointegration: The Process
+
+The ECM is:
+
+- Pretest the variables for the order of integration.  If integrated, then
+- Perform a seemingly troubled regression: the spurious regression of $$y_{t} = \beta_{0} + \beta_{1}x_{t} + \epsilon_{t}$$
+
+- Is $\epsilon_{t}$ stationary?  Check using $$\Delta \hat{\epsilon}_{t} = \alpha_{1}\hat{\epsilon}_{t-1}$$
+
+- If all complies, then estimate the ECM:
+
+$$\Delta x_{t} = \alpha + \gamma_{xy} \hat{\epsilon_{t-1}} + G + \epsilon{Cx}$$
+$$\Delta y_{t} = \alpha + \gamma_{yx} \hat{\epsilon_{t-1}} + G + \epsilon{Cy}$$
+
+where G is the set of appropriate lagged differences in an OLS VAR [an aside on instrumental variables here]
+- Assess model adequacy.
+
+---
+
+## Multiple Cointegrating Vectors: Johansen
+
+The VECM or Vector Error Correction Model
+
+---
+
+## Non-integrated ECM?
+
+de Boef and Keele [referenced in BFHP on p. 90] 
