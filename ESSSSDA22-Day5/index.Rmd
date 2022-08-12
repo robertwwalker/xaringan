@@ -167,6 +167,7 @@ $$h_t = \alpha_{0} + \alpha_{1} e^{2}_{t-1}$$
 
 Fractional integration methods.
 Structural breaks: see Jong Hee Park's work.
+Unit roots in the presence of breaks...
 
 
 ---
