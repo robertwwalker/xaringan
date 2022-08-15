@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Day 7: Missing Data</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Robert W. Walker" />
+    <meta name="date" content="2022-08-16" />
+    <script src="index_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Day 7: Missing Data
+]
+.subtitle[
+## And a bit more within/between
+]
+.author[
+### Robert W. Walker
+]
+.date[
+### August 16, 2022
+]
+
+---
+
+
+
+
+
+
+
+
+# Outline for Day 7
+
+1. Missing data: why does it matter?  
+2. What do we do?
+3. What's special about panel data here?
+
+---
+
+## Day 7: Missing Data
+
+Why do we care about missing data?  What problem does an optimal method for missing data accomplish?
+
+---
+
+## Types of Missing Data
+
+- OAR (Observed at Random) \\ Missingness on `\(Y\)` is not determined by `\(X\)`.
+- MAR (Missing at Random) \\ Missingness on `\(Y\)` is not determined by `\(Y\)`.
+- MCAR (Missing Completely at Random) \\ Missingness is both OAR and MAR.
+
+Suppose two variables `\(X\)` and `\(Y\)`.
+
+---
+
+## Illustrating these Points
+
+.pull-left[
+
+```r
+library(MASS)
+big.X &lt;- mvrnorm(n = 100, c(0, 0, 0), matrix(c(1, 0.8, -0.7, 0.8, 1, -0.6, -0.7, -0.6, 1), nrow = 3, ncol = 3, byrow = TRUE))
+x &lt;- big.X[, 1]
+y &lt;- 3 + x + rnorm(100)
+df1 &lt;- data.frame(x = x, y = y)
+df2 &lt;- df1
+df2$x[df1$x &lt; 0] &lt;- NA
+df3 &lt;- subset(df1, subset = y &lt; 4)
+df4 &lt;- df1[sample(c(1:100), size=60, replace=FALSE),]
+par(mfrow = c(2, 2))
+plot(df1, main = "Complete", ylim = c(0, 7), xlim = c(-2.5, 2.5))
+abline(lm(y ~ x, data = df1))
+plot(df2, xlim = c(-2.25, 2.25), ylim = c(0, 7), main = "MAR not OAR (x pos.)")
+abline(lm(y ~ x, data = df1), lty = 1)
+abline(lm(y ~ x, data = df2), lty = 2)
+plot(df3, xlim = c(-2.25, 2.25), ylim = c(0, 7), main = "Not MAR (y &lt; 4)")
+abline(lm(y ~ x, data = df1), lty = 1)
+abline(lm(y ~ x, data = df3), lty = 2)
+x2 &lt;- big.X[, 2]
+x3 &lt;- big.X[, 3]
+plot(df4, xlim = c(-2.25, 2.25), ylim = c(0, 7), main = "MCAR")
+abline(lm(y ~ x, data = df1), lty = 1)
+abline(lm(y ~ x, data = df4), lty = 2)
+```
+]
+
+.pull-right[
+&lt;img src="index_files/figure-html/unnamed-chunk-3-1.svg" width="100%" /&gt;
+]
+
+
+
+---
+
+## What to do?
+
+- Assess missingness?
+- Multiple Imputation
+- MCMC
+
+---
+
+## Assessing Missingness
+
+- Simple regression techniques (binary GLMs) can serve the useful purpose of identifying the predictors of missingness.
+- As a practical matter, we can't really establish the true nature of missingness.
+- BUT, we can at least examine missingness as a function of observed covariates.  Doing this, we should be careful to engage functional forms above and beyond simple linearity.
+
+
+---
+
+## Multiple Imputation
+
+- Multiple imputation: the process of **imputing** missing data on multiple occasions to rectangularize a data matrix for analysis.
+- Most commonly done with a multivariate normal distribution where the mean vector and variance/covariance matrix form the basis for imputing.
+- Other methods are also frequently used including versions of **nearest neighbors** and simple mean imputation.  The latter is generally a bad strategy.
+- `\(R\)` makes a few methods of imputation readily available.
+
+---
+
+## Imputation with `R`
+
+- `\(\texttt{Amelia}\)`: Performs multiple imputation under a multivariate normal distribution.  It contains functions for time series, cross-sectional, and time series cross-sectional data and includes an ability to handle nominal and ordered data.
+- `\(\texttt{robCompositions}\)`: Multiple imputation for missing data on a simplex or other bounded constraint space.
+- `\(\texttt{mice}\)`: Multivariate Imputation using Chained Equations.  Basically, a Gibbs sampler (a full conditional specification of the imputation equations).
+- `\(\texttt{mi}\)`: Bayesian specifications of regression models for the imputation of missing data.
+
+---
+
+## Imputation in Stata
+
+Stata was a bit late to the multiple imputation game but has improved considerably.  There is an overarching suite of commands that can be employed with the prefix `\(\texttt{mi}\)`.  There are some things that Stata cannot (does not) do.  For example, there is no method for compositional data; this can be problematic.  Of course, the negative correlations can allow unbounded approximations to get close, but that isn't what we really want.  It is better to use all of the available information in the data because throwing away information when we are "making it up" guarantees that we make it up less well.
+
+Specifically for TSCS/CSTS data, Honaker and King (2010) in the \emph{American Journal of Political Science} is on this exact problem.  Their software is, however, written in R.  [You can find the paper from here](http://gking.harvard.edu/files/pr.pdf)
+
+---
+
+## Have Imputations, What do I do?
+
+- The trouble with multiply imputed data come in two forms.  
+- One is that we want to analyze the (now) complete data but need to account for the presence of predictions.
+- The other is that we need some method or methods for the assessment of our imputation.
+
+
+---
+
+## Analyzing Imputed Data
+
+- Imputed data are predictions from models.  Not unlike any predicted variable, the imputations are draws from a sampling distribution and cannot be argued fixed in repeated samples with a straight face.  Moreover, the sampling distributions of statistics to which imputations are inputs must reflect the uncertainty of the imputation alongside more conventional uncertainty about the statistic.
+- Rubin first gave a formula for combining imputation-based statistics.
+- It relies on the asymptotic normality of the statistics; they are a linear combination of normals.
+
+---
+
+## Diagnostics for Imputed Data
+
+- Functions exist for plotting patterns of missingness: `missing.pattern.plot`
+- Comparing histograms (after imputation): `mi.hist`, etc.
+- Comparing scatterplots: `mi.scatterplot`
+
+---
+
+## The Statistics of it all
+
+We can calculate a few interesting quantities that inform imputation independent of the ultimate goal.  For example, let 
+`$$W_{\beta} = \sum_{k=1}^{K} \frac{V_{k}}{K}$$` be the average within imputation variance of `\(\beta_{k}\)`.  Similarly, let the between imputation variance of `\(\beta\)` be, `$$B_{\beta} = \sum_{k=1}^{K} \frac{(\beta_{k} - \overline{\beta})^{2}}{(K-1)}$$` which yields a total variance of `$$T_{\beta} = B_{\beta}(1 + \frac{1}{k}) + W_{\beta}$$` which gives `\(\frac{\overline{\beta}}{\sqrt{T_{\beta}}} \sim t_{\nu}\)` where `$$\nu = (K-1)[1+WB^{-1}(1 + \frac{1}{K})^{-1}].$$`  
+
+---
+
+Furthermore, notice that if the imputations are completely uninformative regarding `\(\beta\)`, then `\(\beta_{k} = \beta^{*}\; \forall k \in K\)` and `\(T_{\beta} = W_{\beta}\)`.  This allows us to construct a ratio, `\(r = \frac{(1 + \frac{1}{K})B_{\beta}}{W_{\beta}}\)` to measure the increase in variance owing to imputation.  Finally, let `\(\epsilon = \frac{r}{1 + r}\)` be the proportion of missing information.  All of this comes together when the relative efficiency of `\(K\)` imputations relatively to an infinite number is `\((1 + \frac{\epsilon}{K})^{-1}\)`.  Take an example of `\(K=0.5\)` and 5 imputations.
+
+---
+
+## Some General Comments
+
+There is almost no reason not to impute data.  Not imputing throws away information.  Imputing may not add any but it allows us to retain ``real'' information.  Consider the following scenarios.  Suppose that MAR fails.  What does imputation really do and what are the properties of the original estimator anyway?  What happens with imputation when MAR holds?  What is your belief that MCAR ever holds?
+
+
+---
+
+## The Bayes Approach
+
+Missing data are like anything else that is missing.  In the Bayesian framework, we want to sample the missing quantities.  We can learn about their distributions, covariances, and the like but we fundamentally want to learn as little as possible from the missing data but maximize the quantity of information recovered from other nonmissing things.  Imputation simply becomes another part of the sampler.
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="https://platform.twitter.com/widgets.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "%current%",
+"highlightStyle": "github",
+"highlightLines": true,
+"ratio": "16:9",
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
