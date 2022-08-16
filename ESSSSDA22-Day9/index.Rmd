@@ -1,0 +1,464 @@
+---
+title: "Day 9: GMM and DPD"
+author: "Robert W. Walker"
+date: "August 18, 2022"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: true
+      beforeInit: "https://platform.twitter.com/widgets.js"
+
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+  fig.width=9, fig.height=3.5, fig.retina=3,
+  out.width = "100%",
+  cache = FALSE,
+  echo = TRUE,
+  message = FALSE, 
+  warning = FALSE,
+  hiline = TRUE
+)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, comment=NA, prompt=FALSE, fig.height=6, fig.width=6.5, fig.retina = 3, dev = 'svg', dev.args = list(bg = "transparent"))
+library(xaringanthemer); library(kableExtra); library(tidyverse); library(skimr)
+# style_mono_accent(
+style_duo_accent(
+#style_solarized_light(
+primary_color = "#371142", 
+# header_color = "#ffffff",
+          secondary_color = "#1c5253", 
+          text_bold_color = "#FF00FF",
+          link_color = "#F97B64",
+          text_font_google   = google_font("EB Garamond"),
+          code_font_google   = google_font("Fira Mono")
+)
+```
+
+```{css, echo = FALSE, include=FALSE}
+.remark-slide-content p, il, ol, li {
+  font-size: 32px;
+  padding: 8px 16px 8px 16px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 24px;
+}
+.red { 
+  color: red; 
+}
+.green { 
+  color: green; 
+}
+.scrollable {
+  height: 80%;
+  overflow-y: auto;
+} 
+```
+
+# Outline for Day 9:
+
+1. Hurwicz/Nickell bias
+1. GMM
+1. Panels and GMM
+1. Systems and single equations
+1. Implementation
+
+
+---
+
+## Brief Comment on Hurwicz/Nickell Bias
+
+- Bias is of stochastic order $\frac{1}{T}$.
+- Less bad as more $T$
+
+
+---
+
+## GMM
+
+Generalized method of moments estimators are a class of estimators created by analogs of the population moment conditions for sample moments.  For example, linear regression is a GMM estimator and the moment restriction that must hold for OLS is that $\mathbb{E}[\mathbf{X^{\prime}}\epsilon] = 0$.  With endogenous $x \in \mathbf{X}$, we instrument using $z$.  If there is one $z$ for each endogenous $x$, we have a standard IV.  Without exact identification, we need iteration and GMM estimators will typically involve testing these overidentifying restrictions using a Sargan test, as we will see.
+
+---
+
+## GMM for Panels
+
+The trick here is that the panel structure gives us numerous instruments for **free**.  Comes in two forms.  Single-equation and systems estimators.  With systems estimators, assumptions give us leverage on moment conditions in both level and difference forms, we use these jointly to estimate the parameters of interest.
+
+---
+
+## Introducing DPD
+
+- We are interested in estimating the parameters of models of the form 
+$$y_{it} = y_{i,t-1}\gamma + X_{it}\beta + \alpha_{i} + \epsilon_{it}$$ 
+for $i = \{1,\ldots,N\}$ and $t = \{1,\ldots, T \}$ using datasets with large $N$ and fixed $T$ 
+- By construction, $y_{i,t-1}$ is correlated with the unobserved 
+individual-level effect $\alpha_{i}$. 
+- Removing $\alpha_{i}$ by the within transform produces an inconsistent estimator with $T$ fixed. 
+- First difference both sides and look for instrumental-variables (IV) 
+and generalized method-of-moments (GMM) estimators
+
+
+---
+
+## Arrelano-Bond
+
+- First differencing the model equation yields 
+$$\Delta y_{it} = \Delta y_{i,t-1}\gamma + \Delta x_{it}\beta + \Delta \epsilon_{it}$$
+- The $\alpha_{i}$ are gone, but the $y_{i,t-1}$ in $\Delta y_{i,t-1}$ is a function of the $\epsilon_{i,t-1}$ which is also in $\Delta \epsilon_{it}$. 
+- $\Delta y_{i,t-1}$ is correlated with $\Delta \epsilon_{it}$ by construction 
+- Anderson and Hsiao (1981) give a 2SLS estimator based on (further) lags of $\Delta y_{it}$ as instruments for $\Delta y_{i,t-1}$.  E.g. if $\epsilon_{it}$ is IID over $i$ and $t$, $\Delta y_{i,t-2}$ is valid for $\Delta y_{i,t-1}$. 
+- Anderson and Hsiao (1981) also suggest a 2SLS estimator based on lagged levels of $y_{it}$ as instruments for $\Delta y_{i,t-1}$.  E.g. if $\epsilon_{it}$ is IID over $i$ and $t$, $y_{i,t-2}$ can instrument for $\Delta y_{i,t-1}$.
+- Holtz-Eakin, and co-authors (1988) and Arellano and Bond (1991) showed how to construct estimators based 
+on moment equations constructed from further lagged levels of $y_{it}$ and the first-differenced errors.
+- We are creating moment conditions using lagged levels of the 
+dependent variable with first differences, $\Delta \epsilon_{it}$.  First-differences of strictly exogenous covariates also create 
+moment conditions.
+- Assume that $\epsilon_{it}$ are IID over $i$ and $t$ (no serial correlation)
+- GMM is needed because there are more instruments than parameters. 
+
+---
+
+## Strict Exogeneity vs. Predetermined
+
+- If regressors are strictly exogenous: $\mathbb{E}[x_{it}\epsilon_{is}]=0\; \forall s,t$.
+- If predetermined, $\mathbb{E}[x_{it}\epsilon_{is}]\neq0\; \textrm{if} s < t$ but $\mathbb{E}[x_{it}\epsilon_{is}]=0\; \forall s \geq t$
+- Dynamic panel data models allow predetermined regressors.  [backward feedback, no forward feedback]
+
+
+---
+
+## A bit more on this and GMM
+
+- The moment conditions formed by assuming that particular lagged 
+levels of the dependent variable are orthogonal to the differenced 
+disturbances are known as GMM-type moment conditions 
+- Sometimes they are called sequential moment conditions 
+- The moment conditions formed using the strictly exogenous 
+covariates are just standard IV moment conditions, so they are called 
+standard moment conditions 
+- The dynamic panel-data estimators in Stata report which transforms 
+of which variables were used as instruments 
+- In GMM estimators, we weight the vector of sample-average moment 
+conditions by the inverse of a positive definite matrix 
+- When that matrix is the covariance matrix of the moment conditions, 
+we have an efficient GMM estimator 
+- In the case of nonidentically distributed disturbances, we can use a 
+two-step GMM estimator that estimates the covariance matrix of the 
+moment conditions using the first-step residuals 
+- Although the large-sample robust variance-covariance matrix of the 
+two-step estimator does not depend on the fact that estimated 
+residuals were used, simulation studies have found that that 
+Windmejier's bias-corrected estimator performs much better
+- Specifying vce(robust) produces an estimated VCE that is robust to 
+heteroskedasticity 
+
+---
+
+## cont'd
+
+- There is a result in the large-sample theory for GMM which states 
+that the VCE of the two-step estimator does not depend on the fact 
+that it uses the residuals from the first step.  Windmeijer 2005 bias-corrects the VCE of the two-step GMM.
+- No robust Sargan test but Arrelano-Bond test exists.
+- When the variables are predetermined, it means that we cannot 
+include the whole vector of differences of observed xit into the 
+instrument matrix 
+- We just include the levels of $x_{it}$ for those time periods that are 
+assumed to be unrelated to $\Delta \epsilon_{it}$. 
+- The Arellano-Bond estimator formed moment conditions using 
+lagged-levels of the dependent variable and the predetermined 
+variables with first-differences of the disturbances 
+- Arellano and Bover(1995) and Blundell and Bond (1998) found 
+that if the autoregressive process is too persistent, then the 
+lagged-levels are weak instruments 
+- These authors proposed using additional moment conditions in which 
+lagged differences of the dependent variable are orthogonal to levels 
+of the disturbances 
+- To get these additional moment conditions, they assumed that 
+panel-level effect is unrelated to the first observable first-difference of 
+the dependent variable 
+- $\texttt{xtdpdsys}$ is syntactically similar to $\texttt{xtabond}$
+
+---
+
+## Wawro
+
+- The range of panel data models employed by political scientists is a small subset of those available.
+- Anderson-Hsiao: (IV) Difference regression $$\Delta y_{i,t} = \gamma \Delta y_{i,t-1} + \beta \Delta x_{i,t-1} + \Delta u_{i,t}$$ and instrument for terms with lagged difference or lagged levels.  NB: Beck says the estimator is bad.  Econometricians tend to agree.
+- Arrelano and Bond:  Recast A-H as GMM estimator facilitating more instruments.
+- Systems GMM estimators that combine a levels and a difference equation.
+
+---
+
+## Previous Student Question
+
+Wawro takes the $T=3$ case and defines the true model to be:
+$$y_{i,t}  = \gamma y_{i,t-1} + \alpha_{i} + u_{i,t}$$
+
+What does this allow us to write?
+
+$$\Delta_{3,2}  y_{i}  =  \underbrace{\gamma [ \overbrace{\gamma y_{i,1} + \alpha_{i} + u_{i,2}}^{y_{i,2}} ] + \alpha_{i} + u_{i,3}}_{y_{i,3}} - \underbrace{\gamma y_{i,1} + \alpha_{i} + u_{i,2}}_{y_{i,2}}$$
+$$(\gamma^{2} - \gamma)y_{i,1} + \underbrace{\gamma \alpha_{i}}_{\delta_{i}} + \underbrace{u_{i,3} + (\gamma - 1) u_{i,2}}_{u_{\Delta(3,2)}^{*}}$$
+
+In other words, this is an estimating equation without regressors.  
+
+---
+
+So how does he get $\Delta y_{i,2}  =  (\gamma - 1) y_{i,1} + \alpha_{i} + u_{i,2}$?  It relies on how we treat the initial condition.
+
+$$\Delta_{2,1}  y_{i}  =  \overbrace{\gamma y_{i,1} + \alpha_{i} + u_{i,2}}^{y_{i,2}} - y_{i,1}$$ where the last term is $\gamma y_{i,0} + \alpha_{i} + u_{i,1}$.  If, as is commonly the case, we treat the initial condition as fixed, we get what he gets.  If we treat $y_{i,1}$ as the fixed effect plus random noise, then we would get, after some manipulation, $$\Delta_{2,1}  y_{i}  =  (\gamma - 1)y_{i,1} + (u_{i,2} - u_{i,1})$$  Because of the assumption of no serial correlation, the latter, under normality, is also normal (as a difference in independent normals) because the unit effects cancel under differencing.
+
+---
+
+## The Data for Implementation
+
+```
+Contains data from abdata.dta
+  obs:         1,031                          Layard & Nickell, Unemployment
+                                                in Britain, Economica 53, 1986
+ ------------------------------------------------------------------------------
+              storage  display     value
+variable name   type   format      label      variable label
+-------------------------------------------------------------------------------
+ind             int    %8.0g                  industry
+year            int    %8.0g
+emp             float  %9.0g                  employment
+wage            float  %9.0g                  real wage
+cap             float  %9.0g                  gross capital stock
+indoutpt        float  %9.0g                  industry output
+n               float  %9.0g                  log(employment)
+w               float  %9.0g                  log(real wage)
+k               float  %9.0g                  log(gross capital stock)
+ys              float  %9.0g                  log(industry output)
+yr1980          float  %9.0g
+yr1981          float  %9.0g
+yr1982          float  %9.0g
+yr1983          float  %9.0g
+yr1984          float  %9.0g
+id              float  %9.0g                  firm ID
+-------------------------------------------------------------------------------
+Sorted by:  id  year
+```
+
+---
+
+## Implementation
+
+- $\texttt{xtregar}$: , $\texttt{re}$ and $\texttt{fe}$ options
+
+  - Fit a first order autoregressive structure to TSCS data.
+  - Defaults to an iterative estimator but $\texttt{twostep}$ is available.
+  - $\texttt{lbi}$ gives a test of the hypothesis that $\rho$ is zero. (not a default)
+
+- $\texttt{xtabond}$
+  - $\texttt{estat abond}$ gives a test for autocorrelation
+  - $\texttt{estat sargan}$ gives the overidentifying restrictions test
+
+- $\texttt{xtlsdvc y x, initial(ah or ab or bb) vcov(1000 bs iter)}$ will handle unbalanced \\ 
+Bias-corrected least-squares dummy variable (LSDV) estimators for the standard autoregressive panel-data model using the bias approximations in Bruno (2005a) for unbalanced panels
+- $\texttt{xtivreg}$
+- $\texttt{xtdpd}$ fits Arellano-Bond and Arellano-Bover/Blundell-Bond
+
+  - $\texttt{estat abond}$ gives a test for autocorrelation
+  - $\texttt{estat sargan}$ gives the overidentifying restrictions test  (Rejection implies failure of assumptions)
+
+---
+
+## More on DPD
+
+- David Roodman's excellent and well documented \texttt{xtabond2} extends the Stata command and incorporates orthogonal deviations transformation that assist in gapped panels.  I personally think it is the best software for this.
+- Systems DPD is complicated but perhaps very useful.
+- As an aside, I laughed pretty hard at a post on econ job rumours where someone claimed that no one actually understands these models!  [Not true, I am positive that Hansen does.....]
+
+
+---
+
+```{r, echo=FALSE}
+library(foreign)
+library(xtable)
+# Trying this out with some NLS data (this matches stata's xtsum for the between)  You should find the data by google.
+# nls.data <- read.dta("~/Downloads/nlswork.dta")
+panel.summary <- function(mydata, idim) {
+# Summarize the grand mean and unit means
+# Example invocation: panel.summary(nls.data, nls.data$idcode)
+mydata <- mydata # Need a macro for the dataset
+idim <- as.vector(idim) # Pull the vector of the unit dimension
+identifier <- table(idim) # Tabulate the unique identifiers
+pan.btw <- matrix(data=NA, nrow=length(identifier), ncol=dim(mydata)[[2]]) # Basic matrix to fill in
+pan.within <- matrix(data=NA, nrow=length(idim), ncol=dim(mydata)[[2]]) # A second storage for the within
+for (i in 1:length(identifier)) {  # Loop over unique IDs to get Between things
+  btw.vec <- NULL
+  btw.mat <- NULL
+  id.val <- as.numeric(names(identifier)[[i]]) # Create vector of values of ID
+  for (j in 1:dim(mydata)[[2]]) { # Loop over columns in data.
+  btw.vec <- mean(mydata[idim==id.val,j], na.rm=TRUE) # Unit means
+  btw.mat <- c(btw.mat,btw.vec) # Append to existing
+}
+pan.btw[i,] <- btw.mat
+}
+# Now do the within.  This is the really slow and inefficient part.
+pan.mean <- matrix(nrow=dim(mydata)[[1]], ncol=dim(mydata)[[2]])
+for (i in 1:dim(mydata)[[1]]) { # loop over all rows in data
+with.vec <- NULL
+with.mat <- NULL
+id.val <- idim[[i]]
+ for (j in 1:dim(mydata)[[2]]) {
+ with.vec <- mean(mydata[idim==id.val,j], na.rm=TRUE)
+ with.mat <- c(with.mat,with.vec)
+ }
+pan.mean[i,] <- with.mat
+}
+# Generate within transformed data
+res.mat.with <- mydata - pan.mean
+# Summarize the within-centered
+ret.sum.with <- apply(res.mat.with, 2, sd, na.rm=TRUE)
+# Same thing to the between
+ret.sum.btw <- apply(pan.btw, 2, sd, na.rm=TRUE)
+names(ret.sum.btw) <- colnames(mydata)
+mean.mat.btw <- pan.btw # Could collapse
+colnames(mean.mat.btw) <- colnames(mydata)
+colnames(res.mat.with) <- names(ret.sum.with) <- colnames(mydata)
+# Create rows for summary statistics
+# and store all of this in sum.out.both
+sum.out.both <- matrix(data=NA,nrow=8, ncol=dim(mydata)[[2]])
+colnames(sum.out.both) <- colnames(mydata)
+grand.mean <- apply(mydata, 2, mean, na.rm=TRUE)
+gmmat <- matrix(data=grand.mean, nrow=length(idim), ncol=dim(mydata)[[2]], byrow=TRUE)
+mat2 <- (mydata-gmmat)^2
+mat4 <- (pan.mean-gmmat)^2
+mat6 <- res.mat.with^2
+sum.out.both[1,] <- grand.mean
+sum.out.both[2,] <- apply(mydata, 2, sd, na.rm=TRUE)
+sum.out.both[3,] <- apply(mat2, 2, sum, na.rm=TRUE)
+sum.out.both[4,] <- ret.sum.btw
+sum.out.both[5,] <- apply(mat4, 2, sum, na.rm=TRUE)
+sum.out.both[6,] <- ret.sum.with
+sum.out.both[7,] <- apply(mat6, 2, sum, na.rm=TRUE)
+sum.out.both[8,] <- sum.out.both[7,]/sum.out.both[3,]
+rownames(sum.out.both) <- c("Grand mean","S.D.","TSS","Between S.D.","BSS", "Within S.D.","WSS","% Within")
+# Return everything
+pan.sum <- list(summary.btw=ret.sum.btw, mean.mat.btw=mean.mat.btw,summary.with=ret.sum.with, mean.mat.with=res.mat.with, sum.tab=round(sum.out.both, digits=4), grand.mean=grand.mean, mat2=mat2, mat4=mat4, mat6=mat6)
+return(pan.sum)
+}
+library(plm)
+data(EmplUK)
+ps <- panel.summary(EmplUK, EmplUK$firm)
+ps$sum.tab
+```
+
+---
+
+```{r}
+# To make it match the Stata data.
+EmplUK$n <- log(EmplUK$emp)
+EmplUK$w <- log(EmplUK$wage)
+EmplUK$k <- log(EmplUK$capital)
+EmplUK$ys <- log(EmplUK$output)
+```
+
+---
+
+```{r, eval=FALSE}
+# Can just use log syntax to solve it.
+# Arellano and Bond (1991), table 4(a1) 
+Table4.a1 <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1) + lag(log(capital), 0:2) + lag(log(output), 0:2) | lag(log(emp), 2:99), data = EmplUK, effect = "twoways", model = "onestep")
+summary(Table4.a1)
+```
+
+---
+
+```{r, echo=FALSE}
+# Can just use log syntax to solve it.
+# Arellano and Bond (1991), table 4(a1) 
+Table4.a1 <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1) + lag(log(capital), 0:2) + lag(log(output), 0:2) | lag(log(emp), 2:99), data = EmplUK, effect = "twoways", model = "onestep")
+summary(Table4.a1)
+```
+
+
+---
+
+```{r, eval=FALSE}
+## Arellano and Bond (1991), table 4b 
+Table4.b <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+           + log(capital) + lag(log(output), 0:1) | lag(log(emp), 2:99),
+            data = EmplUK, effect = "twoways", model = "twosteps")
+# To make it match Stata
+summary(Table4.b, robust=FALSE)
+```
+
+---
+
+```{r, echo=FALSE}
+## Arellano and Bond (1991), table 4b 
+Table4.b <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+           + log(capital) + lag(log(output), 0:1) | lag(log(emp), 2:99),
+            data = EmplUK, effect = "twoways", model = "twosteps")
+# To make it match Stata
+summary(Table4.b, robust=FALSE)
+```
+
+
+---
+
+```{r, eval=FALSE}
+# Or with Robust [Notice it is default]
+summary(Table4.b)
+```
+
+---
+
+```{r, echo=FALSE}
+# Or with Robust [Notice it is default]
+summary(Table4.b)
+```
+
+---
+
+```{r, eval=FALSE}
+## Blundell and Bond (1998) table 4
+Table4.BB <- pgmm(log(emp) ~ lag(log(emp), 1)+ lag(log(wage), 0:1) +
+           lag(log(capital), 0:1) | lag(log(emp), 2:99) +
+           lag(log(wage), 2:99) + lag(log(capital), 2:99),        
+           data = EmplUK, effect = "twoways", model = "onestep", 
+           transformation = "ld") 
+summary(Table4.BB, robust = TRUE)
+```
+
+
+---
+
+```{r, echo=FALSE}
+## Blundell and Bond (1998) table 4
+Table4.BB <- pgmm(log(emp) ~ lag(log(emp), 1)+ lag(log(wage), 0:1) +
+           lag(log(capital), 0:1) | lag(log(emp), 2:99) +
+           lag(log(wage), 2:99) + lag(log(capital), 2:99),        
+           data = EmplUK, effect = "twoways", model = "onestep", 
+           transformation = "ld") 
+summary(Table4.BB, robust = TRUE)
+```
+---
+
+## References
+
+The manual for R package $\texttt{plm}$ was published in the Journal of Statistical Software.  It is nice and extensive excepting the application of dpd models; only some are available.  There is also `panelvar` for panel VAR models that estimates even more `dpd` estimators.  Kit Baum has a very nice discussion of this in Stata in a set of course slides on the web at Boston College [search google for Baum Dynamic Panel Data Estimators].
+
+---
+
+## Some Summary Remarks on Philosophy
+
+- Poolers begin with the assumption that the data can be pooled and the composite/population averaged inference is general.
+- Time series scholars begin with the belief that things should only be pooled with evidence in support of pooling.
+- These are beliefs and proclivities more than insights from general rules.
+- Substance and theory should drive model choices; the reverse is ridiculous given that we assume the right model.

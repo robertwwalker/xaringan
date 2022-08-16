@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Day 9: GMM and DPD</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Robert W. Walker" />
+    <meta name="date" content="2022-08-18" />
+    <script src="index_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Day 9: GMM and DPD
+]
+.author[
+### Robert W. Walker
+]
+.date[
+### August 18, 2022
+]
+
+---
+
+
+
+
+
+
+
+
+# Outline for Day 9:
+
+1. Hurwicz/Nickell bias
+1. GMM
+1. Panels and GMM
+1. Systems and single equations
+1. Implementation
+
+
+---
+
+## Brief Comment on Hurwicz/Nickell Bias
+
+- Bias is of stochastic order `\(\frac{1}{T}\)`.
+- Less bad as more `\(T\)`
+
+
+---
+
+## GMM
+
+Generalized method of moments estimators are a class of estimators created by analogs of the population moment conditions for sample moments.  For example, linear regression is a GMM estimator and the moment restriction that must hold for OLS is that `\(\mathbb{E}[\mathbf{X^{\prime}}\epsilon] = 0\)`.  With endogenous `\(x \in \mathbf{X}\)`, we instrument using `\(z\)`.  If there is one `\(z\)` for each endogenous `\(x\)`, we have a standard IV.  Without exact identification, we need iteration and GMM estimators will typically involve testing these overidentifying restrictions using a Sargan test, as we will see.
+
+---
+
+## GMM for Panels
+
+The trick here is that the panel structure gives us numerous instruments for **free**.  Comes in two forms.  Single-equation and systems estimators.  With systems estimators, assumptions give us leverage on moment conditions in both level and difference forms, we use these jointly to estimate the parameters of interest.
+
+---
+
+## Introducing DPD
+
+- We are interested in estimating the parameters of models of the form 
+`$$y_{it} = y_{i,t-1}\gamma + X_{it}\beta + \alpha_{i} + \epsilon_{it}$$` 
+for `\(i = \{1,\ldots,N\}\)` and `\(t = \{1,\ldots, T \}\)` using datasets with large `\(N\)` and fixed `\(T\)` 
+- By construction, `\(y_{i,t-1}\)` is correlated with the unobserved 
+individual-level effect `\(\alpha_{i}\)`. 
+- Removing `\(\alpha_{i}\)` by the within transform produces an inconsistent estimator with `\(T\)` fixed. 
+- First difference both sides and look for instrumental-variables (IV) 
+and generalized method-of-moments (GMM) estimators
+
+
+---
+
+## Arrelano-Bond
+
+- First differencing the model equation yields 
+`$$\Delta y_{it} = \Delta y_{i,t-1}\gamma + \Delta x_{it}\beta + \Delta \epsilon_{it}$$`
+- The `\(\alpha_{i}\)` are gone, but the `\(y_{i,t-1}\)` in `\(\Delta y_{i,t-1}\)` is a function of the `\(\epsilon_{i,t-1}\)` which is also in `\(\Delta \epsilon_{it}\)`. 
+- `\(\Delta y_{i,t-1}\)` is correlated with `\(\Delta \epsilon_{it}\)` by construction 
+- Anderson and Hsiao (1981) give a 2SLS estimator based on (further) lags of `\(\Delta y_{it}\)` as instruments for `\(\Delta y_{i,t-1}\)`.  E.g. if `\(\epsilon_{it}\)` is IID over `\(i\)` and `\(t\)`, `\(\Delta y_{i,t-2}\)` is valid for `\(\Delta y_{i,t-1}\)`. 
+- Anderson and Hsiao (1981) also suggest a 2SLS estimator based on lagged levels of `\(y_{it}\)` as instruments for `\(\Delta y_{i,t-1}\)`.  E.g. if `\(\epsilon_{it}\)` is IID over `\(i\)` and `\(t\)`, `\(y_{i,t-2}\)` can instrument for `\(\Delta y_{i,t-1}\)`.
+- Holtz-Eakin, and co-authors (1988) and Arellano and Bond (1991) showed how to construct estimators based 
+on moment equations constructed from further lagged levels of `\(y_{it}\)` and the first-differenced errors.
+- We are creating moment conditions using lagged levels of the 
+dependent variable with first differences, `\(\Delta \epsilon_{it}\)`.  First-differences of strictly exogenous covariates also create 
+moment conditions.
+- Assume that `\(\epsilon_{it}\)` are IID over `\(i\)` and `\(t\)` (no serial correlation)
+- GMM is needed because there are more instruments than parameters. 
+
+---
+
+## Strict Exogeneity vs. Predetermined
+
+- If regressors are strictly exogenous: `\(\mathbb{E}[x_{it}\epsilon_{is}]=0\; \forall s,t\)`.
+- If predetermined, `\(\mathbb{E}[x_{it}\epsilon_{is}]\neq0\; \textrm{if} s &lt; t\)` but `\(\mathbb{E}[x_{it}\epsilon_{is}]=0\; \forall s \geq t\)`
+- Dynamic panel data models allow predetermined regressors.  [backward feedback, no forward feedback]
+
+
+---
+
+## A bit more on this and GMM
+
+- The moment conditions formed by assuming that particular lagged 
+levels of the dependent variable are orthogonal to the differenced 
+disturbances are known as GMM-type moment conditions 
+- Sometimes they are called sequential moment conditions 
+- The moment conditions formed using the strictly exogenous 
+covariates are just standard IV moment conditions, so they are called 
+standard moment conditions 
+- The dynamic panel-data estimators in Stata report which transforms 
+of which variables were used as instruments 
+- In GMM estimators, we weight the vector of sample-average moment 
+conditions by the inverse of a positive definite matrix 
+- When that matrix is the covariance matrix of the moment conditions, 
+we have an efficient GMM estimator 
+- In the case of nonidentically distributed disturbances, we can use a 
+two-step GMM estimator that estimates the covariance matrix of the 
+moment conditions using the first-step residuals 
+- Although the large-sample robust variance-covariance matrix of the 
+two-step estimator does not depend on the fact that estimated 
+residuals were used, simulation studies have found that that 
+Windmejier's bias-corrected estimator performs much better
+- Specifying vce(robust) produces an estimated VCE that is robust to 
+heteroskedasticity 
+
+---
+
+## cont'd
+
+- There is a result in the large-sample theory for GMM which states 
+that the VCE of the two-step estimator does not depend on the fact 
+that it uses the residuals from the first step.  Windmeijer 2005 bias-corrects the VCE of the two-step GMM.
+- No robust Sargan test but Arrelano-Bond test exists.
+- When the variables are predetermined, it means that we cannot 
+include the whole vector of differences of observed xit into the 
+instrument matrix 
+- We just include the levels of `\(x_{it}\)` for those time periods that are 
+assumed to be unrelated to `\(\Delta \epsilon_{it}\)`. 
+- The Arellano-Bond estimator formed moment conditions using 
+lagged-levels of the dependent variable and the predetermined 
+variables with first-differences of the disturbances 
+- Arellano and Bover(1995) and Blundell and Bond (1998) found 
+that if the autoregressive process is too persistent, then the 
+lagged-levels are weak instruments 
+- These authors proposed using additional moment conditions in which 
+lagged differences of the dependent variable are orthogonal to levels 
+of the disturbances 
+- To get these additional moment conditions, they assumed that 
+panel-level effect is unrelated to the first observable first-difference of 
+the dependent variable 
+- `\(\texttt{xtdpdsys}\)` is syntactically similar to `\(\texttt{xtabond}\)`
+
+---
+
+## Wawro
+
+- The range of panel data models employed by political scientists is a small subset of those available.
+- Anderson-Hsiao: (IV) Difference regression `$$\Delta y_{i,t} = \gamma \Delta y_{i,t-1} + \beta \Delta x_{i,t-1} + \Delta u_{i,t}$$` and instrument for terms with lagged difference or lagged levels.  NB: Beck says the estimator is bad.  Econometricians tend to agree.
+- Arrelano and Bond:  Recast A-H as GMM estimator facilitating more instruments.
+- Systems GMM estimators that combine a levels and a difference equation.
+
+---
+
+## Previous Student Question
+
+Wawro takes the `\(T=3\)` case and defines the true model to be:
+`$$y_{i,t}  = \gamma y_{i,t-1} + \alpha_{i} + u_{i,t}$$`
+
+What does this allow us to write?
+
+`$$\Delta_{3,2}  y_{i}  =  \underbrace{\gamma [ \overbrace{\gamma y_{i,1} + \alpha_{i} + u_{i,2}}^{y_{i,2}} ] + \alpha_{i} + u_{i,3}}_{y_{i,3}} - \underbrace{\gamma y_{i,1} + \alpha_{i} + u_{i,2}}_{y_{i,2}}$$`
+`$$(\gamma^{2} - \gamma)y_{i,1} + \underbrace{\gamma \alpha_{i}}_{\delta_{i}} + \underbrace{u_{i,3} + (\gamma - 1) u_{i,2}}_{u_{\Delta(3,2)}^{*}}$$`
+
+In other words, this is an estimating equation without regressors.  
+
+---
+
+So how does he get `\(\Delta y_{i,2}  =  (\gamma - 1) y_{i,1} + \alpha_{i} + u_{i,2}\)`?  It relies on how we treat the initial condition.
+
+`$$\Delta_{2,1}  y_{i}  =  \overbrace{\gamma y_{i,1} + \alpha_{i} + u_{i,2}}^{y_{i,2}} - y_{i,1}$$` where the last term is `\(\gamma y_{i,0} + \alpha_{i} + u_{i,1}\)`.  If, as is commonly the case, we treat the initial condition as fixed, we get what he gets.  If we treat `\(y_{i,1}\)` as the fixed effect plus random noise, then we would get, after some manipulation, `$$\Delta_{2,1}  y_{i}  =  (\gamma - 1)y_{i,1} + (u_{i,2} - u_{i,1})$$`  Because of the assumption of no serial correlation, the latter, under normality, is also normal (as a difference in independent normals) because the unit effects cancel under differencing.
+
+---
+
+## The Data for Implementation
+
+```
+Contains data from abdata.dta
+  obs:         1,031                          Layard &amp; Nickell, Unemployment
+                                                in Britain, Economica 53, 1986
+ ------------------------------------------------------------------------------
+              storage  display     value
+variable name   type   format      label      variable label
+-------------------------------------------------------------------------------
+ind             int    %8.0g                  industry
+year            int    %8.0g
+emp             float  %9.0g                  employment
+wage            float  %9.0g                  real wage
+cap             float  %9.0g                  gross capital stock
+indoutpt        float  %9.0g                  industry output
+n               float  %9.0g                  log(employment)
+w               float  %9.0g                  log(real wage)
+k               float  %9.0g                  log(gross capital stock)
+ys              float  %9.0g                  log(industry output)
+yr1980          float  %9.0g
+yr1981          float  %9.0g
+yr1982          float  %9.0g
+yr1983          float  %9.0g
+yr1984          float  %9.0g
+id              float  %9.0g                  firm ID
+-------------------------------------------------------------------------------
+Sorted by:  id  year
+```
+
+---
+
+## Implementation
+
+- `\(\texttt{xtregar}\)`: , `\(\texttt{re}\)` and `\(\texttt{fe}\)` options
+
+  - Fit a first order autoregressive structure to TSCS data.
+  - Defaults to an iterative estimator but `\(\texttt{twostep}\)` is available.
+  - `\(\texttt{lbi}\)` gives a test of the hypothesis that `\(\rho\)` is zero. (not a default)
+
+- `\(\texttt{xtabond}\)`
+  - `\(\texttt{estat abond}\)` gives a test for autocorrelation
+  - `\(\texttt{estat sargan}\)` gives the overidentifying restrictions test
+
+- `\(\texttt{xtlsdvc y x, initial(ah or ab or bb) vcov(1000 bs iter)}\)` will handle unbalanced \\ 
+Bias-corrected least-squares dummy variable (LSDV) estimators for the standard autoregressive panel-data model using the bias approximations in Bruno (2005a) for unbalanced panels
+- `\(\texttt{xtivreg}\)`
+- `\(\texttt{xtdpd}\)` fits Arellano-Bond and Arellano-Bover/Blundell-Bond
+
+  - `\(\texttt{estat abond}\)` gives a test for autocorrelation
+  - `\(\texttt{estat sargan}\)` gives the overidentifying restrictions test  (Rejection implies failure of assumptions)
+
+---
+
+## More on DPD
+
+- David Roodman's excellent and well documented \texttt{xtabond2} extends the Stata command and incorporates orthogonal deviations transformation that assist in gapped panels.  I personally think it is the best software for this.
+- Systems DPD is complicated but perhaps very useful.
+- As an aside, I laughed pretty hard at a post on econ job rumours where someone claimed that no one actually understands these models!  [Not true, I am positive that Hansen does.....]
+
+
+---
+
+
+```
+                     firm      year    sector         emp       wage    capital
+Grand mean        73.2037 1979.6508    5.1232      7.8917    23.9188     2.5074
+S.D.              41.2333    2.2161    2.6781     15.9349     5.6484     6.2487
+TSS          1751193.2260 5058.2968 7387.3560 261539.3894 32861.7647 40217.7902
+Between S.D.      40.5586    0.6001    2.6774     16.1689     5.1840     6.1048
+BSS          1751193.2260  368.2968 7387.3560 256508.7790 28458.3312 39065.0725
+Within S.D.        0.0000    2.1339    0.0000      2.2100     2.0677     1.0579
+WSS                0.0000 4690.0000    0.0000   5030.6104  4403.4335  1152.7176
+% Within           0.0000    0.9272    0.0000      0.0192     0.1340     0.0287
+                  output
+Grand mean      103.8012
+S.D.              9.9380
+TSS          101726.9240
+Between S.D.      4.3649
+BSS           19218.0111
+Within S.D.       8.9502
+WSS           82508.9129
+% Within          0.8111
+```
+
+---
+
+
+```r
+# To make it match the Stata data.
+EmplUK$n &lt;- log(EmplUK$emp)
+EmplUK$w &lt;- log(EmplUK$wage)
+EmplUK$k &lt;- log(EmplUK$capital)
+EmplUK$ys &lt;- log(EmplUK$output)
+```
+
+---
+
+
+```r
+# Can just use log syntax to solve it.
+# Arellano and Bond (1991), table 4(a1) 
+Table4.a1 &lt;- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1) + lag(log(capital), 0:2) + lag(log(output), 0:2) | lag(log(emp), 2:99), data = EmplUK, effect = "twoways", model = "onestep")
+summary(Table4.a1)
+```
+
+---
+
+
+```
+Twoways effects One-step model Difference GMM 
+
+Call:
+pgmm(formula = log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 
+    0:1) + lag(log(capital), 0:2) + lag(log(output), 0:2) | lag(log(emp), 
+    2:99), data = EmplUK, effect = "twoways", model = "onestep")
+
+Unbalanced Panel: n = 140, T = 7-9, N = 1031
+
+Number of Observations Used: 611
+Residuals:
+      Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
+-0.6006508 -0.0299498  0.0000000 -0.0001193  0.0311461  0.5693264 
+
+Coefficients:
+                         Estimate Std. Error z-value  Pr(&gt;|z|)    
+lag(log(emp), 1:2)1      0.686226   0.144594  4.7459 2.076e-06 ***
+lag(log(emp), 1:2)2     -0.085358   0.056016 -1.5238 0.1275510    
+lag(log(wage), 0:1)0    -0.607821   0.178205 -3.4108 0.0006478 ***
+lag(log(wage), 0:1)1     0.392623   0.167993  2.3371 0.0194319 *  
+lag(log(capital), 0:2)0  0.356846   0.059020  6.0462 1.483e-09 ***
+lag(log(capital), 0:2)1 -0.058001   0.073180 -0.7926 0.4280206    
+lag(log(capital), 0:2)2 -0.019948   0.032713 -0.6098 0.5420065    
+lag(log(output), 0:2)0   0.608506   0.172531  3.5269 0.0004204 ***
+lag(log(output), 0:2)1  -0.711164   0.231716 -3.0691 0.0021469 ** 
+lag(log(output), 0:2)2   0.105798   0.141202  0.7493 0.4536974    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Sargan test: chisq(25) = 48.74983 (p-value = 0.0030295)
+Autocorrelation test (1): normal = -3.599593 (p-value = 0.00031872)
+Autocorrelation test (2): normal = -0.5160282 (p-value = 0.60583)
+Wald test for coefficients: chisq(10) = 408.2859 (p-value = &lt; 2.22e-16)
+Wald test for time dummies: chisq(6) = 11.57904 (p-value = 0.072046)
+```
+
+
+---
+
+
+```r
+## Arellano and Bond (1991), table 4b 
+Table4.b &lt;- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+           + log(capital) + lag(log(output), 0:1) | lag(log(emp), 2:99),
+            data = EmplUK, effect = "twoways", model = "twosteps")
+# To make it match Stata
+summary(Table4.b, robust=FALSE)
+```
+
+---
+
+
+```
+Twoways effects Two-steps model Difference GMM 
+
+Call:
+pgmm(formula = log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 
+    0:1) + log(capital) + lag(log(output), 0:1) | lag(log(emp), 
+    2:99), data = EmplUK, effect = "twoways", model = "twosteps")
+
+Unbalanced Panel: n = 140, T = 7-9, N = 1031
+
+Number of Observations Used: 611
+Residuals:
+      Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
+-0.6190677 -0.0255683  0.0000000 -0.0001339  0.0332013  0.6410272 
+
+Coefficients:
+                        Estimate Std. Error  z-value  Pr(&gt;|z|)    
+lag(log(emp), 1:2)1     0.474151   0.085303   5.5584 2.722e-08 ***
+lag(log(emp), 1:2)2    -0.052967   0.027284  -1.9413 0.0522200 .  
+lag(log(wage), 0:1)0   -0.513205   0.049345 -10.4003 &lt; 2.2e-16 ***
+lag(log(wage), 0:1)1    0.224640   0.080063   2.8058 0.0050192 ** 
+log(capital)            0.292723   0.039463   7.4177 1.191e-13 ***
+lag(log(output), 0:1)0  0.609775   0.108524   5.6188 1.923e-08 ***
+lag(log(output), 0:1)1 -0.446373   0.124815  -3.5763 0.0003485 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Sargan test: chisq(25) = 30.11247 (p-value = 0.22011)
+Autocorrelation test (1): normal = -2.427829 (p-value = 0.01519)
+Autocorrelation test (2): normal = -0.3325401 (p-value = 0.73948)
+Wald test for coefficients: chisq(7) = 371.9877 (p-value = &lt; 2.22e-16)
+Wald test for time dummies: chisq(6) = 26.9045 (p-value = 0.0001509)
+```
+
+
+---
+
+
+```r
+# Or with Robust [Notice it is default]
+summary(Table4.b)
+```
+
+---
+
+
+```
+Twoways effects Two-steps model Difference GMM 
+
+Call:
+pgmm(formula = log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 
+    0:1) + log(capital) + lag(log(output), 0:1) | lag(log(emp), 
+    2:99), data = EmplUK, effect = "twoways", model = "twosteps")
+
+Unbalanced Panel: n = 140, T = 7-9, N = 1031
+
+Number of Observations Used: 611
+Residuals:
+      Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
+-0.6190677 -0.0255683  0.0000000 -0.0001339  0.0332013  0.6410272 
+
+Coefficients:
+                        Estimate Std. Error z-value  Pr(&gt;|z|)    
+lag(log(emp), 1:2)1     0.474151   0.185398  2.5575 0.0105437 *  
+lag(log(emp), 1:2)2    -0.052967   0.051749 -1.0235 0.3060506    
+lag(log(wage), 0:1)0   -0.513205   0.145565 -3.5256 0.0004225 ***
+lag(log(wage), 0:1)1    0.224640   0.141950  1.5825 0.1135279    
+log(capital)            0.292723   0.062627  4.6741 2.953e-06 ***
+lag(log(output), 0:1)0  0.609775   0.156263  3.9022 9.530e-05 ***
+lag(log(output), 0:1)1 -0.446373   0.217302 -2.0542 0.0399605 *  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Sargan test: chisq(25) = 30.11247 (p-value = 0.22011)
+Autocorrelation test (1): normal = -1.53845 (p-value = 0.12394)
+Autocorrelation test (2): normal = -0.2796829 (p-value = 0.77972)
+Wald test for coefficients: chisq(7) = 142.0353 (p-value = &lt; 2.22e-16)
+Wald test for time dummies: chisq(6) = 16.97046 (p-value = 0.0093924)
+```
+
+---
+
+
+```r
+## Blundell and Bond (1998) table 4
+Table4.BB &lt;- pgmm(log(emp) ~ lag(log(emp), 1)+ lag(log(wage), 0:1) +
+           lag(log(capital), 0:1) | lag(log(emp), 2:99) +
+           lag(log(wage), 2:99) + lag(log(capital), 2:99),        
+           data = EmplUK, effect = "twoways", model = "onestep", 
+           transformation = "ld") 
+summary(Table4.BB, robust = TRUE)
+```
+
+
+---
+
+
+```
+Twoways effects One-step model System GMM 
+
+Call:
+pgmm(formula = log(emp) ~ lag(log(emp), 1) + lag(log(wage), 0:1) + 
+    lag(log(capital), 0:1) | lag(log(emp), 2:99) + lag(log(wage), 
+    2:99) + lag(log(capital), 2:99), data = EmplUK, effect = "twoways", 
+    model = "onestep", transformation = "ld")
+
+Unbalanced Panel: n = 140, T = 7-9, N = 1031
+
+Number of Observations Used: 1642
+Residuals:
+      Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
+-0.7530341 -0.0369030  0.0000000  0.0002882  0.0466069  0.6001503 
+
+Coefficients:
+                         Estimate Std. Error z-value  Pr(&gt;|z|)    
+lag(log(emp), 1)         0.935605   0.026295 35.5810 &lt; 2.2e-16 ***
+lag(log(wage), 0:1)0    -0.630976   0.118054 -5.3448 9.050e-08 ***
+lag(log(wage), 0:1)1     0.482620   0.136887  3.5257 0.0004224 ***
+lag(log(capital), 0:1)0  0.483930   0.053867  8.9838 &lt; 2.2e-16 ***
+lag(log(capital), 0:1)1 -0.424393   0.058479 -7.2572 3.952e-13 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Sargan test: chisq(100) = 118.763 (p-value = 0.097096)
+Autocorrelation test (1): normal = -4.808434 (p-value = 1.5212e-06)
+Autocorrelation test (2): normal = -0.2800133 (p-value = 0.77947)
+Wald test for coefficients: chisq(5) = 11174.82 (p-value = &lt; 2.22e-16)
+Wald test for time dummies: chisq(7) = 14.71138 (p-value = 0.039882)
+```
+---
+
+## References
+
+The manual for R package `\(\texttt{plm}\)` was published in the Journal of Statistical Software.  It is nice and extensive excepting the application of dpd models; only some are available.  There is also `panelvar` for panel VAR models that estimates even more `dpd` estimators.  Kit Baum has a very nice discussion of this in Stata in a set of course slides on the web at Boston College [search google for Baum Dynamic Panel Data Estimators].
+
+---
+
+## Some Summary Remarks on Philosophy
+
+- Poolers begin with the assumption that the data can be pooled and the composite/population averaged inference is general.
+- Time series scholars begin with the belief that things should only be pooled with evidence in support of pooling.
+- These are beliefs and proclivities more than insights from general rules.
+- Substance and theory should drive model choices; the reverse is ridiculous given that we assume the right model.
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="https://platform.twitter.com/widgets.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "%current%",
+"highlightStyle": "github",
+"highlightLines": true,
+"ratio": "16:9",
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

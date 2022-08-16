@@ -1,0 +1,383 @@
+---
+title: "Day 8: Panel GLM"
+author: "Robert W. Walker"
+date: "August 17, 2022"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: true
+      beforeInit: "https://platform.twitter.com/widgets.js"
+
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+  fig.width=9, fig.height=3.5, fig.retina=3,
+  out.width = "100%",
+  cache = FALSE,
+  echo = TRUE,
+  message = FALSE, 
+  warning = FALSE,
+  hiline = TRUE
+)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, comment=NA, prompt=FALSE, fig.height=6, fig.width=6.5, fig.retina = 3, dev = 'svg', dev.args = list(bg = "transparent"))
+library(xaringanthemer); library(kableExtra); library(tidyverse); library(skimr)
+# style_mono_accent(
+style_duo_accent(
+#style_solarized_light(
+primary_color = "#371142", 
+# header_color = "#ffffff",
+          secondary_color = "#1c5253", 
+          text_bold_color = "#FF00FF",
+          link_color = "#F97B64",
+          text_font_google   = google_font("EB Garamond"),
+          code_font_google   = google_font("Fira Mono")
+)
+```
+
+```{css, echo = FALSE, include=FALSE}
+.remark-slide-content p, il, ol, li {
+  font-size: 32px;
+  padding: 8px 16px 8px 16px;
+}
+code.r{
+  font-size: 14px;
+}
+pre {
+  font-size: 24px;
+}
+.red { 
+  color: red; 
+}
+.green { 
+  color: green; 
+}
+.scrollable {
+  height: 80%;
+  overflow-y: auto;
+} 
+```
+
+# Outline for Day 8
+
+1. Panel GLM Models: An Overview
+1. Panel GLM Models: Heterogeneity
+1. Panel GLM Models: Dynamics
+
+---
+
+## Dirty Pool and Fixed Effects
+
+- Green, Kim, Yoon point out that the addition of dyad fixed effects undercut much of what we think we know about the causes of dyadic trade and war.
+- Oneal and Russett expand the data, argue that the approach is not very sound (especially for the conflicts), and that the critique is overstated.
+- Beck and Katz make a compelling case for problems with the application of fixed effects estimators to these binary circumstances, especially with rare events.
+- King provides a nice summary of the issues and brings much of the debate to some central points.
+
+---
+
+## A Brief MLE Background using the Binary Example
+
+
+- Data type: Binary data
+- Densities: Mostly symmetric and unimodal [exception: cloglog]
+- Interpretation: Nonlinear models require the specification of the entire prediction vector.  Standard errors are not nuisance parameters.
+- Testing: Z-scores and Wald tests [bad small sample properties].  Likelihood Ratio.
+
+---
+
+## Data Types
+
+- Survey responses: $\{yes, no\}$
+- Choices: $\{Capital controls, Free Capital Movements\}$
+- Votes in a Two-Party System $\{Democrat, Republican\}$
+- A Host of Others...
+
+Typical Interpretation:
+
+**Some unobserved continuous random variable crosses a threshold.**
+
+---
+
+## Binary Choice Models
+
+The generic distribution for a binary choice situation is the Bernoulli distribution.  A *Bernoulli trial* requires two first principles based on two alternatives: 
+- Mutual exclusivity $\Rightarrow Pr(y=1 | y=0)=0$ or $Pr(y=0 | y=1) = 0$ 
+- Exhaustion $\Rightarrow Pr(y=1) = 1 - Pr(y=0)$  
+
+If we define $$\pi = Pr(y=1)$$ Relying on this equation and *Exhaustion*, we can define the probability mass function for a Bernoulli random variable as:
+
+$$Y_i \sim f_{Bernoulli}(y_i | \pi) = \begin{cases} \pi^{y_{i}}(1-\pi)^{1-y_{i}} & \textrm{ for } y=0,1 \\ 0 & otherwise \end{cases}$$
+
+---
+
+## Binary Choice Models, II
+
+Let $u_{i}^*$ be some unobserved latent utility for an action $y_i$ taken by actor $i$.  
+
+Though we cannot observe $u^*_{i}$, expected utility theory requires that taking an action generate nonnegative utility.  As a result, we should only observe $y_i =1$ if $u_{i}^* \geq 0$.  In compact notation with $1=T$ and $0=F$, $y_i = I[u_{i}^* \geq 0]$. 
+
+To derive the maximum likelihood estimator is fairly simple, we simply need the product of $y_i$ multiplied by the action probability ($\pi_{i})$) associated with $y_i$.  Thus, 
+
+$$\mathcal{L}(\pi | \vec{y}) = \prod_{i=1}^{N} \pi_{i}^{y_{i}} (1 - \pi_{i})^{1 - y_{i}}$$
+
+Of course, this model is not very interesting, because we have only have data on $\vec{y}$ and the MLE of $\pi$ is simply $\frac{1}{N}\sum_{i=1}^{N} y_{i}$.  What we really want is a conditional mean function for $u_{i}^*$ and an assumption about the distribution of the latent errors.  Let's consider some candidates.
+
+---
+
+## Specifying a Conditional Mean Function
+
+Let $$u^*_{i} = X_{i}\beta + \epsilon_{i}$$  
+
+The conditional expectation of $u^*_{i}$ is a linear additive function of $X_{i}$ and unobserved parameters $\beta$.  The way to concoct probabilities from this setup is to engage in a bit of transformation.  So, let's substitute, $$u^*_{i} = X_{i}\beta \geq - \epsilon_{i}$$  If the distribution is symmetric [about zero as are logistics and normals] we can engage in some trickery, $$Pr (y=1)  =  F(-X\beta) \\  =  \Lambda(-X\beta)$$ 
+
+This allows us to write the relevant likelihoods as follows: 
+
+$$\mathcal{L}_{N}(\beta | y_i , X_i)  =  \prod_{i=1}^{N} \Phi(-X_{i}\beta)^{y_{i}} \Phi(X_{i}\beta)^{1 - y_{i}}$$
+$$\mathcal{L}_{L}(\beta | y_i , X_i)  =  \prod_{i=1}^{N} \Lambda(-X_{i}\beta)^{y_{i}} \Lambda(X_{i}\beta)^{1 - y_{i}}$$
+
+---
+
+and to write the logs of the likelihood functions as
+
+$$\ln \mathcal{L}_{N}(\beta | y_i , X_i)  = \sum_{i=1}^{N} y_i \ln \Phi(-X_{i}\beta) + (1-y_{i}) \ln \Phi(X_{i}\beta)$$
+$$\ln \mathcal{L}_{L}(\beta | y_i , X_i)  =  \sum_{i=1}^{N} y_i \ln \Lambda(-X_{i}\beta) + (1 - y_i ) \ln \Lambda(X_{i}\beta)$$
+
+---
+
+Or, for arbitrary c.d.f. $F$, $$\ln \mathcal{L} = \sum_{i=1}^{N} (1-y_{i}) \ln  F(X\beta) + y \ln (1 - F(X\beta))$$
+
+This gives us everything we need for logits, probits, and a host of other Bernoulli-based MLE's.
+
+Some cumulative distribution functions:
+
+- Normal [S]:  $\Phi$ which does not have a closed form integral
+- Logistic [S]:  $\Lambda = \frac{e^{X_{i}\beta}}{1 + e^{X_{i}\beta}}$
+- Cauchy [S]: $\frac{1}{\pi}\arctan(X\beta) + \frac{1}{2}$
+- Complementary log-log: $1 - e^{-e ^{X_{i} \beta } }$
+- Log-log:  $e^{-e ^{-X_{i}\beta}}$
+
+---
+
+
+![](./img/cumulative-lines.png)
+
+
+---
+
+
+![](./img/densities.png)
+
+---
+
+## Identification of Binary Choice Models
+
+Most of the distributions described above are not single-parameter distributions.  However, there is not really enough information in the data to identify two parameters.  As a result, we tend to work with standardized distributions.  For example, the probit model [based on the normal] sets $\sigma=1$.  The logit model [based on the logistic distribution] sets $\sigma=\frac{\pi}{\sqrt{3}}$.  Because of this fact, we do not actually estimate $\beta$, we estimate a scaled parameter $\frac{\beta}{\sigma}$.  *NB: It is for this reason that we can come up with an approximation relating logit and probit estimates of $\hat{\beta}$.  The ratio is 1.8, but as Long mentions, others are argued to work better.*  It also means that $\hat{u}_{i}^*$ is scaled to $\sigma$.  $\hat{\pi}$ is unaffected.
+
+This does not influence hypothesis testing on $\beta$ nor does it inhibit our ability to uncover consistent estimates of the probabilities -- the quantities of interest.
+
+---
+
+## Marginal Effects
+
+
+- Marginal effects should generally be calculated at theoretically interesting [referential] values of the independent variables. 
+- For nonlinear models, marginal effects depend on decisions about where to set other variables.
+- King, et. al. have some software for Stata [clarify] and R [Zelig] to do this for you.
+- If you use software to do it, know how they do it.  Some of the choices of the programmers are not innocuous.
+- Unknowns have sampling distributions; estimated quantities have associated uncertainty and the transparent communication of relevant quantities requires that we pay serious attention to this.
+
+---
+
+
+![](./img/logit-constants-betas-plus.png)
+
+---
+
+![](./img/logit-constants-betas-minus.png)
+
+---
+
+## Some Notation
+
+Reviewing, let us define: $\mathcal{L}(\theta | \vec{y})$ as the *likelihood*,  simplify to $\mathcal{L}(\theta)$.
+
+1. The Score Vector $$S(\theta) \equiv \frac{\partial \ln \mathcal{L}(\theta)}{\partial \theta}$$ 
+1. The Hessian Matrix $$H(\theta) \equiv \frac{\partial^2 \ln \mathcal{L}(\theta)}{\partial \theta \partial \theta^{'}}$$
+1. The Information Matrix $$- E \left[ \frac{\partial^2 \ln \mathcal{L}(\theta)}{\partial \theta  \partial \theta^{'}}\right]^{*} = I(\theta) \equiv E[S(\theta)S(\theta)^{'}]$$
+
+---
+
+## Cramer and Rao's Inequality
+
+Assuming that the density of $y$ satisfies regularity conditions, the variance of an unbiased estimator $\hat{\theta}$ of a parameter $\theta$, $$V(\hat{\theta}) \geq \left[I(\theta)\right]^{-1} = \left( - E \left[ \frac {\partial^2 \ln \mathcal{L}(\theta)}{\partial \theta  \partial \theta^{'}} \right] \right)^{-1}$$  
+
+I will spare you the proof on this.  Loosely, the regularity conditions are on the density of the random variable that appears in  $\mathcal{L}$ that ensure that the Lindberg-Levy CLT will apply to observations on the random vector $y = \frac{\partial \ln f(x | \theta)}{\partial \theta}$.  Among them are finite moments of $x$ to order 3 and that the range of the $x$'s is independent of the parameters.
+
+---
+
+## Properties of MLE's
+
+- Consistency:  $\textrm{plim } \hat{\theta}_{MLE} = \theta$
+- Asymptotic Efficiency:  $$V(\hat{\theta}_{MLE}) = I(\theta)^{-1} = \left(- E \left[ \frac{\partial^2 \ln \mathcal{L}(\theta)}{\partial \theta  \partial \theta^{'}}\right]\right)^{-1}$$
+- Asymptotic Normality: $$\hat{\theta}_{MLE} \stackrel{a}{\sim} N(0, I[\theta]^{-1})$$
+- Invariance: MLE of $\gamma = c(\theta)$ is $c(\hat{\theta}_{MLE})$
+
+---
+
+## Asymptotically Equivalent Tests
+
+Define likelihoods $\mathcal{L}(\theta)$ in two variants:
+
+$\mathcal{L}_{U}(\theta)$ as an \textbf{unrestricted} model.
+$\mathcal{L}_{R}(\theta)$ as a restricted model, nested in $\mathcal{L}_{U}(\theta)$: $\theta_{R} \subsetneq \theta_{U}$.
+
+1. Wald:  Requires only the computation of $\mathcal{L}_{U}$ 
+   - Can use a robust var/cov matrix.
+   - Worst small sample properties, see Fears, et. al. (1996) and Pawitan (2000) 
+1. Lagrange Multiplier: Requires only the computation of $\mathcal{L}_{R}$  
+    - Can use a robust var/cov matrix.
+1. Likelihood Ratio: Requires the computation of $\mathcal{L}_{U}$ and $\mathcal{L}_{R}$  
+    - Cannot use a robust var/cov matrix.
+    - $2(\ln \mathcal{L}_{U} - \ln \mathcal{L}_{R}) \sim \chi_{m}^2$ where $m$ is the number of restrictions.  Indeed, doesn't need one and that's good.
+
+---
+
+## A Brief Diversion to GEE
+
+- Semi-parametric regression that relies on specifying the first-two moments.
+- Random effects and variances are nuisance (this is the PA option)
+- Estimating equations, not likelihoods so no L-R tests.
+- Specifies the within-group structure.
+- Uses the sandwich for variance/covariance matrix
+
+---
+
+## Back to the Story
+
+- Is the effect that we want to identify a within or a between effect?
+- A brief aside on the population issue
+- BIG PICTURE ISSUE: Just because data are not continuous does not mean heterogeneity and dynamics don't matter.
+
+---
+
+## Nuisance v. Substance
+There are methods, like GEE, that treat dynamics and other issues as nuisance.  Specify some correlation structure and then utilize a moment-based quasi-likelihood estimator to get parameter estimates because we don't care about the correlation.  In many instances, this is probably fine.  But many times, the precise time issues are essential.
+
+---
+
+## Panel Data Count Models
+
+Stata estimates two panel data count model classes -- the Poisson and the Negative Binomial.  In most cases, the fact that the Poisson is a single-parameter distribution leads to a default preference for the negative binomial (of which the Poisson is a special case).
+
+- $\texttt{xtpoisson}$ estimates fixed effects, random effects, and population averaged versions of the Poisson model for TSCS/CSTS.  The population averaged version is simply a GEE with a correlation option.
+- $\texttt{xtnbreg}$ is similar with a negative binomial regression model.  The options are the same.
+
+---
+
+## Binary Models
+
+Stata estimates three panel data binary estimators -- the logit, probit, and cloglog.  Fixed, random, and population averaged versions exist for logit and cloglog; the probit has no fixed effects version.  The PA is, again, a GEE estimator.
+
+---
+
+## Ordered Models
+
+Stata estimates two classes of panel data ordinal regressions -- the logit and probit.  Both are random effects estimators, though population averaged versions exist.  The PA is, again, a GEE estimator.
+
+---
+
+## Mixed Effects Models
+
+$\texttt{xtmelogit}$ (logit) and $\texttt{xtmepoisson}$ (Poisson) estimate mixed effects regression models for TSCS/CSTS data.  The ideas and implementation are similar to the related command \texttt{xtmixed} that we have discussed.
+
+---
+
+## $\texttt{xtgee}$ syntax
+
+$\texttt{xtgee}$ operates off of the GLM family and link function ideas.  For example, probits and logits are family (binomial) with a probit or logit link. The key issue becomes specifying a working correlation matrix (within-groups/units) from among the options of exchangeable, independent, unstructured, fixed (must be user specified), ar (of order), stationary (of order), and nonstationary (of order).
+
+---
+
+## Binary Dynamics
+
+There are four classes of discrete time series models that we might use for incorporating dynamics for binary observations varying across both time and space.  These get some treatment in the paper by Beck, et. al.
+
+- Latent dependence (Dynamic Linear Models)
+- State dependence (Markov Processes)
+- Autoregressive disturbances
+- Duration (survival models and isomorphisms)
+
+---
+
+## Latent Dependence
+
+Carry on the setup from yesterday.
+
+$$u_{i,t}^{*} = X\beta + \rho u^{*}_{i,t-1} + \epsilon_{it}$$
+
+This is the analog of a lagged dependent variable regression fit in the latent space rather than the observed data.  Such models are probably easiest to fit using Bayesian data augmentation.
+
+---
+
+## Autoregressive Errors and Serial Correlation
+
+$$u_{i,t}^{*}  =  X\beta + \epsilon_{it}$$
+$$\epsilon_{i,t}  =  \rho \epsilon_{i,t-1} + \nu_{t}$$ 
+
+where $\nu$ are i.i.d.  The model is odd in the sense that a shock to $X$ dies immediately but a shock to an omitted thing has dynamic impacts.  There are some suggested tests for serial correlation.  We will implement one of them that employs the generalized residual.  The idea is similar to what we have seen before.  Here, we have two outcome values and two possible generalized residuals.  We either have the density over the CDF or the negative of the density over one minus the CDF.  Then we want the covariance in time of the generalized residuals and need to calculate a variance given as
+$$V(s) = \sum_{t=2}^{T} \frac{\phi_{t}^{2} \phi^{2}_{t-1}}{\Phi_{t}(1-\Phi_{t})\Phi_{t-1}(1-\Phi_{t-1})}$$  We could apply this individually or collectively to the whole set with $N$ summations added to the mix.  One can show that the covariance over the square root of $V(s)$ has an asymptotic normal distribution.
+
+---
+
+## BKT 1998
+
+Beck, Katz, and Tucker (1998) point out that BTSCS are grouped duration data.  Indeed, a cloglog discrete choice model is a Cox proportional hazards model.  They are not similar, like each other, whatever.  They are isomorphic.  One can leverage this to do something about the temporal evolution of binary processes.   Let's get to the details.
+
+---
+
+## Markov Processes
+
+Markov processes extend to a general class of discrete events observed through time and across units.  While the reading discusses the binary case, extensions for ordered and multinomial events are straightforward.  I will show two examples.
+
+$$\mathbf{P}  =  \left(\begin{array}{cccc}\pi_{11} & \pi_{12} &\ldots & \pi_{1J} \\
+\pi_{21} & \ddots & \hdots  & \vdots \\ 
+\vdots & \ddots & \hdots  & \vdots \\ 
+\pi_{J1} & \pi_{J2} & \hdots & \pi_{JJ}\end{array}\right)$$
+
+
+- Rows represent $s^{t}$: the state up to time $t$
+- Columns represent $y^{t}$
+- Rows sum to unity
+
+The idea is that the current outcome depends on covariates and the prior state.  We can do a lot with that.
+
+---
+
+
+## Some General Comments on Panel GLM
+
+- One has to be careful with these extensions of standard linear models. Ex. Random effects probit and fixed effects logit.
+- The orthogonality of the random effects and the regressors is maintained.
+- In most cases, the real trouble is incidental parameters.  That may not be as harsh as it initially seems.  William Greene has an interesting argument about this in his paper, *Estimating Econometric Models with Fixed Effects*.
+
+---
+
+## To My Examples
+
+Questions that arise:
+
+- What do the state dependent parameters represent?  Interpreting interaction terms.
+- Do the effects of a given variable depend on the prior state?
+- Is the effect given a prior state differentiable from zero?
+- How do we calculate these things?
+
+
