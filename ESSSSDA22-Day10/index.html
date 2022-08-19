@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Day 10: Wrapping Up</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Robert W. Walker" />
+    <meta name="date" content="2022-08-19" />
+    <script src="index_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Day 10: Wrapping Up
+]
+.author[
+### Robert W. Walker
+]
+.date[
+### August 19, 2022
+]
+
+---
+
+
+
+
+
+
+
+
+# Outline for Day 10:
+
+1. Implementation of DPD/GMM
+1. Conclusions of Panel GLM
+1. TWFE
+1. Causal Inference in Panel Data
+
+---
+
+## The Data for Implementation of GMM
+
+```
+Contains data from abdata.dta
+  obs:         1,031                          Layard &amp; Nickell, Unemployment
+                                                in Britain, Economica 53, 1986
+ ------------------------------------------------------------------------------
+              storage  display     value
+variable name   type   format      label      variable label
+-------------------------------------------------------------------------------
+ind             int    %8.0g                  industry
+year            int    %8.0g
+emp             float  %9.0g                  employment
+wage            float  %9.0g                  real wage
+cap             float  %9.0g                  gross capital stock
+indoutpt        float  %9.0g                  industry output
+n               float  %9.0g                  log(employment)
+w               float  %9.0g                  log(real wage)
+k               float  %9.0g                  log(gross capital stock)
+ys              float  %9.0g                  log(industry output)
+yr1980          float  %9.0g
+yr1981          float  %9.0g
+yr1982          float  %9.0g
+yr1983          float  %9.0g
+yr1984          float  %9.0g
+id              float  %9.0g                  firm ID
+-------------------------------------------------------------------------------
+Sorted by:  id  year
+```
+
+---
+
+## Implementation
+
+- `\(\texttt{xtregar}\)`: , `\(\texttt{re}\)` and `\(\texttt{fe}\)` options
+
+  - Fit a first order autoregressive structure to TSCS data.
+  - Defaults to an iterative estimator but `\(\texttt{twostep}\)` is available.
+  - `\(\texttt{lbi}\)` gives a test of the hypothesis that `\(\rho\)` is zero. (not a default)
+
+- `\(\texttt{xtabond}\)`
+  - `\(\texttt{estat abond}\)` gives a test for autocorrelation
+  - `\(\texttt{estat sargan}\)` gives the overidentifying restrictions test
+
+- `\(\texttt{xtlsdvc y x, initial(ah or ab or bb) vcov(1000 bs iter)}\)` will handle unbalanced \\ 
+Bias-corrected least-squares dummy variable (LSDV) estimators for the standard autoregressive panel-data model using the bias approximations in Bruno (2005a) for unbalanced panels
+- `\(\texttt{xtivreg}\)`
+- `\(\texttt{xtdpd}\)` fits Arellano-Bond and Arellano-Bover/Blundell-Bond
+  - `\(\texttt{estat abond}\)` gives a test for autocorrelation
+  - `\(\texttt{estat sargan}\)` gives the overidentifying restrictions test  (Rejection implies failure of assumptions)
+
+---
+
+## More on DPD
+
+- David Roodman's excellent and well documented `xtabond2` extends the Stata command and incorporates orthogonal deviations transformation that assist in gapped panels.  I personally think it is the best software for this.
+- Systems DPD is complicated but perhaps very useful.
+- As an aside, I laughed pretty hard at a post on econ job rumours where someone claimed that no one actually understands these models!  [Not true, I am positive that Hansen does.....]
+
+
+---
+
+
+```
+                     firm      year    sector         emp       wage    capital
+Grand mean        73.2037 1979.6508    5.1232      7.8917    23.9188     2.5074
+S.D.              41.2333    2.2161    2.6781     15.9349     5.6484     6.2487
+TSS          1751193.2260 5058.2968 7387.3560 261539.3894 32861.7647 40217.7902
+Between S.D.      40.5586    0.6001    2.6774     16.1689     5.1840     6.1048
+BSS          1751193.2260  368.2968 7387.3560 256508.7790 28458.3312 39065.0725
+Within S.D.        0.0000    2.1339    0.0000      2.2100     2.0677     1.0579
+WSS                0.0000 4690.0000    0.0000   5030.6104  4403.4335  1152.7176
+% Within           0.0000    0.9272    0.0000      0.0192     0.1340     0.0287
+                  output
+Grand mean      103.8012
+S.D.              9.9380
+TSS          101726.9240
+Between S.D.      4.3649
+BSS           19218.0111
+Within S.D.       8.9502
+WSS           82508.9129
+% Within          0.8111
+```
+
+---
+
+
+```r
+# To make it match the Stata data.
+EmplUK$n &lt;- log(EmplUK$emp)
+EmplUK$w &lt;- log(EmplUK$wage)
+EmplUK$k &lt;- log(EmplUK$capital)
+EmplUK$ys &lt;- log(EmplUK$output)
+```
+
+---
+
+
+```r
+# Can just use log syntax to solve it.
+# Arellano and Bond (1991), table 4(a1) 
+Table4.a1 &lt;- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1) + lag(log(capital), 0:2) + lag(log(output), 0:2) | lag(log(emp), 2:99), data = EmplUK, effect = "twoways", model = "onestep")
+summary(Table4.a1)
+```
+
+---
+
+
+```
+Twoways effects One-step model Difference GMM 
+
+Call:
+pgmm(formula = log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 
+    0:1) + lag(log(capital), 0:2) + lag(log(output), 0:2) | lag(log(emp), 
+    2:99), data = EmplUK, effect = "twoways", model = "onestep")
+
+Unbalanced Panel: n = 140, T = 7-9, N = 1031
+
+Number of Observations Used: 611
+Residuals:
+      Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
+-0.6006508 -0.0299498  0.0000000 -0.0001193  0.0311461  0.5693264 
+
+Coefficients:
+                         Estimate Std. Error z-value  Pr(&gt;|z|)    
+lag(log(emp), 1:2)1      0.686226   0.144594  4.7459 2.076e-06 ***
+lag(log(emp), 1:2)2     -0.085358   0.056016 -1.5238 0.1275510    
+lag(log(wage), 0:1)0    -0.607821   0.178205 -3.4108 0.0006478 ***
+lag(log(wage), 0:1)1     0.392623   0.167993  2.3371 0.0194319 *  
+lag(log(capital), 0:2)0  0.356846   0.059020  6.0462 1.483e-09 ***
+lag(log(capital), 0:2)1 -0.058001   0.073180 -0.7926 0.4280206    
+lag(log(capital), 0:2)2 -0.019948   0.032713 -0.6098 0.5420065    
+lag(log(output), 0:2)0   0.608506   0.172531  3.5269 0.0004204 ***
+lag(log(output), 0:2)1  -0.711164   0.231716 -3.0691 0.0021469 ** 
+lag(log(output), 0:2)2   0.105798   0.141202  0.7493 0.4536974    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Sargan test: chisq(25) = 48.74983 (p-value = 0.0030295)
+Autocorrelation test (1): normal = -3.599593 (p-value = 0.00031872)
+Autocorrelation test (2): normal = -0.5160282 (p-value = 0.60583)
+Wald test for coefficients: chisq(10) = 408.2859 (p-value = &lt; 2.22e-16)
+Wald test for time dummies: chisq(6) = 11.57904 (p-value = 0.072046)
+```
+
+
+---
+
+
+```r
+## Arellano and Bond (1991), table 4b 
+Table4.b &lt;- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+           + log(capital) + lag(log(output), 0:1) | lag(log(emp), 2:99),
+            data = EmplUK, effect = "twoways", model = "twosteps")
+# To make it match Stata
+summary(Table4.b, robust=FALSE)
+```
+
+---
+
+
+```
+Twoways effects Two-steps model Difference GMM 
+
+Call:
+pgmm(formula = log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 
+    0:1) + log(capital) + lag(log(output), 0:1) | lag(log(emp), 
+    2:99), data = EmplUK, effect = "twoways", model = "twosteps")
+
+Unbalanced Panel: n = 140, T = 7-9, N = 1031
+
+Number of Observations Used: 611
+Residuals:
+      Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
+-0.6190677 -0.0255683  0.0000000 -0.0001339  0.0332013  0.6410272 
+
+Coefficients:
+                        Estimate Std. Error  z-value  Pr(&gt;|z|)    
+lag(log(emp), 1:2)1     0.474151   0.085303   5.5584 2.722e-08 ***
+lag(log(emp), 1:2)2    -0.052967   0.027284  -1.9413 0.0522200 .  
+lag(log(wage), 0:1)0   -0.513205   0.049345 -10.4003 &lt; 2.2e-16 ***
+lag(log(wage), 0:1)1    0.224640   0.080063   2.8058 0.0050192 ** 
+log(capital)            0.292723   0.039463   7.4177 1.191e-13 ***
+lag(log(output), 0:1)0  0.609775   0.108524   5.6188 1.923e-08 ***
+lag(log(output), 0:1)1 -0.446373   0.124815  -3.5763 0.0003485 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Sargan test: chisq(25) = 30.11247 (p-value = 0.22011)
+Autocorrelation test (1): normal = -2.427829 (p-value = 0.01519)
+Autocorrelation test (2): normal = -0.3325401 (p-value = 0.73948)
+Wald test for coefficients: chisq(7) = 371.9877 (p-value = &lt; 2.22e-16)
+Wald test for time dummies: chisq(6) = 26.9045 (p-value = 0.0001509)
+```
+
+
+---
+
+
+```r
+# Or with Robust [Notice it is default]
+summary(Table4.b)
+```
+
+---
+
+
+```
+Twoways effects Two-steps model Difference GMM 
+
+Call:
+pgmm(formula = log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 
+    0:1) + log(capital) + lag(log(output), 0:1) | lag(log(emp), 
+    2:99), data = EmplUK, effect = "twoways", model = "twosteps")
+
+Unbalanced Panel: n = 140, T = 7-9, N = 1031
+
+Number of Observations Used: 611
+Residuals:
+      Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
+-0.6190677 -0.0255683  0.0000000 -0.0001339  0.0332013  0.6410272 
+
+Coefficients:
+                        Estimate Std. Error z-value  Pr(&gt;|z|)    
+lag(log(emp), 1:2)1     0.474151   0.185398  2.5575 0.0105437 *  
+lag(log(emp), 1:2)2    -0.052967   0.051749 -1.0235 0.3060506    
+lag(log(wage), 0:1)0   -0.513205   0.145565 -3.5256 0.0004225 ***
+lag(log(wage), 0:1)1    0.224640   0.141950  1.5825 0.1135279    
+log(capital)            0.292723   0.062627  4.6741 2.953e-06 ***
+lag(log(output), 0:1)0  0.609775   0.156263  3.9022 9.530e-05 ***
+lag(log(output), 0:1)1 -0.446373   0.217302 -2.0542 0.0399605 *  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Sargan test: chisq(25) = 30.11247 (p-value = 0.22011)
+Autocorrelation test (1): normal = -1.53845 (p-value = 0.12394)
+Autocorrelation test (2): normal = -0.2796829 (p-value = 0.77972)
+Wald test for coefficients: chisq(7) = 142.0353 (p-value = &lt; 2.22e-16)
+Wald test for time dummies: chisq(6) = 16.97046 (p-value = 0.0093924)
+```
+
+---
+
+
+```r
+## Blundell and Bond (1998) table 4
+Table4.BB &lt;- pgmm(log(emp) ~ lag(log(emp), 1)+ lag(log(wage), 0:1) +
+           lag(log(capital), 0:1) | lag(log(emp), 2:99) +
+           lag(log(wage), 2:99) + lag(log(capital), 2:99),        
+           data = EmplUK, effect = "twoways", model = "onestep", 
+           transformation = "ld") 
+summary(Table4.BB, robust = TRUE)
+```
+
+
+---
+
+
+```
+Twoways effects One-step model System GMM 
+
+Call:
+pgmm(formula = log(emp) ~ lag(log(emp), 1) + lag(log(wage), 0:1) + 
+    lag(log(capital), 0:1) | lag(log(emp), 2:99) + lag(log(wage), 
+    2:99) + lag(log(capital), 2:99), data = EmplUK, effect = "twoways", 
+    model = "onestep", transformation = "ld")
+
+Unbalanced Panel: n = 140, T = 7-9, N = 1031
+
+Number of Observations Used: 1642
+Residuals:
+      Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
+-0.7530341 -0.0369030  0.0000000  0.0002882  0.0466069  0.6001503 
+
+Coefficients:
+                         Estimate Std. Error z-value  Pr(&gt;|z|)    
+lag(log(emp), 1)         0.935605   0.026295 35.5810 &lt; 2.2e-16 ***
+lag(log(wage), 0:1)0    -0.630976   0.118054 -5.3448 9.050e-08 ***
+lag(log(wage), 0:1)1     0.482620   0.136887  3.5257 0.0004224 ***
+lag(log(capital), 0:1)0  0.483930   0.053867  8.9838 &lt; 2.2e-16 ***
+lag(log(capital), 0:1)1 -0.424393   0.058479 -7.2572 3.952e-13 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Sargan test: chisq(100) = 118.763 (p-value = 0.097096)
+Autocorrelation test (1): normal = -4.808434 (p-value = 1.5212e-06)
+Autocorrelation test (2): normal = -0.2800133 (p-value = 0.77947)
+Wald test for coefficients: chisq(5) = 11174.82 (p-value = &lt; 2.22e-16)
+Wald test for time dummies: chisq(7) = 14.71138 (p-value = 0.039882)
+```
+---
+
+## References
+
+The manual for R package `\(\texttt{plm}\)` was published in the Journal of Statistical Software.  It is nice and extensive excepting the application of dpd models; only some are available.  There is also `panelvar` for panel VAR models that estimates even more `dpd` estimators.  Kit Baum has a very nice discussion of this in Stata in a set of course slides on the web at Boston College [search google for Baum Dynamic Panel Data Estimators].
+
+---
+## A Brief Point on FEVD
+
+Plumper and Troeger have designed a procedure to solve one of the principle problems that arises in fixed effects regressions: it is either impossible or suboptimal to estimate the effects of time-invariant or nearly time-invariant regressors.  Their approach plays off of the generic consistency of the fixed effects estimator.  In general, they begin by estimating an LSDV model. `$$y_{it} = \alpha_{i} + X_{it}\beta + \epsilon_{it}$$`
+They then proceed to model the unit effects as a function of (largely) time-invariant regressors that they denote as `\(Z\)`
+`$$\alpha_{i} = Z_{i}\gamma + \psi_{i}$$` In a third stage, they then construct the regression with an offset.  In effect, they take the offset and add it to the regression such as,
+`$$y_{it} = \psi_{i} + X_{it}\beta + Z_{i}\gamma + \nu_{it}$$` and adjust the variance/covariance matrix of the errors accordingly.
+
+
+
+
+---
+
+## Some Summary Remarks on Philosophy
+
+- Poolers begin with the assumption that the data can be pooled and the composite/population averaged inference is general.
+- Time series scholars begin with the belief that things should only be pooled with evidence in support of pooling.
+- These are beliefs and proclivities more than insights from general rules.
+- Substance and theory should drive model choices; the reverse is ridiculous given that we assume the right model.
+- **I am surprised that GEE type models do not get far more play because of the typical nature of social science theorizing these days.**
+
+---
+class: inverse
+
+# On Dynamics in Panel GLM
+
+---
+
+## `\(\texttt{xtgee}\)` syntax
+
+`\(\texttt{xtgee}\)` operates off of the GLM family and link function ideas.  For example, probits and logits are family (binomial) with a probit or logit link. The key issue becomes specifying a working correlation matrix (within-groups/units) from among the options of exchangeable, independent, unstructured, fixed (must be user specified), ar (of order), stationary (of order), and nonstationary (of order).
+
+---
+
+## A Within-Between GEE
+
+`panelr` estimates a Within-Between gee regression that extends the logic of GEE to limited outcomes.
+
+
+---
+
+## Binary Dynamics
+
+There are four classes of discrete time series models that we might use for incorporating dynamics for binary observations varying across both time and space.  These get some treatment in the paper by Beck, et. al.
+
+- Latent dependence (Dynamic Linear Models)
+- State dependence (Markov Processes)
+- Autoregressive disturbances
+- Duration (survival models and isomorphisms)
+
+---
+
+## Latent Dependence
+
+Carry on the setup from yesterday.
+
+`$$u_{i,t}^{*} = X\beta + \rho u^{*}_{i,t-1} + \epsilon_{it}$$`
+
+This is the analog of a lagged dependent variable regression fit in the latent space rather than the observed data.  Such models are probably easiest to fit using Bayesian data augmentation.
+
+---
+
+## Autoregressive Errors and Serial Correlation
+
+`$$u_{i,t}^{*}  =  X\beta + \epsilon_{it}$$`
+`$$\epsilon_{i,t}  =  \rho \epsilon_{i,t-1} + \nu_{t}$$` 
+
+where `\(\nu\)` are i.i.d.  The model is odd in the sense that a shock to `\(X\)` dies immediately but a shock to an omitted thing has dynamic impacts.  There are some suggested tests for serial correlation.  We will implement one of them that employs the generalized residual.  The idea is similar to what we have seen before.  Here, we have two outcome values and two possible generalized residuals.  We either have the density over the CDF or the negative of the density over one minus the CDF.  Then we want the covariance in time of the generalized residuals and need to calculate a variance given as
+`$$V(s) = \sum_{t=2}^{T} \frac{\phi_{t}^{2} \phi^{2}_{t-1}}{\Phi_{t}(1-\Phi_{t})\Phi_{t-1}(1-\Phi_{t-1})}$$`  We could apply this individually or collectively to the whole set with `\(N\)` summations added to the mix.  One can show that the covariance over the square root of `\(V(s)\)` has an asymptotic normal distribution.
+
+---
+
+## BKT 1998
+
+Beck, Katz, and Tucker (1998) point out that BTSCS are grouped duration data.  **Indeed, a cloglog discrete choice model is a Cox proportional hazards model.**  They are not similar, like each other, whatever.  They are isomorphic.  One can leverage this to do something about the temporal evolution of binary processes.   The details are in the lab on Box.  As an addition to this, Carter and Signorino have a compelling argument that instead of a completely saturated set of dummy variables for time since event, it is generically superior to use the Taylor series of time, time squared, and time cubed.
+
+---
+
+## Markov Processes
+
+Markov processes extend to a general class of discrete events observed through time and across units.  While the reading discusses the binary case, extensions for ordered and multinomial events are straightforward.  I will show two examples.
+
+`$$\mathbf{P}  =  \left(\begin{array}{cccc}\pi_{11} &amp; \pi_{12} &amp;\ldots &amp; \pi_{1J} \\
+\pi_{21} &amp; \ddots &amp; \hdots  &amp; \vdots \\ 
+\vdots &amp; \ddots &amp; \hdots  &amp; \vdots \\ 
+\pi_{J1} &amp; \pi_{J2} &amp; \hdots &amp; \pi_{JJ}\end{array}\right)$$`
+
+
+- Rows represent `\(s^{t}\)`: the state up to time `\(t\)`
+- Columns represent `\(y^{t}\)`
+- Rows sum to unity
+
+The idea is that the current outcome depends on covariates and the prior state.  We can do a lot with that.
+
+
+---
+class: inverse
+
+## Implementation
+
+Is trivial.  It is a discrete choice model with interactions between the covariates [however structured in time] and the prior state.  By construction, it treats heterogeneity as uniformly a function of the prior state, at least in the simplest cast.  It also enables to distinct classes of tests.  Do the effects of a covariate depend on the prior state and what is the effect of some change in a covariate given an assumed state.  The range of counterfactuals is not small.
+
+
+---
+## Some General Comments on Panel GLM
+
+- One has to be careful with these extensions of standard linear models. Ex. Random effects probit and fixed effects logit.
+- The orthogonality of the random effects and the regressors is maintained.
+- In most cases, the real trouble is incidental parameters.  That may not be as harsh as it initially seems.  William Greene has an interesting argument about this in his paper, *Estimating Econometric Models with Fixed Effects*.
+
+---
+
+## To My Examples
+
+Questions that arise:
+
+- What do the state dependent parameters represent?  Interpreting interaction terms.
+- Do the effects of a given variable depend on the prior state?
+- Is the effect given a prior state differentiable from zero?
+- How do we calculate these things?
+
+
+---
+## Two Way Fixed Effects and Causal Inference
+
+
+---
+# Some DiD and TWFE
+
+.pull-left[
+DiD as the double difference [from Andrew C. Baker](https://andrewcbaker.netlify.app/did)
+]
+.pull-right[
+![](./img/Screen Shot 2022-08-19 at 3.21.55 AM.png)
+]
+
+---
+## TWFE
+
+![](./img/Screen Shot 2022-08-19 at 3.25.54 AM.png)
+
+---
+# Equivalence
+
+![](./img/Screen Shot 2022-08-19 at 3.27.09 AM.png)
+
+---
+## The Problem
+
+![](./img/Screen Shot 2022-08-19 at 3.29.19 AM.png)
+
+---
+
+## Glynn and Blackwell
+
+&gt; Repeated measurements of the same countries, people, or groups over time are vital to many fields of political 
+&gt; science.  These measurements, sometimes called time-series cross-sectional (TSCS) data, allow researchers to estimate
+&gt; a broad set of causal quantities, including contemporaneous and lagged treatment effects. Unfortunately, popular 
+&gt; methods for TSCS data can only produce valid inferences for lagged effects under very strong assumptions. In this 
+&gt; paper, we use potential outcomes to define causal quantities of interest in this settings and clarify how standard 
+&gt; models like the autoregressive distributed lag model can produce biased estimates of these quantities due to 
+&gt; post-treatment conditioning. We then describe two estimation strategies that avoid these post-treatment 
+&gt; biases-inverse probability weighting and structural nested mean models-and show via simulations that they can 
+&gt; outperform standard approaches in small sample settings.
+
+---
+
+## Imai and Kim
+
+
+&gt; Many researchers use unit fixed effects regression models as their default methods for
+&gt; causal inference with longitudinal data. We show that the ability of these models to adjust
+&gt; for unobserved time-invariant confounders comes at the expense of dynamic causal relationships,
+&gt; which are allowed to exist under an alternative selection-on-observables approach.
+&gt; Using the nonparametric directed acyclic graph, we highlight the two key causal identification
+&gt; assumptions of fixed effects models: past treatments do not directly influence current
+&gt; outcome, and past outcomes do not affect current treatment. Furthermore, we introduce
+&gt; a new nonparametric matching framework that elucidates how various fixed effects models
+&gt; implicitly compare treated and control observations to draw causal inference. By establishing
+&gt; the equivalence between matching and weighted fixed effects estimators, this framework
+&gt; enables a diverse set of identification strategies to adjust for unobservables provided that
+&gt; the treatment and outcome variables do not influence each other over time. \end{quotation}
+
+---
+
+## Some Concluding Remarks
+
+Plumper, et. al. 2005 point out that specification issues matter, alot.
+
+- Absorbing cross-sectional variance by unit dummies.
+- Absorbing time-series variance with lagged DV
+- Lag structure matters
+- Slope heterogeneity is a relevant consideration
+
+Findings may not be at all robust.  
+
+---
+
+## My Own View
+My own view of this, to borrow a phrase but use it a bit differently than the original authors, is to think of models as treatments with our data as the subject.  We make one set of assumptions and we treat our subject.  Change that around a bit and treat again.  Do it a third time and so on and so on.  In the end, we have sets of models related by subtle differences in assumptions about the process that generated the data and estimates obtained across models toward this end.  Our inferential process should be inherently Bayesian in the sense that we update the strength of conclusions on the basis of findings differing in predictable ways given these differing sets of assumptions. \newline \newline
+
+.red[There is no single right model or magic bullet for diagnosing an unknown data generating process.]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="https://platform.twitter.com/widgets.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "%current%",
+"highlightStyle": "github",
+"highlightLines": true,
+"ratio": "16:9",
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
