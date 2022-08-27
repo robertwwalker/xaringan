@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Data Analysis, Modelling, and Decision-Making</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Robert W. Walker" />
+    <meta name="date" content="2022-08-30" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <script src="libs/htmlwidgets/htmlwidgets.js"></script>
+    <link href="libs/datatables-css/datatables-crosstalk.css" rel="stylesheet" />
+    <script src="libs/datatables-binding/datatables.js"></script>
+    <script src="libs/jquery/jquery-3.6.0.min.js"></script>
+    <link href="libs/dt-core/css/jquery.dataTables.min.css" rel="stylesheet" />
+    <link href="libs/dt-core/css/jquery.dataTables.extra.css" rel="stylesheet" />
+    <script src="libs/dt-core/js/jquery.dataTables.min.js"></script>
+    <script src="libs/jszip/jszip.min.js"></script>
+    <link href="libs/dt-ext-buttons/css/buttons.dataTables.min.css" rel="stylesheet" />
+    <script src="libs/dt-ext-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="libs/dt-ext-buttons/js/buttons.html5.min.js"></script>
+    <script src="libs/dt-ext-buttons/js/buttons.colVis.min.js"></script>
+    <script src="libs/dt-ext-buttons/js/buttons.print.min.js"></script>
+    <link href="libs/crosstalk/css/crosstalk.min.css" rel="stylesheet" />
+    <script src="libs/crosstalk/js/crosstalk.min.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Data Analysis, Modelling, and Decision-Making
+]
+.subtitle[
+## Statistics and Decision Science
+]
+.author[
+### Robert W. Walker
+]
+.date[
+### 30 August 2022
+]
+
+---
+
+class: center
+
+
+
+
+
+
+&lt;iframe src="https://prezi.com/p/dc_jtw1oks2k/embed/" id="iframe_container" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen="" allow="autoplay; fullscreen" height="600" width="800"&gt;&lt;/iframe&gt;
+
+
+---
+# A syllabus
+
+[Let's walk through that.](https://wise.willamette.edu/access/content/group/GSMPR-622-P1-22_FA/Syllabus/Syllabus-FA22-P1-622.pdf)
+
+---
+# First Day Work
+
+## Some Quick R and Excel Tools
+
+---
+class: right
+background-image: url("images/RMD.png")
+background-size: contain
+
+# Some Comments on Workflow
+
+Everything is built around R and RStudio.
+
+--
+
+RMarkdown is my tool of choice.  
+
+--
+
+In fact, these slides are RMarkdown rendered as .html.  
+
+--
+
+The *RStudio* has a *knit* button that renders the document so long as it contains the appropriate packages.
+
+--
+
+It is literate programming; it allows us to combine results and output.  
+
+--
+
+In a host of different formats.  
+
+--
+
+That are fundamentally reproducible: *the key to science*.
+
+---
+
+# Some Example Data
+
+The data are Bond.Funds.  We have an ID, Type, Assets, Fees [Yes or No], Expense Ratio, Returns in 2009, 3 year, 5 year, and a Risk classification.  A [link to the data](https://github.com/robertwwalker/DADMStuff/raw/master/BondFunds.csv).
+
+
+```r
+load(url("https://github.com/robertwwalker/DADMStuff/raw/master/R-Workspace-Lecture-1.RData"))
+Bonds
+# read from Excel: Bonds &lt;-
+# readxl::read_xls('/home/rob/Downloads/BondFundsSupport.xls',
+# sheet='JustData')
+```
+
+---
+
+<div id="htmlwidget-037e833291e861f89ced" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-037e833291e861f89ced">{"x":{"filter":"none","vertical":false,"extensions":["Buttons"],"data":[["FN-1","FN-2","FN-3","FN-4","FN-5","FN-6","FN-7","FN-8","FN-9","FN-10","FN-11","FN-12","FN-13","FN-14","FN-15","FN-16","FN-17","FN-18","FN-19","FN-20","FN-21","FN-22","FN-23","FN-24","FN-25","FN-26","FN-27","FN-28","FN-29","FN-30","FN-31","FN-32","FN-33","FN-34","FN-35","FN-36","FN-37","FN-38","FN-39","FN-40","FN-41","FN-42","FN-43","FN-44","FN-45","FN-46","FN-47","FN-48","FN-49","FN-50","FN-51","FN-52","FN-53","FN-54","FN-55","FN-56","FN-57","FN-58","FN-59","FN-60","FN-61","FN-62","FN-63","FN-64","FN-65","FN-66","FN-67","FN-68","FN-69","FN-70","FN-71","FN-72","FN-73","FN-74","FN-75","FN-76","FN-77","FN-78","FN-79","FN-80","FN-81","FN-82","FN-83","FN-84","FN-85","FN-86","FN-87","FN-88","FN-89","FN-90","FN-91","FN-92","FN-93","FN-94","FN-95","FN-96","FN-97","FN-98","FN-99","FN-100","FN-101","FN-102","FN-103","FN-104","FN-105","FN-106","FN-107","FN-108","FN-109","FN-110","FN-111","FN-112","FN-113","FN-114","FN-115","FN-116","FN-117","FN-118","FN-119","FN-120","FN-121","FN-122","FN-123","FN-124","FN-125","FN-126","FN-127","FN-128","FN-129","FN-130","FN-131","FN-132","FN-133","FN-134","FN-135","FN-136","FN-137","FN-138","FN-139","FN-140","FN-141","FN-142","FN-143","FN-144","FN-145","FN-146","FN-147","FN-148","FN-149","FN-150","FN-151","FN-152","FN-153","FN-154","FN-155","FN-156","FN-157","FN-158","FN-159","FN-160","FN-161","FN-162","FN-163","FN-164","FN-165","FN-166","FN-167","FN-168","FN-169","FN-170","FN-171","FN-172","FN-173","FN-174","FN-175","FN-176","FN-177","FN-178","FN-179","FN-180","FN-181","FN-182","FN-183","FN-184"],["Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Intermediate Government","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate","Short Term Corporate"],[7268.1,475.1,193,18603.5,142.6,1401.6,985.6,2188.8,390.6,544.1,1407.4,155.5,397.5,906.1,379.1,62.7,1539.1,167.3,448,238.1,557.8,192.7,261.8,135.8,1807.3,4615.4,86.2,291.1,6332.5,110.7,619.7,628.7,274.3,891.8,94.7,676.3,1182.1,135.9,588.8,40,1080.4,309.1,4472.2,498.7,278.2,1525.5,556.6,588.6,332.5,84.9,17.3,104.1,530.7,333.6,1133.3,322.5,123.8,425.6,184.7,122.7,107.2,135.6,82.2,305.7,551.3,24.2,661.2,154.6,106.9,1011.1,634.8,168.7,792.1,583.5,56.1,285.5,640.3,84.7,81.3,611.7,595.1,131.3,88,686.6,3531.8,358,33,139.1,123.9,1922,203.4,66.1,1346,4772.9,77.5,76.2,146.3,49.2,96.1,226.8,122.3,725.9,1248.4,36.5,127.4,605.2,1879.2,964.7,325.3,69.8,177.8,156.6,244.9,475.5,46.1,181.3,63.8,135.4,388,18.6,298.1,461.3,159.9,3662.7,42.6,111.4,114.5,5282.9,17.4,518,262.5,93.9,1130,1101.9,49.9,640.3,477.4,569.4,36.8,145.4,148.9,195.8,2361.1,12.4,26.3,681,486.1,10744.6,108.9,69,128.3,374.4,280.6,456.2,16297.1,517,80.5,119.3,88.3,5701.6,478.4,369.3,297.4,230.6,115.7,6981.5,190.1,278.4,246.1,143.8,1469.6,80,95.5,170.5,95.4,237.1,983,51.9,249.7,33.8,249.8,52.9,39.7,182.3],["No","No","No","No","No","No","No","No","No","No","No","No","No","No","No","No","No","No","No","No","No","No","Yes","No","Yes","No","No","Yes","Yes","No","Yes","No","No","Yes","Yes","Yes","Yes","No","Yes","No","No","Yes","Yes","Yes","No","No","Yes","Yes","Yes","No","No","Yes","Yes","No","No","Yes","No","Yes","Yes","No","No","Yes","No","Yes","No","No","Yes","Yes","Yes","Yes","Yes","Yes","Yes","No","No","No","No","Yes","Yes","No","No","No","No","Yes","No","Yes","No","No","No","Yes","Yes","No","No","No","No","No","No","No","No","No","No","No","No","No","No","No","No","Yes","No","No","Yes","No","No","Yes","No","No","Yes","No","No","No","No","No","Yes","No","No","No","No","No","No","No","No","No","Yes","No","No","No","No","No","No","Yes","No","No","Yes","No","No","Yes","No","No","No","Yes","No","No","Yes","No","No","No","No","No","No","Yes","No","No","Yes","No","Yes","No","No","Yes","No","No","Yes","No","No","No","Yes","No","No","No","No","No","Yes","No","No","No"],[0.45,0.5,0.71,0.13,0.6,0.54,0.49,0.55,0.67,0.63,0.45,0.91,0.6,0.51,0.57,0.74,0.66,0.6,0.77,1.13,0.74,0.7,1.08,0.65,0.8,0.45,0.61,1.1,0.73,1.08,0.96,0.55,0.8,0.88,0.83,0.93,0.92,0.47,0.96,1.94,0.95,0.98,0.64,0.95,0.2,0.13,0.94,0.96,1,0.71,1.58,0.95,0.92,0.37,0.46,1.13,0.75,0.97,1.03,0.26,0.9,1.15,0.57,0.99,0.52,0.52,0.97,0.9,0.79,0.87,0.9,0.99,1,0.5,0.65,0.36,0.27,1,1.16,0.51,0.55,0.65,0.82,0.94,0.12,1.06,1,0.51,0.32,1.08,1,0.71,0.65,0.56,0.51,0.68,0.55,0.6,0.73,0.45,0.53,0.68,0.72,0.76,0.45,0.3,0.48,0.85,0.53,0.9,0.94,0.63,0.81,0.91,0.92,0.36,0.62,0.7,0.56,0.89,0.51,0.46,0.8,0.52,0.74,0.97,0.65,0.22,0.75,0.72,0.85,0.74,0.86,0.64,0.6,0.54,0.6,0.52,0.38,0.9,1.1,0.52,0.8,0.7,0.49,0.75,0.5,0.46,0.63,0.98,0.55,0.73,0.99,0.37,0.14,0.65,0.7,0.82,0.92,0.69,0.64,0.86,1.05,0.95,0.7,0.45,0.5,0.85,0.75,0.8,1.08,0.7,0.66,0.46,1.02,0.5,0.6,0.7,0.55,0.53,0.43,0.87,0.51,0.53],[6.9,9.8,6.3,5.4,5.9,5.7,3,7.4,5.3,5.7,0.9,12.4,6,8.1,5.7,4.5,6.4,5.8,10.1,4.4,9,3.2,3.5,-1.1,7.8,1.3,-0.2,5.1,4.8,1.9,5,2.1,12.7,4.2,3.5,22.3,28.6,13,5.2,17.1,3.5,0,2.2,0.9,-3.8,-0.7,7.9,6.2,3.7,11.2,2.1,-3.6,4.6,12,3.4,4.7,6.4,9.1,1.7,-3.6,0.1,3.7,-3.3,3,-1.4,0.7,0,2.9,-4.8,1.4,7.3,-2.9,1.2,6,0.7,7.1,0.2,-0.6,7,6.5,5.5,-3.8,2,7.2,-1.6,0.5,0.2,5.5,5,12.1,8.3,6.8,8.6,5,2.2,2.5,12.2,10,7.3,2.9,7.3,15.5,14,5.5,3.6,8.1,9.6,12.9,10.7,6,8.2,12,16.4,6,5.4,4.9,8.6,6.8,6.7,4.1,11.2,8.4,5.9,9,5.4,9.1,9.5,4.3,2.8,10.8,9.5,9.4,13.2,13,1.6,7,12.9,12,3.6,10.1,7.7,7.2,17.4,3.4,4,11.3,10.3,13.4,11.4,5.2,8.8,13.2,16.6,13.6,14.2,10.6,13.4,6,4.5,6.7,6.8,13.5,12.8,13.9,11.5,7.3,11.6,15.5,11.9,24.8,29.7,9.9,19.2,15.6,1.5,14.5,15.2,13.4,2.4,16.4,6.7,5.2,-8.8,32],[6.9,7.5,7,6.6,6.7,6.4,6.8,6.4,6.1,6.2,6.2,6.4,6.3,6.1,6.6,7.8,6.2,6.2,6.5,5.5,6,6,5.1,6,6.1,6.7,5.6,5.8,6,5.4,5.9,6.3,6.1,6.6,6.4,9.4,9.4,5.1,6.7,6.6,6,5.8,5.5,4.9,6,7.1,5.5,5.1,4.7,3.9,4.9,4.7,5.5,4.9,2.3,5.6,3.3,4.7,5.6,6.1,5.3,5.9,5.1,6.2,7.3,-0.1,3.2,2.4,5.6,1.6,3.7,6,2.3,7.3,5.2,5.5,6.5,2.5,1,6.8,6.3,4.4,5.8,3.7,7.2,4.9,6.1,5.1,4.4,5.5,5.2,4.9,6.1,4.9,3.7,5.2,5.8,5,4.8,3.6,5.9,5.9,5.5,5,3.3,4.1,4.9,7.1,4.5,4.6,5.4,6.3,5.5,6.4,4.2,4.5,5.5,4.2,4.6,3.4,5,4.5,4.8,5.2,4.6,4.5,4.9,5.6,3.9,6.4,4.4,5.5,6.5,3.5,1.3,2.3,4.6,4.9,1.7,3.1,4.3,4.2,7.1,5.5,6,3.5,5.7,6.5,4.1,4.7,5.9,4.6,8,3.7,4.9,4.7,5.1,5,1,3.4,2.2,2.7,2.6,3.5,1.8,1.7,5.5,4.4,0.8,8.9,4.8,2.9,0,0.7,-0.2,0.7,0.2,0.1,0.4,0.7,-4.5,-3,-13.8,-2.7],[5.5,6.1,5.6,5.5,5.4,6.2,5.3,5.2,5,5.1,4.7,5.1,5.1,5.1,5.2,5.6,5,5.1,5.3,4.3,4.9,4.9,4,4.6,4.9,5.2,4.4,4.6,4.9,4.2,4.9,5.1,5,5.1,5.1,6.4,6.8,4.5,5.3,5.1,4.7,4.4,4.4,4.1,4.7,5.3,4.3,4.4,4,3.7,3.7,3.7,4.5,4.5,2.5,4.4,3.2,4.1,4.4,4.7,4,4.4,4.2,4.9,5.2,1.2,3,2.6,4.6,2.3,3.4,4.1,2.6,5.7,4.4,4.8,5.2,2.5,1.7,5.5,5.2,3.8,4.5,3.5,5.4,4,4.8,4.3,4.1,5,4.4,4,4.8,4.2,3.5,4.2,4.8,4.6,4.1,3.6,4.6,4.7,4.7,4,3.3,3.7,4.2,5.3,4.1,3.8,4.4,4.9,4.6,4.7,3.6,3.8,4.3,3.7,3.8,3.1,4.3,4,4,4.3,4,3.7,4.1,4.4,3.4,4.9,3.9,4.3,4.9,3.8,2.3,2.7,3.9,4,2.5,3,3.4,3.6,5.1,4.2,4.6,3.3,4.4,4.9,3.6,3.4,4.5,3.8,4.6,3.5,4.4,3.8,4.2,4,1.7,3.1,2.4,2.6,2.7,3.2,2.4,2.4,4.4,3.8,2,6.4,4.3,3,1.3,2,1.8,1.7,1.9,1.2,1.5,1.8,-1.5,-0.7,-7.3,0.2],["Below average","Below average","Average","Average","Average","Average","Average","Below average","Below average","Below average","Average","Below average","Below average","Below average","Below average","Above average","Below average","Below average","Below average","Below average","Below average","Average","Below average","Average","Average","Above average","Average","Below average","Below average","Average","Average","Above average","Average","Average","Average","Above average","Above average","Below average","Average","Above average","Average","Above average","Average","Above average","Above average","Above average","Above average","Below average","Average","Below average","Average","Above average","Average","Above average","Below average","Above average","Average","Below average","Above average","Above average","Average","Average","Above average","Above average","Above average","Above average","Above average","Average","Above average","Average","Above average","Above average","Above average","Average","Average","Below average","Above average","Average","Above average","Average","Below average","Above average","Average","Below average","Above average","Average","Below average","Below average","Below average","Average","Below average","Below average","Below average","Below average","Below average","Below average","Average","Average","Below average","Below average","Average","Average","Average","Below average","Below average","Average","Average","Average","Average","Average","Below average","Average","Average","Average","Average","Average","Average","Below average","Below average","Below average","Average","Average","Below average","Average","Below average","Below average","Below average","Average","Below average","Average","Below average","Above average","Above average","Above average","Below average","Below average","Average","Average","Below average","Below average","Average","Average","Above average","Above average","Above average","Average","Above average","Above average","Average","Below average","Above average","Above average","Above average","Average","Above average","Average","Above average","Average","Average","Average","Below average","Above average","Above average","Average","Average","Below average","Above average","Above average","Average","Above average","Above average","Above average","Above average","Above average","Below average","Above average","Above average","Above average","Average","Above average","Above average","Above average","Above average","Above average"]],"container":"<table class=\"compact\">\n  <thead>\n    <tr>\n      <th>Fund Number<\/th>\n      <th>Type<\/th>\n      <th>Assets<\/th>\n      <th>Fees<\/th>\n      <th>Expense Ratio<\/th>\n      <th>Return 2009<\/th>\n      <th>3-Year Return<\/th>\n      <th>5-Year Return<\/th>\n      <th>Risk<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"dom":"tBp","scrollY":true,"buttons":["csv","excel"],"pageLength":8,"columnDefs":[{"targets":0,"render":"function(data, type, row, meta) {\n    return type !== 'display' ? data : DTWidget.formatRound(data, 1, 3, \",\", \".\", null);\n  }"},{"targets":1,"render":"function(data, type, row, meta) {\n    return type !== 'display' ? data : DTWidget.formatRound(data, 1, 3, \",\", \".\", null);\n  }"},{"targets":2,"render":"function(data, type, row, meta) {\n    return type !== 'display' ? data : DTWidget.formatRound(data, 1, 3, \",\", \".\", null);\n  }"},{"targets":3,"render":"function(data, type, row, meta) {\n    return type !== 'display' ? data : DTWidget.formatRound(data, 1, 3, \",\", \".\", null);\n  }"},{"className":"dt-right","targets":[2,4,5,6,7]}],"order":[],"autoWidth":false,"orderClasses":false,"lengthMenu":[8,10,25,50,100]}},"evals":["options.columnDefs.0.render","options.columnDefs.1.render","options.columnDefs.2.render","options.columnDefs.3.render"],"jsHooks":[]}</script>
+
+---
+# My Current Thinking
+
+An analogy: `\(R\)` is like learning a foreign language.  It has the essential elements of   
+
+- syntax 
+- structure  
+- scoping  
+
+Learning how R thinks and communicates is crucial and that is largely an interaction between you and `\(R\)`.
+
+** `\(R\)` is a language for data. **
+
+
+---
+class: inverse
+
+# Some Essential Excel
+
+- Formulae  
+- Absolute and relative references  
+- Pivot tables   
+
+It has some nice features.  
+
+It fails the simple test of manipulability of the underlying data.
+
+---
+
+
+## Formulae
+
+Pre-programmed functions that take input ranges of cells and produce particular outputs.
+
+A [link to some data](https://github.com/robertwwalker/DADMStuff/raw/master/BondFunds.csv).
+
+e.g. set cell `J5` to be:
+
+```
+=AVERAGE(C2:C21)
+```
+
+This averages the range between C2 and C21 [Assets].  When we copy this left or right, up or down, the numbers and/or letters adjust.  
+
+**Let's try to make column L into `=C2 - J5` all the way down to C21.**  
+
+NB: The average is technically known as the *arithmetic mean*; it is sometimes short-formed to the mean, though there are geometric and harmonic variants, also.
+
+---
+
+## Cell Referencing
+
+We may not want that.  Suppose that I want to create a column showing the difference of assets and average assets.  In essence, we have *rescaled* assets such that 0 is the average and we are measuring above or below that average [and by how much].  The `$` holds an index constant [F4].  We have two.  In our case, we can hold both the rows and the column constant for the average.
+
+--
+
+Because we are only copying down, the `$5` would have sufficed.
+
+```
+=C2 - $J$5
+=C2 - J$5
+```
+
+Then copy the formula down to L21.  Notice the C changes [no $] but the J doesn't. **The $ enables absolute cell referencing.** 
+
+---
+
+As expected.  Average assets over the first 20 is 1894.7; the first is 5373.4 above the average for this set.
+
+![Imgur](https://github.com/robertwwalker/DADMStuff/raw/master/Formulae.png)
+
+
+---
+
+## Formulae and Recursion
+
+This can become quite involved; spreadsheets are programming tools.  **Their underlying problem is that they do not enforce rules or discipline along the way.**
+
+The key to our formulae are one or more inputs, a series of transformation and operations, and one or more outputs defined in a precise fashion.  As an aside, the father of recursion as a core principle in computer science is teaching at Willamette this term -- Eric S. Roberts.  Functions link inputs and outputs. 
+
+**They are models.**
+
+---
+
+# Pivot Tables
+
+Are really cool; they are a very simple and quick way to slice and data and to gain useful comparative and/or summary insight.
+
+They have the added virtue of being drag and drop.
+
+All of the action comes in the calculations shown in the pivot table.  Unfortunately, it is extraordinarily limited.  
+
+--
+
++ What if I want the median?  
+
+--
+
++ How about the first and third quartiles?
+
+---
+# Cautionary Tale
+
+[Excel has probably killed people...  recently](https://www.bbc.com/news/technology-54423988)
+
+---
+
+# R-escue
+
+This will become easy with the group_by command in R's tidyverse.
+
+
+```r
+Bonds %&gt;% group_by(Type) %&gt;% summarise(Avg.Assets = mean(Assets, na.rm=TRUE),
+                                       Avg.Returns = mean(`Return 2009`, na.rm=TRUE),
+                                       `Assets 25th` = quantile(Assets, probs = c(0.25), na.rm = TRUE),
+                                       `Assets 75th` = quantile(Assets, probs = c(0.75), na.rm = TRUE)) %&gt;% kableExtra::kable()
+```
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; Type &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Avg.Assets &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Avg.Returns &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Assets 25th &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Assets 75th &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Intermediate Government &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 953.3897 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 4.452874 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 135.85 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 668.75 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Short Term Corporate &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 872.3134 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 9.595876 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 95.40 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 486.10 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+---
+## And it scales
+
+
+```r
+Bonds %&gt;% group_by(Type,Risk) %&gt;% summarise(Avg.Assets = mean(Assets, na.rm=TRUE),
+                                       Avg.Returns = mean(`Return 2009`, na.rm=TRUE),
+                                       `Assets 25th` = quantile(Assets, probs = c(0.25), na.rm = TRUE),
+                                       `Assets 75th` = quantile(Assets, probs = c(0.75), na.rm = TRUE)) %&gt;% kableExtra::kable()
+```
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; Type &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Risk &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Avg.Assets &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Avg.Returns &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Assets 25th &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Assets 75th &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Intermediate Government &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Above average &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 660.4379 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 3.206897 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 122.700 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 640.300 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Intermediate Government &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Average &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1165.0969 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 3.596875 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 120.525 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 915.250 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Intermediate Government &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Below average &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1019.5808 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 6.896154 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 267.725 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 663.725 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Short Term Corporate &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Above average &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1268.0767 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 13.250000 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 83.850 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 458.175 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Short Term Corporate &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Average &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 793.3892 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 9.702703 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 146.300 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 605.200 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Short Term Corporate &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Below average &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 573.8900 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 5.810000 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 70.800 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 220.950 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+---
+## `skim()`
+
+.scroll-output[
+
+&lt;table style='width: auto;'
+      class='table table-condensed'&gt;
+&lt;caption&gt;Data summary&lt;/caption&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Name &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Piped data &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Number of rows &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 184 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Number of columns &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 9 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; _______________________ &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt;  &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Column type frequency: &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt;  &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; numeric &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 1 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; ________________________ &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt;  &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Group variables &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Type, Risk &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+
+**Variable type: numeric**
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; skim_variable &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Type &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Risk &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; n_missing &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; complete_rate &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; mean &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; sd &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; p0 &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; p25 &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; p50 &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; p75 &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; p100 &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; hist &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Assets &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Intermediate Government &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Above average &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 660.44 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1018.78 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 24.2 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 122.70 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 322.50 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 640.30 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 4615.4 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ▇▁▁▁▁ &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Assets &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Intermediate Government &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Average &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1165.10 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 3292.66 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 17.3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 120.52 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 303.40 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 915.25 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 18603.5 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ▇▁▁▁▁ &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Assets &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Intermediate Government &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Below average &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1019.58 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1770.58 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 33.0 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 267.72 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 436.80 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 663.72 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 7268.1 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ▇▁▁▁▁ &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Assets &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Short Term Corporate &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Above average &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1268.08 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 3449.36 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 12.4 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 83.85 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 213.60 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 458.18 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 16297.1 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ▇▁▁▁▁ &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Assets &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Short Term Corporate &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Average &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 793.39 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1333.28 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 46.1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 146.30 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 298.10 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 605.20 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 5701.6 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ▇▁▁▁▁ &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Assets &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Short Term Corporate &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Below average &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 573.89 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1492.79 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 17.4 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 70.80 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 125.65 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 220.95 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 6981.5 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ▇▁▁▁▁ &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+]
+
+---
+
+## First Graphs
+
+
+
+count: false
+ 
+
+.panel1-Fig1-auto[
+
+```r
+*Bonds %&gt;% ggplot(., aes(x=`Return 2009`, fill=Type))
+```
+]
+ 
+.panel2-Fig1-auto[
+&lt;img src="P22KO_files/figure-html/Fig1_auto_01_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-Fig1-auto[
+
+```r
+Bonds %&gt;% ggplot(., aes(x=`Return 2009`, fill=Type)) +
+* geom_density(alpha = 0.3)
+```
+]
+ 
+.panel2-Fig1-auto[
+&lt;img src="P22KO_files/figure-html/Fig1_auto_02_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-Fig1-auto[
+
+```r
+Bonds %&gt;% ggplot(., aes(x=`Return 2009`, fill=Type)) +
+  geom_density(alpha = 0.3) +
+* scale_xaringan_fill_discrete()
+```
+]
+ 
+.panel2-Fig1-auto[
+&lt;img src="P22KO_files/figure-html/Fig1_auto_03_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-Fig1-auto[
+
+```r
+Bonds %&gt;% ggplot(., aes(x=`Return 2009`, fill=Type)) +
+  geom_density(alpha = 0.3) +
+  scale_xaringan_fill_discrete() +
+* theme_xaringan()
+```
+]
+ 
+.panel2-Fig1-auto[
+&lt;img src="P22KO_files/figure-html/Fig1_auto_04_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-Fig1-auto[
+
+```r
+Bonds %&gt;% ggplot(., aes(x=`Return 2009`, fill=Type)) +
+  geom_density(alpha = 0.3) +
+  scale_xaringan_fill_discrete() +
+  theme_xaringan() +
+* facet_wrap(vars(Risk))
+```
+]
+ 
+.panel2-Fig1-auto[
+&lt;img src="P22KO_files/figure-html/Fig1_auto_05_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-Fig1-auto[
+
+```r
+Bonds %&gt;% ggplot(., aes(x=`Return 2009`, fill=Type)) +
+  geom_density(alpha = 0.3) +
+  scale_xaringan_fill_discrete() +
+  theme_xaringan() +
+  facet_wrap(vars(Risk)) +
+* labs(title="2009 Returns by Risk and Type", x="Returns in 2009")
+```
+]
+ 
+.panel2-Fig1-auto[
+&lt;img src="P22KO_files/figure-html/Fig1_auto_06_output-1.jpeg" width="468" /&gt;
+]
+
+&lt;style&gt;
+.panel1-Fig1-auto {
+  color: black;
+  width: 29.4%;
+  hight: 32%;
+  float: left;
+  padding-left: 1%;
+  font-size: 80%
+}
+.panel2-Fig1-auto {
+  color: black;
+  width: 68.6%;
+  hight: 32%;
+  float: left;
+  padding-left: 1%;
+  font-size: 80%
+}
+.panel3-Fig1-auto {
+  color: black;
+  width: NA%;
+  hight: 33%;
+  float: left;
+  padding-left: 1%;
+  font-size: 80%
+}
+&lt;/style&gt;
+
+
+
+---
+
+&lt;img src="P22KO_files/figure-html/Fig1A-1.jpeg" width="864" /&gt;
+
+
+---
+# We Can Graph Exactly That
+
+
+
+count: false
+ 
+
+.panel1-Box1-auto[
+
+```r
+*Bonds %&gt;% ggplot(., aes(y=`Return 2009`, x=Type, color=Type))
+```
+]
+ 
+.panel2-Box1-auto[
+&lt;img src="P22KO_files/figure-html/Box1_auto_01_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-Box1-auto[
+
+```r
+Bonds %&gt;% ggplot(., aes(y=`Return 2009`, x=Type, color=Type)) +
+* geom_boxplot(alpha = 0.3)
+```
+]
+ 
+.panel2-Box1-auto[
+&lt;img src="P22KO_files/figure-html/Box1_auto_02_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-Box1-auto[
+
+```r
+Bonds %&gt;% ggplot(., aes(y=`Return 2009`, x=Type, color=Type)) +
+  geom_boxplot(alpha = 0.3) +
+* guides(color="none")
+```
+]
+ 
+.panel2-Box1-auto[
+&lt;img src="P22KO_files/figure-html/Box1_auto_03_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-Box1-auto[
+
+```r
+Bonds %&gt;% ggplot(., aes(y=`Return 2009`, x=Type, color=Type)) +
+  geom_boxplot(alpha = 0.3) +
+  guides(color="none") +
+* scale_color_viridis_d()
+```
+]
+ 
+.panel2-Box1-auto[
+&lt;img src="P22KO_files/figure-html/Box1_auto_04_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-Box1-auto[
+
+```r
+Bonds %&gt;% ggplot(., aes(y=`Return 2009`, x=Type, color=Type)) +
+  geom_boxplot(alpha = 0.3) +
+  guides(color="none") +
+  scale_color_viridis_d() +
+* theme_xaringan()
+```
+]
+ 
+.panel2-Box1-auto[
+&lt;img src="P22KO_files/figure-html/Box1_auto_05_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-Box1-auto[
+
+```r
+Bonds %&gt;% ggplot(., aes(y=`Return 2009`, x=Type, color=Type)) +
+  geom_boxplot(alpha = 0.3) +
+  guides(color="none") +
+  scale_color_viridis_d() +
+  theme_xaringan() +
+* facet_wrap(vars(Risk))
+```
+]
+ 
+.panel2-Box1-auto[
+&lt;img src="P22KO_files/figure-html/Box1_auto_06_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-Box1-auto[
+
+```r
+Bonds %&gt;% ggplot(., aes(y=`Return 2009`, x=Type, color=Type)) +
+  geom_boxplot(alpha = 0.3) +
+  guides(color="none") +
+  scale_color_viridis_d() +
+  theme_xaringan() +
+  facet_wrap(vars(Risk)) +
+* labs(title="2009 Returns by Risk and Type", y="Returns in 2009")
+```
+]
+ 
+.panel2-Box1-auto[
+&lt;img src="P22KO_files/figure-html/Box1_auto_07_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-Box1-auto[
+
+```r
+Bonds %&gt;% ggplot(., aes(y=`Return 2009`, x=Type, color=Type)) +
+  geom_boxplot(alpha = 0.3) +
+  guides(color="none") +
+  scale_color_viridis_d() +
+  theme_xaringan() +
+  facet_wrap(vars(Risk)) +
+  labs(title="2009 Returns by Risk and Type", y="Returns in 2009") +
+* theme(axis.text.x = element_text(angle = 45, size=12))
+```
+]
+ 
+.panel2-Box1-auto[
+&lt;img src="P22KO_files/figure-html/Box1_auto_08_output-1.jpeg" width="468" /&gt;
+]
+
+&lt;style&gt;
+.panel1-Box1-auto {
+  color: black;
+  width: 29.4%;
+  hight: 32%;
+  float: left;
+  padding-left: 1%;
+  font-size: 80%
+}
+.panel2-Box1-auto {
+  color: black;
+  width: 68.6%;
+  hight: 32%;
+  float: left;
+  padding-left: 1%;
+  font-size: 80%
+}
+.panel3-Box1-auto {
+  color: black;
+  width: NA%;
+  hight: 33%;
+  float: left;
+  padding-left: 1%;
+  font-size: 80%
+}
+&lt;/style&gt;
+
+
+
+---
+
+&lt;img src="P22KO_files/figure-html/Box1A-1.jpeg" width="864" /&gt;
+
+---
+
+
+
+count: false
+ 
+
+.panel1-RTC-auto[
+
+```r
+*Bonds
+```
+]
+ 
+.panel2-RTC-auto[
+
+```
+# A tibble: 184 × 9
+   `Fund Number` Type       Assets Fees  Expen…¹ Retur…² 3-Yea…³ 5-Yea…⁴ Risk 
+   &lt;chr&gt;         &lt;chr&gt;       &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;
+ 1 FN-1          Intermedi…  7268. No       0.45     6.9     6.9     5.5 Belo…
+ 2 FN-2          Intermedi…   475. No       0.5      9.8     7.5     6.1 Belo…
+ 3 FN-3          Intermedi…   193  No       0.71     6.3     7       5.6 Aver…
+ 4 FN-4          Intermedi… 18604. No       0.13     5.4     6.6     5.5 Aver…
+ 5 FN-5          Intermedi…   143. No       0.6      5.9     6.7     5.4 Aver…
+ 6 FN-6          Intermedi…  1402. No       0.54     5.7     6.4     6.2 Aver…
+ 7 FN-7          Intermedi…   986. No       0.49     3       6.8     5.3 Aver…
+ 8 FN-8          Intermedi…  2189. No       0.55     7.4     6.4     5.2 Belo…
+ 9 FN-9          Intermedi…   391. No       0.67     5.3     6.1     5   Belo…
+10 FN-10         Intermedi…   544. No       0.63     5.7     6.2     5.1 Belo…
+# … with 174 more rows, and abbreviated variable names ¹​`Expense Ratio`,
+#   ²​`Return 2009`, ³​`3-Year Return`, ⁴​`5-Year Return`
+```
+]
+
+---
+count: false
+ 
+
+.panel1-RTC-auto[
+
+```r
+Bonds %&gt;%
+* group_by(Type,Risk)
+```
+]
+ 
+.panel2-RTC-auto[
+
+```
+# A tibble: 184 × 9
+# Groups:   Type, Risk [6]
+   `Fund Number` Type       Assets Fees  Expen…¹ Retur…² 3-Yea…³ 5-Yea…⁴ Risk 
+   &lt;chr&gt;         &lt;chr&gt;       &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;
+ 1 FN-1          Intermedi…  7268. No       0.45     6.9     6.9     5.5 Belo…
+ 2 FN-2          Intermedi…   475. No       0.5      9.8     7.5     6.1 Belo…
+ 3 FN-3          Intermedi…   193  No       0.71     6.3     7       5.6 Aver…
+ 4 FN-4          Intermedi… 18604. No       0.13     5.4     6.6     5.5 Aver…
+ 5 FN-5          Intermedi…   143. No       0.6      5.9     6.7     5.4 Aver…
+ 6 FN-6          Intermedi…  1402. No       0.54     5.7     6.4     6.2 Aver…
+ 7 FN-7          Intermedi…   986. No       0.49     3       6.8     5.3 Aver…
+ 8 FN-8          Intermedi…  2189. No       0.55     7.4     6.4     5.2 Belo…
+ 9 FN-9          Intermedi…   391. No       0.67     5.3     6.1     5   Belo…
+10 FN-10         Intermedi…   544. No       0.63     5.7     6.2     5.1 Belo…
+# … with 174 more rows, and abbreviated variable names ¹​`Expense Ratio`,
+#   ²​`Return 2009`, ³​`3-Year Return`, ⁴​`5-Year Return`
+```
+]
+
+---
+count: false
+ 
+
+.panel1-RTC-auto[
+
+```r
+Bonds %&gt;%
+  group_by(Type,Risk) %&gt;%
+* summarise(Count = n())
+```
+]
+ 
+.panel2-RTC-auto[
+
+```
+# A tibble: 6 × 3
+# Groups:   Type [2]
+  Type                    Risk          Count
+  &lt;chr&gt;                   &lt;chr&gt;         &lt;int&gt;
+1 Intermediate Government Above average    29
+2 Intermediate Government Average          32
+3 Intermediate Government Below average    26
+4 Short Term Corporate    Above average    30
+5 Short Term Corporate    Average          37
+6 Short Term Corporate    Below average    30
+```
+]
+
+---
+count: false
+ 
+
+.panel1-RTC-auto[
+
+```r
+Bonds %&gt;%
+  group_by(Type,Risk) %&gt;%
+  summarise(Count = n()) %&gt;%
+* ggplot(., aes(x=Type, y=Risk, fill=Count))
+```
+]
+ 
+.panel2-RTC-auto[
+&lt;img src="P22KO_files/figure-html/RTC_auto_04_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-RTC-auto[
+
+```r
+Bonds %&gt;%
+  group_by(Type,Risk) %&gt;%
+  summarise(Count = n()) %&gt;%
+  ggplot(., aes(x=Type, y=Risk, fill=Count)) +
+* geom_tile()
+```
+]
+ 
+.panel2-RTC-auto[
+&lt;img src="P22KO_files/figure-html/RTC_auto_05_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-RTC-auto[
+
+```r
+Bonds %&gt;%
+  group_by(Type,Risk) %&gt;%
+  summarise(Count = n()) %&gt;%
+  ggplot(., aes(x=Type, y=Risk, fill=Count)) +
+  geom_tile() +
+* labs(title="Funds by Risk and Type", y="Risk", x="Type")
+```
+]
+ 
+.panel2-RTC-auto[
+&lt;img src="P22KO_files/figure-html/RTC_auto_06_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-RTC-auto[
+
+```r
+Bonds %&gt;%
+  group_by(Type,Risk) %&gt;%
+  summarise(Count = n()) %&gt;%
+  ggplot(., aes(x=Type, y=Risk, fill=Count)) +
+  geom_tile() +
+  labs(title="Funds by Risk and Type", y="Risk", x="Type")+
+* scale_xaringan_fill_continuous()
+```
+]
+ 
+.panel2-RTC-auto[
+&lt;img src="P22KO_files/figure-html/RTC_auto_07_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-RTC-auto[
+
+```r
+Bonds %&gt;%
+  group_by(Type,Risk) %&gt;%
+  summarise(Count = n()) %&gt;%
+  ggplot(., aes(x=Type, y=Risk, fill=Count)) +
+  geom_tile() +
+  labs(title="Funds by Risk and Type", y="Risk", x="Type")+
+  scale_xaringan_fill_continuous() +
+* theme_xaringan()
+```
+]
+ 
+.panel2-RTC-auto[
+&lt;img src="P22KO_files/figure-html/RTC_auto_08_output-1.jpeg" width="468" /&gt;
+]
+
+---
+count: false
+ 
+
+.panel1-RTC-auto[
+
+```r
+Bonds %&gt;%
+  group_by(Type,Risk) %&gt;%
+  summarise(Count = n()) %&gt;%
+  ggplot(., aes(x=Type, y=Risk, fill=Count)) +
+  geom_tile() +
+  labs(title="Funds by Risk and Type", y="Risk", x="Type")+
+  scale_xaringan_fill_continuous() +
+  theme_xaringan() +
+* theme(axis.text.x = element_text(angle = 45, size=12))
+```
+]
+ 
+.panel2-RTC-auto[
+&lt;img src="P22KO_files/figure-html/RTC_auto_09_output-1.jpeg" width="468" /&gt;
+]
+
+&lt;style&gt;
+.panel1-RTC-auto {
+  color: black;
+  width: 29.4%;
+  hight: 32%;
+  float: left;
+  padding-left: 1%;
+  font-size: 80%
+}
+.panel2-RTC-auto {
+  color: black;
+  width: 68.6%;
+  hight: 32%;
+  float: left;
+  padding-left: 1%;
+  font-size: 80%
+}
+.panel3-RTC-auto {
+  color: black;
+  width: NA%;
+  hight: 33%;
+  float: left;
+  padding-left: 1%;
+  font-size: 80%
+}
+&lt;/style&gt;
+
+
+
+---
+
+&lt;img src="P22KO_files/figure-html/RTC1-1.jpeg" width="864" /&gt;
+
+
+---
+# R Makes Data Understanding Easier
+
+
+---
+## Installing packages
+
+R works by packages that add functionality.  The process is two parts: install a package [install.packages("package")] and then use it [library(package)].
+
+R can handle installation for you.  In general, unless you know what it means, avoid compiling from source; binary packages are preferred.
+
+
+```r
+install.packages(c("tidyverse","skimr","magrittr","hrbrthemes","ggthemes"))
+```
+
+For your homework assignment, you will need
+
+
+```r
+install.packages(c("swirl"))
+```
+
+For a brief foray into R Graphics,
+
+
+```r
+install.packages(c("esquisse"))
+```
+
+--
+
+The [RStudio IDE](https://www.rstudio.com/products/rstudio/), is highly recommended but you do not have to.  The command line or the base GUI work but you will have to type to render RMarkdown and I use it alot.
+
+---
+# Interacting with R is Crucial
+
+**That's where swirl and learnr come in.**
+
+
+```r
+install.packages("swirl")
+library(swirl)
+install_course_github("swirldev", "R_Programming_E")
+swirl()
+```
+
+This is set up to email completions.  Or you can screenshot them.  It helps you learn how `\(R\)` thinks.  In the end, it is for your benefit.
+
+---
+# Takeaways
+
+1. The biggest barrier to learning from data is not having a useful pipeline.  
+--
+
+2. Data should be tidy and easy to analyse.  We spend time analysing rather than cleaning.  
+--
+
+3. R makes getting data in and out easy.  It links with tons of things.  
+--
+
+4. R with Markdown make automated report writing and other literate uses of data, graphics, and text easy to do.  
+--
+
+5. The assignment for this week involves practicing this and getting acquainted with R via *swirl*.  
+--
+
+6. As a first task, we need to get data from Excel to R.  There is a worked example in `Resources &gt; R Documents &gt; Import Data from Excel into R` to work with.
+
+---
+# A Postscript
+
++ Interacting with the course text.  Note the tab on the left of the course website that links to the course text github.  It leads to this:
+
+![Screenshot](images/CTGH.png)
+
+---
+# Let's Recreate a Textbook Plot
+
+Let's navigate to chapter 2: summarizing data.  Then Figures.  This is `loan_int_rate_dot_plot`.  The code is the .R file.
+
+![Screenshot](images/DPlot.png)
+
+---
+# Code for that
+
+
+```r
+library(openintro)
+d &lt;- loan50$interest_rate
+xlim &lt;- c(0.9 * min(d), 1.05 * max(d))
+round.to &lt;- 1
+binned &lt;- round.to * round(d / round.to)
+tab &lt;- table(binned)
+M &lt;- mean(d)
+cex    &lt;- 1
+plot(0, type = "n", xlab = "Interest Rate, Rounded to Nearest Percent", ylab = "", axes = FALSE, xlim = xlim, ylim = c(-1, 1.5 * max(tab)))
+for (i in 1:length(tab)) {
+  points(rep(as.numeric(names(tab[i])), tab[i]),
+         1.5 * (1:tab[i]) - 0.4,
+         pch = 19,
+         col = COL[1],
+         cex = 2 * cex)
+}
+abline(h = 0)
+AxisInPercent(1, pretty(c(0, d)))
+polygon(M + c(-1, 1, 0) * 1, c(-1.2, -1.2, -0.1), border = COL[4], col = COL[4])
+```
+
+---
+# It Is [Like Everything] Reproducible
+
+&lt;img src="P22KO_files/figure-html/unnamed-chunk-11-1.jpeg" width="468" /&gt;
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+<style>
+.logo {
+  background-image: url("images/AGSMlogo.jpeg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  position: absolute;
+  bottom: 1em;
+  left: 1em;
+  width: 55px;
+  height: 64px;
+  z-index: 0;
+}
+</style>
+
+<script>
+document
+  .querySelectorAll(
+    '.remark-slide-content' +
+    ':not(.title-slide)' +
+    // add additional classes to exclude here, e.g.
+    // ':not(.inverse)' +
+    ':not(.hide-logo)'
+  )
+  .forEach(el => {
+    el.innerHTML += '<div class="logo"></div>';
+  });
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
