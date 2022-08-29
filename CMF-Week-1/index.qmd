@@ -13,6 +13,7 @@ format:
      slide-number: c/t
      transition: zoom
      multiplex: true
+     preview-links: true
 ---
 
 # An Overview of Forecasting and Choice
