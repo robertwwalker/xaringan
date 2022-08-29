@@ -12,10 +12,14 @@ format:
      incremental: true
      slide-number: c/t
      transition: zoom
+     multiplex: true
 ---
 
 # An Overview of Forecasting and Choice
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=TRUE, comment=NA, prompt=FALSE, fig.height=6, fig.width=6.5, fig.retina = 3, dev = 'svg', dev.args = list(bg = "transparent"), eval=TRUE)
+```
 
 ## Choice and Forecasting
 
@@ -128,3 +132,373 @@ In R, Julia, or Python, if you wish, during the first half on People Analytics.
 # Introduction, R, Statistics, and Regression
 
 ## The Importance of People Analytics
+
+- What are models?
+- Why models?
+- A theory of inference via models
+  - Correlation is not causation.
+- A bit on samples, populations, and representation  
+
+## An inferential process
+
+  - Define the outcome and inputs with a question in mind.
+  - Confirm the outcome is reliably measured.
+  - Find measures of inputs.
+  - Find a sample of outputs and inputs.
+  - Explore data to construct models.
+  - Render data appropriate for model(s).
+  - Estimate models.
+  - Interpret and evaluate models.
+  - Select an optimal model.
+  - Articulate the generalizable inferences owing to sufficient information.
+  
+## On R and the Basics of R
+
+Installation [a similar guide is on discord]
+
+![Chapter 2.2](./img/Screen Shot 2022-08-29 at 9.04.20 AM.png)
+
+## Key Ideas 
+
+::: {.nonincremental}
+1. Object-orientation: Almost everything in `R` is an object.  So we need a means of assignment.  For example, we can compute, 
+
+```{r}
+3+4
+```
+:::
+. . .
+
+**but** if we want that for later use, it must be assigned, with `<-`, `->` or `=`.
+
+```{r} 
+#| eval: true
+#| code-line-numbers: "1-3"
+
+my_sum_la <- 3 + 4
+3 + 4 -> my_sum_ra
+my_sum_eq = 3 + 4
+```
+
+![The Environment Tab](./img/Screen Shot 2022-08-29 at 9.51.16 AM.png)
+
+## Objects on Objects
+
+```{r}
+my_sum_la + 5
+my_new_sum <- my_sum_la + 5
+my_new_sum
+```
+
+## Data Types
+
+1. Numeric
+   - double
+   - integer [followed by `L`]
+1. Character
+   - in `"WHATEVER"` form but always quoted either 'single' or "double".
+   - also `factors`
+1. Logical takes either `TRUE` or `FALSE`
+1. Dates [more on this later]
+
+## Homogenous Data Structures
+::: {.nonincremental}
+1. Vectors
+   - One dimensional data structures of the same **type**.  
+      - `typeof` to find the type 
+      - `str` to see type and contents  
+      - `length` tells us the number of items.
+1. Matrices
+   - Two dimensional data structures of the same **type** defined by *rows* and *columns*
+
+```{r}
+(m <- matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2))
+m[2,2]
+```
+
+3. Arrays
+   - 3 or more-dimensional data structures of the same type.
+
+```{r}
+( arr <- array(data=c(1:16), dim=c(2,2,2,2)) )
+```
+
+:::
+
+## Heterogeneous Data Structures: 
+### Lists
+
+Lists are nominally one-dimensional data structures that can hold data of any type.
+
+```{r}
+( new_list <- list(
+  scalar = 6, 
+  vector = c("Hello", "Goodbye"), 
+  matrix = matrix(1:4, nrow = 2, ncol = 2)
+) )
+```
+
+## Heterogeneous Data Structures: 
+### Data Frames
+
+A data.frame is a special class of list that combines vectors of the same length that are addressable by name.  Databases are like spreadsheets.  Two key descriptors: `str` for types and `dim` for dimensions.
+
+```{r}
+salespeople <- read.csv("http://peopleanalytics-regression-book.org/data/salespeople.csv")
+str(salespeople)
+dim(salespeople)
+```
+
+## `salespeople`
+
+```{r}
+salespeople
+```
+
+## Working with data.frame
+
+- `head()` gives the first few lines.
+
+```{r}
+head(salespeople, 5)
+```
+
+- `tail()` gives the last few lines.
+
+```{r}
+tail(salespeople, 6)
+```
+
+## Single columns and cells
+::: {.nonincremental}
+A single column can be found in three ways   
+   1. by `$`   
+```{r, eval=FALSE}
+salespeople$sales
+```
+   2. by brackets and quoted name   
+```{r, eval=FALSE}
+salespeople[,"sales"]
+```
+   3. by [empty] row and column number
+```{r, eval=FALSE}
+salespeople[,2]
+```
+
+While a particular cell is `[row,column]`
+```{r}
+salespeople[38,2]
+```
+
+:::
+
+## Summaries `summary()`
+
+default `summary` is often fine.
+
+```{r}
+summary(salespeople)
+```
+
+## Summaries: `skimr::skim()`
+
+I prefer `skim` from `skimr`
+
+```{r, results='asis'}
+library(skimr)
+skim(salespeople)
+```
+
+## Dealing with Missing Data
+
+`NA` values are troublesome for calculations because one cannot perform math operations on non-numbers.
+
+```{r}
+sum(salespeople$sales)
+```
+
+Easiest solution: listwise delete
+
+```{r}
+clean_salespeople <- salespeople[complete.cases(salespeople),]
+summary(clean_salespeople)
+```
+
+## I like *tidy*
+
+I will use the `tidyverse` extensively because I think the workflow and code are far easier to both read and understand.
+
+```{r}
+salespeople %>% na.omit %>% summary()
+```
+
+
+```{r}
+salespeople %>% filter(complete.cases(.)) %>% summary
+```
+
+gives us the data.frame with rows that have "NA" values omitted.
+
+## Familiarizing yourself with tidy
+
+There is an R package called `learnr` that has embedded tutorials for practice.
+
+```{r, eval=FALSE}
+install.packages("learnr")
+```
+
+that can be very helpful for the basics of tidy data wrangling.  In particular, `filter` and `mutate`.
+
+![learnr tutorial window](./img/Screen Shot 2022-08-29 at 11.25.46 AM.png)
+
+## Plotting
+
+Base R plots are ugly.  The state of the art is `ggplot2` that is part of the `tidyverse`.  To get started with those, I would suggest `esquisse` -- an R package -- built to use R's internal shiny to drag and drop plots.  For example,
+
+![esquisser(salespeople)](./img/Screen Shot 2022-08-29 at 11.30.47 AM.png)
+
+## Code
+
+![Code tab](./img/Screen Shot 2022-08-29 at 11.38.02 AM.png)
+
+## RMarkdown and Quarto
+
+Section 2.8 of `HRMPA` contains a bit on RMarkdown.  This summer RStudio released a more general version of RMarkdown called `Quarto` that is quite flexible and, in some ways, more general purpose.  These slides were produced using `reveal.js` and `quarto`.  The beauty is that everything is reproducible and that it seamlessly handles code, output, and fancy text, math, and a host of stuff.  If you want to see the code for these slides, it is available [here](https://github.com/robertwwalker/xaringan/blob/master/CMF-Week-1/index.qmd).
+
+# Chapter 3: Statistics Foundations
+
+## Definitions
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- [Arithmetic] Mean `mean()` and `mean(., na.rm=TRUE)` $$\overline{x} = \frac{1}{N}\sum_{i=1}^{N} x_{i}$$
+:::
+
+::: {.column width="50%"}
+- Variances `var()` and `var(., na.rm=TRUE)
+   - Population $$Var_{p}(x) = \frac{1}{N}\sum_{i=1}^{N} (x_{i}-\overline{x})^2$$
+   - Sample $$Var_{s}(x) = \frac{1}{N-1}\sum_{i=1}^{N} (x_{i}-\overline{x})^2$$
+:::
+
+::::
+
+## Standard Deviation
+### `sd()` and `sd(., na.rm=TRUE)`
+
+We use standard deviation to avoid the squared metric.
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- Population $$\sigma_{p}(x) = \sqrt{\frac{1}{N}\sum_{i=1}^{N} (x_{i}-\overline{x})^2}$$
+:::
+
+::: {.column width="50%"}
+- Sample $$\sigma_{s}(x) = \sqrt{\frac{1}{N-1}\sum_{i=1}^{N} (x_{i}-\overline{x})^2}$$
+:::
+
+- They are related: $$\sigma_{s}(x) = \sqrt{\frac{N}{N-1}}\sigma_{p}(x)$$
+::::
+
+## Correlation and Covariance {.smaller}
+
+:::: {.columns}
+
+::: {.column width="50%"}
+Covariance is the shared variance of x and y.
+$$cov_{s}(x,y) = \frac{1}{N-1}\sum_{i=1}^{N} (x_{i}-\overline{x})(y_{i}-\overline{y})$$  There is also population covariance that divides by $N$.
+:::
+
+::: {.column width="50%"}
+Correlation is a bounded measure between -1 and 1.
+$$r_{s}(x,y) = \frac{cov_{s}(x,y)}{\sigma_{s}(x)\sigma_{s}(y)}$$
+In a two variable regression, $r_{x,y}^2$ is the variance in y accounted for by x.
+:::
+
+::::
+
+## Sampling and Distributions
+
+What is a random variable? At what level?  
+
+- The text emphasizes *independent and identically distributed*   
+- This can get pretty into the math weeds. ![Wikipedia definition](./img/Screen Shot 2022-08-29 at 2.09.28 PM.png)
+
+## Statistics have sampling distributions
+
+- Remember $t$? A distribution entirely defined by degrees of freedom.  For the mean, because the deviations about the mean must sum to zero, it is always $N-1$.
+- With statistics we distinguish the *variability* of a statistic, as opposed to data, with the term *standard error*.
+- The standard error of the mean is $$SE(\overline{x}) = \frac{\sigma_{s}(x)}{\sqrt{N}}$$
+
+## A Function for the Standard Error
+
+```{r}
+# Define the function
+SE.mean <- function(vectorX) {  # Input a vector
+# Insert the formula from the slide
+  SE <- sd(vectorX, na.rm=TRUE)/sqrt(length(complete.cases(vectorX)))
+# return the value calculated
+  SE
+}
+SE.mean(salespeople$customer_rate)
+```
+
+## Confidence Intervals {.smaller}
+
+A little reading, a fresher, for the case of a proportion is here as a [Tufte Handout](./img/Tufte-HT-CI.html).  You can also see and extended example on the [Week 1 entry on the website](https://rww.quarto.pub/models-of-choice-and-forecasting/posts/week-1/).
+
+- A Student proved that the sampling distribution of the sample mean is given by the t-distribution under general conditions satisfying the central limit theorem.  
+- $$ t = \frac{\overline{x} - \mu}{SE(x)} $$ 
+- so it must be that given percentiles of $t$, $$\mu = \overline{x} - t * SE(x) $$ 
+- In a sentence, with XXX probability, the **true** mean lies within $\pm$ $t_{n-1, \frac{1-XXX}{2}}$ standard errors of the sample mean if we want a central interval.  *Otherwise, all the probability comes from one side.*
+
+## Hypothesis Tests
+
+Posit some **true** value and assess the likelihood with some a priori level of probability.  The duality of this is the topic of the two linked handouts.  
+- For cases beyond a single mean, the trick is calculating the appropriate standard error and/or the appropriate degrees of freedom.
+
+## Difference of Means {.smaller}
+
+If we wish to know if the mean of two groups is:
+
+- the same or different
+- one is greater/less than the other
+
+The t distribution is also appropriate for this task, as demonstrated by Welch.  ![Welch's t](./img/Screen Shot 2022-08-29 at 3.04.32 PM.png)
+
+This is implemented as `t.test(x, y)` or, for tidy data, `t-test(var~group, data=data)`
+
+## Correlations
+
+A modification of the correlation coefficient has also been shown to have a t-distribution with $N-2$ degrees of freedom.  Known often as $t^{*}$
+
+$$t^{*} = \frac{r\sqrt{n-2}}{\sqrt{1-r^{2}}} $$
+
+This is automatically implemented as `cor.test(x, y)`.
+
+## Contingency tables
+
+We can also examine the *independence* among rows and columns of a table.  Section 3.3.3 contains this example.  The comparison relies on the difference between observed counts and expected counts only knowing the *marginal probability* of each value along the *rows* and *columns* and the total number of items because the expected count is N times row/column probability where the row and column probabilities must sum to one.
+
+![Chi-square independence](./img/Screen Shot 2022-08-29 at 3.15.15 PM.png)
+
+## Two-by-two tables
+
+Are a special case of the above.  The Tufte Handout earlier cited goes through the example of a single proportion [of a binary variable] to show that, as long as the number of expected is greater than about 5 or 10, we can use a normal to assess a difference in a two-by-two table.
+
+This is implemented in `prop.test(table)` after creating the table using `table`.  `table` will require us to learn a new **pipe**; `%$%`.
+
+## Illustration
+
+Let me use an internal dataset to illustrate.
+
+```{r}
+library(magrittr) # for the new pipe
+data("Titanic")   # Some data
+Tidy.Titanic <- DescTools::Untable(Titanic)  # unTable the data
+Tidy.Titanic %$% table(Sex, Survived)
+Tidy.Titanic %$% table(Sex, Survived) %>% prop.test(.)
+Tidy.Titanic %$% chisq.test(Sex, Survived)
+```
+
