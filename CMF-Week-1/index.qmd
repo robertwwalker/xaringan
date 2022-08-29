@@ -501,6 +501,4 @@ Tidy.Titanic %$% table(Sex, Survived)
 Tidy.Titanic %$% table(Sex, Survived) %>% prop.test(.)
 Tidy.Titanic %$% chisq.test(Sex, Survived)
 ```
-# For Next Time:
-
-# Chapter 4: Regression Models
+# For Next Time: Chapter 4 -- Regression Models
