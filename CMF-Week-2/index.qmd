@@ -34,7 +34,7 @@ library(tidyverse)
 :::
 
 ::: {.column width="50%"}
-- Variances `var()` and `var(., na.rm=TRUE)
+- Variances `var()` and `var(., na.rm=TRUE)`
    - Population $$Var_{p}(x) = \frac{1}{N}\sum_{i=1}^{N} (x_{i}-\overline{x})^2$$
    - Sample $$Var_{s}(x) = \frac{1}{N-1}\sum_{i=1}^{N} (x_{i}-\overline{x})^2$$
 :::
