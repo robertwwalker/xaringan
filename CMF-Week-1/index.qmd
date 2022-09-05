@@ -325,17 +325,23 @@ clean_salespeople <- salespeople[complete.cases(salespeople),]
 summary(clean_salespeople)
 ```
 
-## I like *tidy*
+## I like *tidy* {.smaller}
 
 I will use the `tidyverse` extensively because I think the workflow and code are far easier to both read and understand.
 
 ```{r}
-salespeople %>% na.omit %>% summary()
+salespeople %>% na.omit(.) %>% summary()
 ```
 
 
 ```{r}
-salespeople %>% filter(complete.cases(.)) %>% summary
+# There was an error in the original slides that owes to disambiguation
+# The tidyverse version of filter in library(dplyr) works differently
+# Than the default filter in library(stats) that is loaded at startup
+# Examine ?stats::filter vs. ?dplyr::filter
+# R will use stats::filter unless the tidyverse has `masked` it or the
+# version from dplyr is called explicitly
+salespeople %>% dplyr::filter(complete.cases(.)) %>% summary
 ```
 
 gives us the data.frame with rows that have "NA" values omitted.

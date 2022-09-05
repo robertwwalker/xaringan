@@ -1,0 +1,447 @@
+---
+title: "Choice and Forecasting: Week 2"
+author: "Robert W. Walker"
+format: 
+   revealjs:
+     theme: [custom.scss]
+     scrollable: true
+     logo: AGSMlogo.jpeg
+     footer: "Models of Choice and Forecasting"
+     self-contained: true
+     html-math-method: katex
+     incremental: true
+     slide-number: c/t
+     transition: zoom
+     multiplex: true
+     preview-links: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=TRUE, comment=NA, prompt=FALSE, fig.height=6, fig.width=6.5, fig.retina = 3, dev = 'svg', eval=TRUE)
+library(tidyverse)
+```
+
+# Inference and Linear Regression
+
+# Chapter 3: Statistics Foundations
+
+## Definitions
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- [Arithmetic] Mean `mean()` and `mean(., na.rm=TRUE)` $$\overline{x} = \frac{1}{N}\sum_{i=1}^{N} x_{i}$$
+:::
+
+::: {.column width="50%"}
+- Variances `var()` and `var(., na.rm=TRUE)
+   - Population $$Var_{p}(x) = \frac{1}{N}\sum_{i=1}^{N} (x_{i}-\overline{x})^2$$
+   - Sample $$Var_{s}(x) = \frac{1}{N-1}\sum_{i=1}^{N} (x_{i}-\overline{x})^2$$
+:::
+
+::::
+
+## Standard Deviation
+### `sd()` and `sd(., na.rm=TRUE)`
+
+We use standard deviation to avoid the squared metric.
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- Population $$\sigma_{p}(x) = \sqrt{\frac{1}{N}\sum_{i=1}^{N} (x_{i}-\overline{x})^2}$$
+:::
+
+::: {.column width="50%"}
+- Sample $$\sigma_{s}(x) = \sqrt{\frac{1}{N-1}\sum_{i=1}^{N} (x_{i}-\overline{x})^2}$$
+:::
+
+- They are related: $$\sigma_{s}(x) = \sqrt{\frac{N}{N-1}}\sigma_{p}(x)$$
+::::
+
+## Load Some Data
+
+```{r}
+salespeople <- read.csv("http://peopleanalytics-regression-book.org/data/salespeople.csv")
+```
+
+## Examples
+
+```{r}
+#Won't work
+mean(salespeople$sales)
+# Works
+mean(salespeople$sales, na.rm=TRUE)
+#Won't work
+var(salespeople$sales)
+# Works
+var(salespeople$sales, na.rm=TRUE)
+#Won't work
+sd(salespeople$sales)
+# Works
+sd(salespeople$sales, na.rm=TRUE)
+```
+
+
+## Correlation and Covariance {.smaller}
+
+:::: {.columns}
+
+::: {.column width="50%"}
+Covariance is the shared variance of x and y.
+$$cov_{s}(x,y) = \frac{1}{N-1}\sum_{i=1}^{N} (x_{i}-\overline{x})(y_{i}-\overline{y})$$  There is also population covariance that divides by $N$.
+
+```{r}
+# Won't work
+cov(salespeople$sales, salespeople$customer_rate)
+# Works
+cov(salespeople$sales, salespeople$customer_rate, use = "complete.obs")
+```
+
+
+:::
+
+::: {.column width="50%"}
+Correlation is a bounded measure between -1 and 1.
+$$r_{s}(x,y) = \frac{cov_{s}(x,y)}{\sigma_{s}(x)\sigma_{s}(y)}$$
+In a two variable regression, $r_{x,y}^2$ is the variance in y accounted for by x.
+
+```{r}
+# Won't work
+cor(salespeople$sales, salespeople$customer_rate)
+# Works
+cor(salespeople$sales, salespeople$customer_rate, use = "complete.obs")
+```
+
+:::
+
+::::
+
+## Sampling and Distributions
+
+What is a random variable? At what level?  
+
+- The text emphasizes *independent and identically distributed*   
+- This can get pretty into the math weeds. ![Wikipedia definition](./img/Screen Shot 2022-08-29 at 2.09.28 PM.png)
+
+## Statistics have sampling distributions
+
+- Remember $t$? A distribution entirely defined by degrees of freedom.  For the mean, because the deviations about the mean must sum to zero, it is always $N-1$.
+- With statistics we distinguish the *variability* of a statistic, as opposed to data, with the term *standard error*.
+- The standard error of the mean is $$SE(\overline{x}) = \frac{\sigma_{s}(x)}{\sqrt{N}}$$
+
+## A Function for the Standard Error
+
+```{r}
+# Define the function
+SE.mean <- function(vectorX) {  # Input a vector
+# Insert the formula from the slide
+  SE <- sd(vectorX, na.rm=TRUE)/sqrt(length(complete.cases(vectorX)))
+# return the value calculated
+  SE
+}
+SE.mean(salespeople$customer_rate)
+```
+
+## Confidence Intervals {.smaller}
+
+A little reading, a fresher, for the case of a proportion is here as a [Tufte Handout](./img/Tufte-HT-CI.html).  You can also see and extended example on the [Week 1 entry on the website](https://rww.quarto.pub/models-of-choice-and-forecasting/posts/week-1/).
+
+- A Student proved that the sampling distribution of the sample mean is given by the t-distribution under general conditions satisfying the central limit theorem.  
+- $$ t = \frac{\overline{x} - \mu}{SE(x)} $$ 
+- so it must be that given percentiles of $t$, $$\mu = \overline{x} - t * SE(x) $$ 
+- In a sentence, with XXX probability, the **true** mean lies within $\pm$ $t_{n-1, \frac{1-XXX}{2}}$ standard errors of the sample mean if we want a central interval.  *Otherwise, all the probability comes from one side.*
+
+## Hypothesis Tests
+
+Posit some **true** value and assess the likelihood with some a priori level of probability.  The duality of this is the topic of the two linked handouts.  
+- For cases beyond a single mean, the trick is calculating the appropriate standard error and/or the appropriate degrees of freedom.
+
+## Difference of Means {.smaller}
+
+If we wish to know if the mean of two groups is:
+
+- the same or different
+- one is greater/less than the other
+
+The t distribution is also appropriate for this task, as demonstrated by Welch.  ![Welch's t](./img/Screen Shot 2022-08-29 at 3.04.32 PM.png)
+
+This is implemented as `t.test(x, y)` or, for tidy data, `t-test(var~group, data=data)`
+
+## An Aside on the Behrens-Fisher Problem
+
+The text makes it seem as though this is a simple problem.  **It is not.**
+
+![Behrens-Fisher Wikipedia](./img/Screen Shot 2022-09-05 at 12.10.04 AM.png)
+
+## Correlations
+
+A modification of the correlation coefficient has also been shown to have a t-distribution with $N-2$ degrees of freedom.  Known often as $t^{*}$
+
+$$t^{*} = \frac{r\sqrt{n-2}}{\sqrt{1-r^{2}}} $$
+
+This is automatically implemented as `cor.test(x, y)`.
+
+## Contingency tables
+
+We can also examine the *independence* among rows and columns of a table.  Section 3.3.3 contains this example.  The comparison relies on the difference between observed counts and expected counts only knowing the *marginal probability* of each value along the *rows* and *columns* and the total number of items because the expected count is N times row/column probability where the row and column probabilities must sum to one.
+
+![Chi-square independence](./img/Screen Shot 2022-08-29 at 3.15.15 PM.png)
+
+## Two-by-two tables
+
+Are a special case of the above.  The Tufte Handout earlier cited goes through the example of a single proportion [of a binary variable] to show that, as long as the number of expected is greater than about 5 or 10, we can use a normal to assess a difference in a two-by-two table.
+
+This is implemented in `prop.test(table)` after creating the table using `table`.  `table` will require us to learn a new **pipe**; `%$%`.
+
+## Illustration
+
+Let me use an internal dataset to illustrate.
+
+```{r}
+library(magrittr) # for the new pipe
+data("Titanic")   # Some data
+Tidy.Titanic <- DescTools::Untable(Titanic)  # unTable the data
+Tidy.Titanic %$% table(Sex, Survived)
+Tidy.Titanic %$% table(Sex, Survived) %>% prop.test(.)
+Tidy.Titanic %$% chisq.test(Sex, Survived)
+```
+
+# Chapter 4 -- Regression Models
+
+## Ordinary Least Squares
+
+Ordinary Least Squares describes the most common algorithm for estimation but the linear regression model is the "workhorse" of applied statistics generalizing the `mx + c` slope intercept method to multivariate problems.  The text cites three examples:
+
+![Examples](./img/Screen Shot 2022-09-05 at 2.53.19 AM.png)
+
+## Bivariate Regression {.smaller}
+
+With $y$ as outcome and $x$ as input, and assuming the relationship is linear, we can write 
+
+$$y = \alpha + \beta x + \epsilon$$
+
+$\alpha$ and $\beta$ are *parameters* or *coefficients* to be estimated   
+
+$\epsilon$ is residual or error -- the difference between the function of $x$ and the observed value of $y$.    
+
+The method of estimation is, most often and conveniently, finding the values of $\alpha$ and $\beta$ that minimize the sum of squared errors.  Because it is a quadratic, a unique solution always exists.  Indeed, the solution for $\beta$ often written $\hat{\beta}$ is 
+
+$$\hat{\beta} = \frac{cov(x,y)}{var(x)}$$
+
+## An Example with Fictitious Data, part 1 
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+```{r, echo=FALSE}
+library(plotly)
+x <- rnorm(100)
+e <- rnorm(100)
+y <- 2 + 2*x + e
+fake.df <- data.frame(y, x)
+my.lm <- lm(y~x, data=fake.df)
+fake.df$Preds <- predict(my.lm)
+ggplot(fake.df) + aes(x=x, y=y) + geom_point() + theme_minimal() + xlim(-3, 3) + ylim(-3, 7)
+```
+
+:::
+
+::: {.column width="50%"}
+
+```{r, echo=FALSE}
+ggplot(fake.df) + aes(x=x, y=y) + geom_point() + geom_line(aes(y=Preds), color="blue") + hrbrthemes::theme_ipsum_rc() + xlim(-3, 3) + ylim(-3, 7)
+```
+:::
+
+::::
+
+
+## An Example with Fictitious Data, part 2
+
+```{r, echo=FALSE}
+parms <- expand.grid(a = seq(1, 3, by=0.05), b=seq(1, 3, by=0.05))
+SSE <- sapply(1:1681, function(i) { sum((fake.df$y - parms$a[i] - parms$b[i]*fake.df$x)^2)})
+res <- data.frame(a=parms$a, b=parms$b, SSE=SSE)
+res %>% ggplot() + geom_tile(aes(x=a, y=b, fill=SSE)) + scale_fill_viridis_c() -> funky
+funky + theme_minimal()
+```
+
+## Orthognality
+
+- Predicted values are a function of x.
+- Actual values are an (identity) function of y
+- **Ergo, the estimation space and the error space are independent.**
+
+## Multiple Regression
+
+The magic of multiple regression is parsing out the partial effects of multiple inputs.
+
+![Section 4.3](./img/Screen Shot 2022-09-05 at 12.33.39 PM.png)
+
+## Interpretation
+
+- $\beta_{0}$ -- the constant -- is the expected value of $y$ if all the variables $x$ are zero.
+- $\beta_{1}$ is the change in $y$ for a one unit change in $x_{1}, all else held constant [ceteris paribus]
+- $\beta_{2}$ is the change in $y$ for a one unit change in $x_{2}, all else held constant [ceteris paribus]
+- $\beta_{p}$ is the change in $y$ for a one unit change in $x_{p}, all else held constant [ceteris paribus]
+
+The last three are commonly referred to as partial effects -- think partial derivative if you are familiar with calculus.
+
+## The `point estimate`
+
+Is the best guess but these are estimates with accompanying uncertainty.  If $\epsilon$ is normal, the those slopes have a $t$ distribution with $N-p-1$ degrees of freedom.  The reason that each slope consumes a degree of freedom is that the line/plane/hyperplane is constrained to pass through the mean of both $x$ and $y$.
+
+The confidence interval incorporates the uncertainty -- the standard error of $\beta_{\cdot}$.  Confidence intervals can be obtained with `confint` applied to a model object.  `visreg::visreg(model.object)` will plot them.
+
+## An Illustration
+
+```{r}
+data("freeny")
+my.lm.rev <- lm(y ~ price.index + market.potential + income.level, data=freeny)
+summary(my.lm.rev)
+```
+
+## `confint`
+
+```{r}
+confint(my.lm.rev)
+```
+
+## How does the model fit?
+
+- $r^2$ -- yes, the correlation between the predictions and the actual values squared is a measure of goodness of fit.
+
+```{r}
+cor(my.lm.rev$model$y,my.lm.rev$fitted.values)^2
+summary(my.lm.rev)$r.squared
+```
+```{r}
+plot(my.lm.rev$fitted.values,my.lm.rev$model$y, xlab="Fitted", ylab="Actual")
+abline(a=0, b=1)
+```
+## Counterfactual Predictions
+
+```{r}
+# Point
+predict(my.lm.rev, newdata=data.frame(price.index=5, income.level=5.86, market.potential=13))
+# On Average
+predict(my.lm.rev, newdata=data.frame(price.index=5, income.level=5.86, market.potential=13), interval="confidence")
+# All possibilities
+predict(my.lm.rev, newdata=data.frame(price.index=5, income.level=5.86, market.potential=13), interval="prediction")
+```
+
+## Managing Inputs
+
+![McNulty's 2](./img/Screen Shot 2022-09-05 at 1.27.36 PM.png)
+
+
+
+3. It is jointly determined with the outcome -- endogeneity. 
+4. Missingness
+
+## Categorical Predictors
+
+`as.factor()` almost always sorts this out.  His method is a bit more trouble but also works.
+
+Also, one level/factor will be omitted by default, it is absorbed in the constant to avoid perfect linear combinations.  **Let me explain.**
+
+## OLS: Assumptions
+
+1. Linearity:
+$$y = X\beta + \epsilon$$
+
+2. Strict Exogeneity
+$$E[\epsilon | X] = 0$$
+
+3. No [perfect] multicollinearity: 
+
+Rank of the $NxK$ data matrix $X$ is $K$ with probability 1 ($N > K$).
+
+4. X is a nonstochastic matrix.
+
+5. Homoskedasticity
+$$E[\epsilon\epsilon^{\prime}] = \sigma^2I s.t. \sigma^{2} > 0$$
+
+
+## Properties of OLS Estimators
+
+- Unbiasedness is $E(\hat{\beta} - \beta) = 0$  
+- Variance $E[(\hat{\beta} - \beta)(\hat{\beta} - \beta)^{\prime}]$
+- The Gauss-Markov Theorem -- Minimum Variance Unbiased Estimator
+
+
+## The first two
+
+Need nothing about the distribution other than the two moment defintions.  It is for number three that this starts to matter and, in many ways, this is directly a reflection of Basu's theorem.
+
+## Unbiasedness
+
+With $\hat{\beta}=(X^{\prime}X)^{-1}X^{\prime}y$, $\mathbb{E}[\hat{\beta} - \beta] = 0$ requires, $$\mathbb{E}[(X^{\prime}X)^{-1}X^{\prime}y - \beta] = 0$$  We require an inverse already.  Invoking the definition of $y$, we get 
+
+$$\mathbb{E}[\mathbf{(X^{\prime}X)^{-1}X^{\prime}}(\mathbf{X}\beta + \epsilon) - \beta]  =  0$$ $$\mathbb{E}[\mathbf{(X^{\prime}X)^{-1}X^{\prime}}\mathbf{X}\beta + \mathbf{(X^{\prime}X)^{-1}X^{\prime}}\epsilon - \beta]   =  0$$ 
+
+Taking expectations and rearranging.
+
+$$\hat{\beta}  - \beta   =  -\mathbb{E}[\mathbf{(X^{\prime}X)^{-1}X^{\prime}}\epsilon]$$ 
+
+If the latter multiple is zero, all is well.
+
+## Variance
+
+$\mathbb{E}[(\hat{\mathbf{\beta}} - \beta)(\hat{\mathbf{\beta}} - \beta)^{\prime}]$ can be derived as follows.
+
+$$\mathbb{E}[(\mathbf{(X^{\prime}X)^{-1}X^{\prime}}\mathbf{X}\beta + \mathbf{(X^{\prime}X)^{-1}X^{\prime}}\epsilon - \beta)(\mathbf{(X^{\prime}X)^{-1}X^{\prime}}\mathbf{X}\beta + \mathbf{(X^{\prime}X)^{-1}X^{\prime}}\epsilon - \beta)^{\prime}]$$ $$\mathbb{E}[(\mathbf{I}\beta + \mathbf{(X^{\prime}X)^{-1}X^{\prime}}\epsilon - \beta)(\mathbf{I}\beta + \mathbf{(X^{\prime}X)^{-1}X^{\prime}}\epsilon - \beta)^{\prime}]$$
+Recognizing the zero part from before, we are left with the manageable,
+
+$$\mathbb{E}[(\hat{\mathbf{\beta}} - \beta)(\hat{\mathbf{\beta}} - \beta)^{\prime}]$$  $$\mathbb{E}[\mathbf{(X^{\prime}X)^{-1}X^{\prime}}\epsilon\epsilon^{\prime}\mathbf{X(X^{\prime}X)^{-1}}]$$
+Nifty.  With nonstochastic $\mathbf{X}$, it's the structure of $\epsilon\epsilon^{\prime}$ and we know what that is.  By assumption, we have $\sigma^{2}\mathbf{I}$.  If stochastic, we need more steps to get to the same place.
+
+## Gauss-Markov
+
+Proving the Gauss-Markov theorem is not so instructive.  From what we already have, we are restricted to linear estimators, we add or subtract something.  So after computation, we get the OLS standard errors plus a positive semi-definite matrix.  OLS always wins.  From here, a natural place to go is corrections for non $\mathbf{I}$.  We will do plenty of that.  And we will eventually need Aitken.
+
+## Checking Assumptions
+
+1. Linearity: Examine the added-variable plots accessible in `car` for patterns
+
+```{r}
+library(car)
+avPlots(my.lm.rev)
+```
+
+2. Exogeneity: No easy means of assessment.  **Quite unfortunate**
+
+3. No perfect multicollinearity: really a technical requirement because something will have to be dropped to produce estimates because of matrix invertability.
+
+4. Makes math easy but doesn't really matter.
+
+5. Constant error variance
+
+The `avPlots` from before as a function of x.  We also commonly use default plots of the regression model.
+
+```{r}
+plot(my.lm.rev)
+```
+
+Leverage assists in detecting outliers.
+
+## Care with Normality
+
+It is not a core assumption for the method; it is a core assumption for inference.  There is widespread use of a `robust` standard error that does not require normality.  Normality is what allows `t` distributions for inference.  The q-q plots he cites are nice.  Even better is 
+
+```{r}
+library(gvlma)
+gvlma(my.lm.rev)
+```
+
+## Collinearity Inflates Standard Errors
+
+Because the variables are hard to separate; that's the definition of correlated or collinear.
+
+## Extending Linear Regression
+
+1. Interactions: Suppose two variables have an impact where each depends on the value of the other.  The partial derivative now includes a base term and a product term.
+
+2. Higher order polynomials: the magic of Taylor series -- just include powers of the relevant variable.
