@@ -11,7 +11,7 @@ format:
      html-math-method: katex
      incremental: true
      slide-number: c/t
-     transition: zoom
+     transition: convex
      multiplex: true
      preview-links: true
 ---
@@ -267,6 +267,10 @@ res <- data.frame(a=parms$a, b=parms$b, SSE=SSE)
 res %>% ggplot() + geom_tile(aes(x=a, y=b, fill=SSE)) + scale_fill_viridis_c() -> funky
 funky + theme_minimal()
 ```
+
+## An Example with Fictitious Data, part 3 {background-color="black" background-image="./img/Rayshade.png"}
+
+Using `rayshader` `plot_gg`
 
 ## Orthognality
 
