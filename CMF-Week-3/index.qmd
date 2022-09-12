@@ -1,0 +1,462 @@
+---
+title: "Choice and Forecasting: Week 3"
+author: "Robert W. Walker"
+format: 
+   revealjs:
+     theme: [custom.scss]
+     scrollable: true
+     logo: AGSMlogo.jpeg
+     footer: "Models of Choice and Forecasting"
+     self-contained: true
+     html-math-method: katex
+     incremental: true
+     slide-number: c/t
+     transition: convex
+     multiplex: true
+     preview-links: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=TRUE, tidy=TRUE, comment=NA, prompt=FALSE, fig.height=6, fig.width=6.5, fig.retina = 3, dev = 'svg', eval=TRUE)
+library(tidyverse)
+```
+
+# Regression for Binary Variables
+
+## Why Not Linear Models
+
+Though with an outcome taking two values, say Yes and No, one might think that a direct model linking change in x to probability of y, given that y is either 0 or 1, perhaps 0% or 100% would be ideal.  As it happens, combined with lines, this is a source of trouble because lines extend forever.
+
+# Churn: The Data
+
+We will work with data on Churn.  For details, [look on Kaggle.com -- a great source of data](https://www.kaggle.com/datasets/blastchar/telco-customer-churn).
+
+```{r}
+Churn <- read.csv("https://github.com/robertwwalker/DADMStuff/raw/master/WA_Fn-UseC_-Telco-Customer-Churn.csv")
+names(Churn)
+```
+
+## More on the Data
+
+```{r}
+dim(Churn)
+str(Churn)
+table(Churn$Churn)
+```
+
+## Transformation to Numbers
+
+Now to a regression model.  We will need a variable type change to pull this off.  Let's have a look at the necessary transformation.
+
+```{r}
+str(Churn$Churn)
+str(as.factor(Churn$Churn))
+str(as.numeric(as.factor(Churn$Churn)))
+Churn$Churn.Numeric <- as.numeric(as.factor(Churn$Churn))-1
+str(Churn$Churn.Numeric)
+```
+
+## Linear Regression
+
+```{r, message=FALSE, warning=FALSE}
+library(stargazer); library(magrittr); library(tidyverse); library(skimr)
+my.lm <- lm(Churn.Numeric~InternetService+tenure+PhoneService+Contract+TotalCharges, data=Churn)
+summary(my.lm)
+```
+
+## Scientific Notation
+
+```{r}
+options(scipen=6)
+summary(my.lm)
+```
+
+## The Predictions?
+
+```{r}
+my.lm$fitted.values %>% skim()
+```
+
+No, there are negative values.  To prevent that, we need a different tool; this is the subject of Chapter 5.
+
+## Residuals?
+
+We should also examine residuals.  Using a variety of tests of linear model assumptions, we find the model lacking in every one but constant variance [homo/heteroscedasticity].
+
+```{r}
+library(gvlma)
+gvlma(my.lm)
+```
+
+## Churn is a Binomial {.smaller}
+
+Any given customer is conceptualized as a Bernoulli trial, e.g. $\pi^{y}(1-\pi)^{1-y}$.  With a willingness to believe that every `Churn` decision is an independently and identically distributed trial in this group of customers, overall churn is a binomial random variable with probability mass function $$P_{y} = {n \choose y} \pi^{y}(1-\pi)^{n-y}$$ where
+
+- $P_{y}$ is the binomial probability of $y$
+- $y$ is the number of successes in $n$ trials
+- $n$ is the number of trials
+- $\pi$ is the probability of success in any given trial.
+
+## GLM Theory {.smaller}
+
+In the theory of these models, presented by Peter McCullagh and John Nelder in 1989[^1], that link for the probabilities is what ties regression to the binomial distribution; 
+
+- We posit that $(1-\pi_{i}) = Pr(y_{i}=1|X_{i}) = 1-F(X_{i}\beta)$ so that $\pi_{i} = Pr(y_{i}=0|X_{i})= F(X_{i}\beta)$.  If $F$ is some well-behaved probability distribution, then the aforementioned is valid.  
+- There are a few ways of actually writing that; the $\pi_{i}$ could be derived from 
+  - a normal distribution -- called probit
+  - the logistic distribution -- the model is named logit
+  - there are a few others that are somewhat common: the Cauchy, the log-log, and the complimentary log-log.  The latter two are asymmetric and mirrors one of the other.  
+  
+What we want to do is to find the estimates of $\beta$ that maximize the likelihood of the sample we observe.[^2]
+
+## A Probit Model
+
+First, a little substitution and some notation.  Let me label the normal probability up to $X_{i}\beta$ to be $\Phi(X\beta)$ and the probability above $X\beta$ to be $1-\Phi(X+{i}\beta)$.  I could substitute this into the binomial and obtain the product for the entire sample -- this is known as the likelihood.
+
+$$\prod^{n}_{i=1} \Phi(X_{i}\beta)^{1-y_{i}}(1-\Phi(X_{i}\beta))^{y_{i}}$$
+
+## Taking Logs
+
+Taking logs yields:
+
+$$\ln \mathcal{L} =  \sum^{n}_{i=1} (1-y_{i})\ln \Phi(X_{i}\beta) + y_{i} \ln (1-\Phi(X_{i}\beta))$$
+So the solution becomes 
+
+$$\arg \max_{\beta} \ln \mathcal{L} =  \arg \max_{\beta} \sum^{n}_{i=1} (1-y_{i})\ln \Phi(X_{i}\beta) + y_{i} \ln (1-\Phi(X_{i}\beta))$$
+
+In English, we want to find the values of $\beta$ that maximize the log-likelihod of the entire sample.
+
+## Estimating a Probit Model
+
+The outcome of interest is `Churn`.  The model specification will call `glm`, let me examine `Churn` as a function of `InternetService`, `tenure`, `PhoneService`, `Contract` and `TotalCharges`.  There is one trick to deploying it, the outcome variable must be a `factor` type.  To make the table nice, let me mutate the type to a factor and then we can model it.
+
+```{r, warning=FALSE, message=FALSE}
+Churn %<>% mutate(ChurnF = as.factor(Churn))
+Churn %>% select(Churn,ChurnF) %>% mutate(as.numeric(ChurnF)) %>% head()
+```
+
+## Estimates
+
+```{r, warning=FALSE, message=FALSE}
+my.probit <- glm(ChurnF~InternetService+tenure+PhoneService+Contract+TotalCharges, family = binomial(link="probit"), data=Churn)
+summary(my.probit)
+```
+
+## AIC: Akaike Information Criterion
+
+A measure of goodness of fit.
+
+![AIC Definition: `stats`](./img/Screen Shot 2022-09-12 at 9.59.35 AM.png)
+
+## Observations
+
+We can do `astrology` on the tables; read the stars. Fiber optic customers are more likely to Churn and those without internet service are less likely to Churn but both conditions are compared to a third category absorbed into the Constant.  What is that category?
+
+```{r}
+janitor::tabyl(Churn$InternetService)
+```
+
+`DSL` subscribers.  It is the first in alphabetical order.  *That is the default option.*  That also means that the constant captures those on Month-to-month contracts and without phone service -- the omitted category for each.
+
+## So what do these `coefficients` show?  
+
+The slopes represent the effect of a one-unit change in $x$ on the underlying distribution for the probabilities.  Unless one has intuition for those distributions, they come across as nonsensical.  In the table above, let me take the example of tenure.  For each unit of tenure [another month having been a customer], the normal variable $Z \sim N(0,1)$ decreases by 0.028.  But what that means depends on whether we are going from 0 to -0.028 or from -2 to -2.028.  Remember the standard normal has about 95% of probability between -2 and 2 and has a modal/most common value at zero.
+
+## A Picture of the Normal
+
+```{r, echo=FALSE}
+data.frame(Z=rnorm(10000)) %>% 
+  ggplot(.) + aes(x=Z) + geom_density() + 
+  theme_minimal() + geom_vline(aes(xintercept=-2.028), color="red") +
+  geom_vline(aes(xintercept=-2),color="red") +
+  geom_vline(aes(xintercept=-0.028),color="blue") +
+  geom_vline(aes(xintercept=0), color="blue")
+```
+
+
+## Plotting Slopes
+
+```{r}
+library(jtools)
+plot_summs(my.probit, inner_ci_level = .95)
+```
+
+## A Better Plot
+
+```{r}
+Churn %>% mutate(tenure = scale(tenure), TotalCharges = scale(TotalCharges)) %>% glm(ChurnF~InternetService+tenure+PhoneService+Contract+TotalCharges, family = binomial(link="probit"), data=.) %>% plot_summs(., inner_ci_level = .95)
+```
+
+## The Trouble with Non-linear Models
+
+I should be clear that the model does have lines; they are just lines inside of a nonlinear function -- the F.  The `generalized linear` part means that the interpretation of any one factor will depend on the values of the others.  We will have to usually want to generate hypothetical data to understand what is really going on.  After a presentation of the remaining models, I will return to my preferred method of interpretation.
+
+## Logistic Regression
+
+The logistic distribution is the focus of the textbook chapter.  To respecify the model using that, the only change in syntax is the `link`, we need it to be `link="logit"` which is the default.
+
+The logistic function is given by:
+
+$$\Lambda = \frac{e^{X\beta}}{1+e^{X\beta}}$$
+
+## The Analytics
+
+$$\arg \max_{\beta} \ln \mathcal{L} =  \arg \max_{\beta} \sum^{n}_{i=1} (1-y_{i})\ln \Lambda(X_{i}\beta) + y_{i} \ln (1-\Lambda(X_{i}\beta))$$
+
+One of the advantages of using the logistic distribution is that you can analytically solve it with only categorical variables.  The other is the interpretation of the estimates; the slope is an increment in the log-odds, e.g. $\ln (\frac{\pi_{y=1}}{1-\pi_{y=1}})$.
+
+## The Estimates: Logistic Regression
+
+```{r, warning=FALSE, message=FALSE}
+my.logit <- glm(ChurnF~InternetService+tenure+PhoneService+Contract+TotalCharges, family = binomial(link="logit"), data=Churn)
+summary(my.logit)
+```
+
+## Odds Ratios {.smaller}
+
+```{r}
+exp(my.logit$coefficients)
+```
+
+All else equal,
+
+- The odds of Churning with Fiber optics, as opposed to DSL, increase by 223%.
+- The odds of Churning with No internet, as opposed to DSL, decrease by 53.5% .
+- The odds of Churning with No phone service, as opposed to Phone service, are 51% lower.
+- The odds of Churning decrease by 4% per unit tenure [month].
+- The odds of Churning increase by 0.04% per dollar of total charges.
+- The odds of Churning decrease under contracts.  Compared to none, about 83% lower odds under a two-year contract and 58% lower odds under a one-year contract.
+
+## Confidence Intervals for Odds Ratios
+
+If you choose to work with odds, then the suggestion to exponentiate the confidence intervals for the odds-ratios is sound.
+
+```{r}
+exp(confint(my.logit))
+```
+
+## Diagnostics
+
+There are diagnostics that can be applied to these models.  The various pseudo-$r^2$ measures.  This model fit is neither terrible nor good.
+
+```{r}
+library(DescTools)
+DescTools::PseudoR2(
+  my.logit, 
+  which = c("McFadden", "CoxSnell", "Nagelkerke", "Tjur")
+)
+```
+
+## ROC
+
+```{r}
+Churn.CC <- Churn %>% select(ChurnF,InternetService,tenure,PhoneService,Contract,TotalCharges) %>% filter(!is.na(TotalCharges))
+my.logit.CC <- glm(ChurnF~InternetService+tenure+PhoneService+Contract+TotalCharges, family = binomial(link="logit"), data=Churn.CC)
+library(LogisticDx)
+# get range of goodness-of-fit diagnostics
+model_diagnostics <- LogisticDx::gof(my.logit.CC, 
+                                             plotROC = TRUE)
+```
+
+## The ROC
+
+### The Receiver Operating Curve
+
+It plots specificity against sensitivity.  Specificity is the ability, in this case, to correctly identify non-Churners[few false positives is highly specific]; sensitivity is the ability of the test to correctly identify Churners [few false negatives is highly sensitive].  A useful mnemonic is that the presence of the letter `f` in specificity is a reminder that the False test results are False for the condition, while the `t` in sensitivity is True test results are True for the condition.
+
+
+## Other Diagnostics
+
+```{r}
+# returns a list
+names(model_diagnostics)
+model_diagnostics$gof
+```
+
+## Other Binomial GLMs {.smaller}
+
+```{r, results='asis', warning=FALSE, message=FALSE}
+my.cauchit <- glm(ChurnF~InternetService+tenure+PhoneService+Contract+TotalCharges, family = binomial(link="cauchit"), data=Churn)
+my.cloglogit <- glm(ChurnF~InternetService+tenure+PhoneService+Contract+TotalCharges, family = binomial(link="cloglog"), data=Churn)
+stargazer(my.cauchit, my.cloglogit, my.logit, my.probit, type="html", style="apsr")
+```
+
+## Best by AIC: `cloglog`
+
+```{r}
+library(pROC)
+predicted <- predict(my.cloglogit, type="response")
+auc(Churn.CC$ChurnF, predicted, plot=TRUE)
+```
+
+## Residuals
+
+```{r}
+d <- density(residuals(my.logit, "pearson"))
+plot(d, main= "")
+```
+
+This is rather poor.
+
+## Predicted Probability (1/3) {.smaller}
+
+I find that the most straightforward way to interpret them is with plots in the probability metric.  Let me take the example of `tenure`.
+
+I will need to create data for interpretation.  Let's suppose we have a `DSL` user with phone service on a two year contract with average `TotalCharges`.  The last thing I need to know is what values of `tenure` to show.
+
+```{r}
+library(skimr)
+Churn %>% filter(InternetService=="DSL", PhoneService=="Yes", Contract=="Two year") %>% skim(tenure,TotalCharges)
+```
+
+## Data for Prediction (2/3)
+
+Now I can create the data and generate predictions in the probability metric of the response.
+
+```{r}
+Tenure.Pred <- data.frame(InternetService="DSL", PhoneService="Yes", Contract="Two year", TotalCharges = 4733.5, tenure = seq(0,72, by=1))
+Tenure.Pred$Prob.Churn <- predict(my.logit, newdata=Tenure.Pred, type="response")
+```
+
+## Plot of Effect of Tenure
+
+```{r}
+ggplot(Tenure.Pred) + aes(x=tenure, y=Prob.Churn) + geom_line() + theme_minimal()
+```
+
+## A Fancier Plot
+
+```{r, echo=FALSE}
+Tenure.Pred.Three <- rbind(data.frame(InternetService="DSL", PhoneService="Yes", Contract="Month-to-month", TotalCharges = 4733.5, tenure = seq(0,72, by=1)),data.frame(InternetService="DSL", PhoneService="Yes", Contract="One year", TotalCharges = 4733.5, tenure = seq(0,72, by=1)), data.frame(InternetService="DSL", PhoneService="Yes", Contract="Two year", TotalCharges = 4733.5, tenure = seq(0,72, by=1)))
+Tenure.Pred.Three$Prob.Churn <- predict(my.logit, newdata=Tenure.Pred.Three, type="response")
+ggplot(Tenure.Pred.Three) + aes(x=tenure, y=Prob.Churn, color=Contract) + geom_line() + theme_minimal() + labs(y="Pr(Churn)")
+```
+
+# A Better Way of Thinking About all of This
+
+I personally believe that the only real way to assess models for use in **predictive analytics** is to assess them by that criteria.  That doesn't mean fitting inside the extant sample of data, but rather sampling from it and then using the model to predict what is known as a **holdout sample**.  Let me show you what I mean.  In this case, let me use the probit and logit models from before and a 75/25 split.  This means that I will analyse 75 percent and predict the other 25 percent.  I can use `join` style commands to pull it off pretty simply.  I have 7043 rows.  So I want `r ceiling(7043*0.75)` rows of the original data out of that 7043.
+
+## Train and Test
+
+```{r}
+train <- Churn[sample(c(1:7043), size=5283, replace=FALSE),]
+test <- Churn %>% anti_join(., train)
+```
+
+## Estimate the model
+
+```{r}
+library(janitor)
+mod.train <- train %>% glm(ChurnF~InternetService+tenure+PhoneService+Contract+TotalCharges, family = binomial(link="probit"), data=.)
+```
+
+## Predict on `test`
+
+Predict the result on the `test` set that I created.  I will then turn the probabilities into a best guess by whether `Churn` or `No` is more likely.
+
+```{r}
+test$Pred.Probs <- predict(mod.train, newdata=test, type="response")
+test %>% mutate(Pred.Val = (Pred.Probs > 0.5)) %>% janitor::tabyl(Churn,Pred.Val, show_na = FALSE) %>% adorn_percentages("row")
+```
+
+## More Calibration
+
+all of the totals.
+
+```{r}
+test %>% mutate(Pred.Val = (Pred.Probs > 0.5)) %>% janitor::tabyl(Churn,Pred.Val, show_na = FALSE) %>% adorn_totals(c("row","col"))
+```
+
+Now you might say that the fact we can only get 50 to 55 percent of `Churn='Yes'` with the model, remember that only 26.5 percent of people `Churn` overall so we have improved quite a bit over knowing nothing at all but the raw row probability.  In this specific case, the probability of `Yes` in the test set is shown below.
+
+```{r}
+test %>% tabyl(Churn)
+```
+
+## Quadratic Terms?
+
+What would happen if I assume that the effect of `tenure` is not a line but instead has some curvature.
+
+```{r, warning=FALSE, message=FALSE}
+mod.train.SQ <- train %>% glm(ChurnF~InternetService+tenure+I(tenure^2)+PhoneService+Contract+TotalCharges, family = binomial(link="probit"), data=.)
+summary(mod.train.SQ)
+```
+
+## Comparison by Plot
+
+```{r}
+Tenure.Pred$Prob.Churn.2 <- predict(mod.train, newdata=Tenure.Pred, type="response")
+Tenure.Pred$Prob.Churn.Sq <- predict(mod.train.SQ, newdata=Tenure.Pred, type="response")
+ggplot(Tenure.Pred) + aes(x=tenure, y=Prob.Churn.Sq) + geom_line() + geom_line(aes(y=Prob.Churn.2), color="purple") + theme_minimal() + labs(y="Pr(Churn)")
+```
+
+## Predicting the Test Set
+
+does it really do better?
+
+```{r}
+test$Pred.Probs.Sq <- predict(mod.train, newdata=test, type="response")
+test %>% mutate(Pred.Val.Sq = (Pred.Probs.Sq > 0.5)) %>% janitor::tabyl(Churn,Pred.Val.Sq, show_na = FALSE) %>% adorn_percentages("row")
+```
+
+Not usually.  Such people are really unlikely to Churn no matter what; it only starts at about 0.25.
+
+## A final note: a classification tree
+
+First, I will start with a generic classification tree with everything set to the defaults.  Then I will look at a report to refine it.
+
+```{r}
+library(rpart)
+library(rpart.plot)
+fit.BT <- rpart(ChurnF~InternetService+tenure+PhoneService+Contract+TotalCharges, data = train, method = 'class')
+```
+
+## A Plot of the Tree
+
+```{r}
+rpart.plot(fit.BT)
+```
+
+## How well does it fit the test sample?
+
+```{r}
+test$Churn.No <- predict(fit.BT, newdata=test)[,1]
+test$Churn.PredRT <- (test$Churn.No < 0.5)
+test %>% tabyl(Churn, Churn.PredRT)
+```
+
+Not very well.  We can alter the tolerance for complexity using some diagnostics about the tree.
+
+## cp: Complexity
+
+```{r}
+printcp(fit.BT)
+```
+The option `cp` controls a complexity parameter that keeps the tree from overfitting the tree.  I want to show a fairly complex one so I will change from the default of 0.01 to 0.0025.
+
+## Estimation
+
+```{r}
+fit.BT.2 <- rpart(ChurnF~InternetService+tenure+PhoneService+Contract+TotalCharges, data = train, method = 'class', cp=0.0025)
+```
+
+## Plot of Big Tree
+
+```{r}
+rpart.plot(fit.BT.2, extra = 106)
+```
+
+### Predictions
+
+```{r}
+test$Churn.No <- predict(fit.BT.2, newdata=test)[,1]
+test$Churn.PredRT2 <- (test$Churn.No < 0.5)
+test %>% tabyl(Churn, Churn.PredRT2)
+```
+
+
+
+[^1]: McCullagh, P. and Nelder, J.A. (1989) __Generalized Linear Models. 2nd Edition__, Chapman and Hall, London.
+[http://dx.doi.org/10.1007/978-1-4899-3242-6](http://dx.doi.org/10.1007/978-1-4899-3242-6)
+
+[^2]: Full disclosure, I am cheating a bit here.  I don't really want to explain the fitting of generalized linear models as it most often involves iteratively reweighted least squares.  I prefer to motivate them with the far more intuitive likelihood approach though they are not, strictly speaking, identical.
