@@ -446,7 +446,7 @@ fit.BT.2 <- rpart(ChurnF~InternetService+tenure+PhoneService+Contract+TotalCharg
 rpart.plot(fit.BT.2, extra = 106)
 ```
 
-### Predictions
+## Predictions
 
 ```{r}
 test$Churn.No <- predict(fit.BT.2, newdata=test)[,1]
@@ -454,6 +454,17 @@ test$Churn.PredRT2 <- (test$Churn.No < 0.5)
 test %>% tabyl(Churn, Churn.PredRT2)
 ```
 
+## Conclusions
+
+- Linear regression is generally inappropriate for binary outcomes.
+- Lines extend infinitely.
+- *Generalized linear models* come to the rescue but require a family for the data and, in this case, a link for the probably.
+- A probit is a normal; the logit is logistic.  There are others.
+- Fewer diagnostis for such models exist.
+- Plots of probability by input help to understand what is going on.
+- Some people like odds ratios, the exponentiated coefficients from a *logit*
+- Training and test are an important means of maintaining parsimony and maximizing predictive accuracy.
+- Classification trees are another approach to these problems.
 
 
 [^1]: McCullagh, P. and Nelder, J.A. (1989) __Generalized Linear Models. 2nd Edition__, Chapman and Hall, London.
