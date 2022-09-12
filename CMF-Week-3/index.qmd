@@ -267,6 +267,8 @@ It plots specificity against sensitivity.  Specificity is the ability, in this c
 
 ## Other Diagnostics
 
+[What all is in `gof`?](https://cran.r-project.org/web/packages/LogisticDx/LogisticDx.pdf)
+
 ```{r}
 # returns a list
 names(model_diagnostics)
