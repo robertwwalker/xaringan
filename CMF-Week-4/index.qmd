@@ -129,7 +129,8 @@ library(patchwork)
 ## A Picture
 
 ```{r}
-Graph.1 + Graph.2
+Graph.1 + Graph.2 + plot_annotation(
+  title = 'Intermediates')
 ```
 
 ## A Plot
@@ -153,7 +154,8 @@ library(patchwork)
 ## A Picture
 
 ```{r}
-Graph.1 + Graph.2
+Graph.1 + Graph.2 + plot_annotation(
+  title = 'Fixes')
 ```
 
 ## A Plot
@@ -177,7 +179,8 @@ library(patchwork)
 ## A Picture
 
 ```{r}
-Graph.1 + Graph.2
+Graph.1 + Graph.2 + plot_annotation(
+  title = 'Floats')
 ```
 
 ## Goodness of Fit
