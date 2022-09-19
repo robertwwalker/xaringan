@@ -311,3 +311,23 @@ DescTools::PseudoR2(
 ```
 
 The last model is clearly better than the first by any of these measures.  That said, there are a lot of additional predictors that add much complexity to the model and the difference in AIC is not very large.
+
+## Constructing Predictions Together
+
+Let's do this.
+
+To get the data, we will need the following.
+
+```{r, eval=FALSE}
+Li.Data <- read.dta("https://github.com/robertwwalker/xaringan/raw/master/CMF-Week-4/img/li-replication.dta")
+```
+
+## The Model
+
+```{r}
+li.mod4 <- polr(generositygF ~ law00log + transition + fdiinf + democfdi + democ + autocfdi2 + autocfdir + reggengl + reggengl2 + gdppclog + gdplog, data=Li.Data)
+```
+
+## What Counterfactual?
+
+And what does this mean....
