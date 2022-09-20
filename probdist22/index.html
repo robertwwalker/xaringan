@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Probability Distributions</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Robert W. Walker" />
+    <meta name="date" content="2022-09-20" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <script src="libs/htmlwidgets/htmlwidgets.js"></script>
+    <script src="libs/plotly-binding/plotly.js"></script>
+    <script src="libs/typedarray/typedarray.min.js"></script>
+    <script src="libs/jquery/jquery.min.js"></script>
+    <link href="libs/crosstalk/css/crosstalk.min.css" rel="stylesheet" />
+    <script src="libs/crosstalk/js/crosstalk.min.js"></script>
+    <link href="libs/plotly-htmlwidgets-css/plotly-htmlwidgets.css" rel="stylesheet" />
+    <script src="libs/plotly-main/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Probability Distributions
+]
+.subtitle[
+## Linking Probability and Data
+]
+.author[
+### Robert W. Walker
+]
+.date[
+### 2022-09-20
+]
+
+---
+
+
+
+
+
+
+
+## An Admin Note
+
+There is a very nice graphical user interface for parts of R called radiant that is especially useful for probability distributions.  To acquire it, try:
+
+```
+install.packages("radiant")
+```
+
+It can be started via Add-ins.
+
+---
+# Probability: The Logic of Science
+
+Jaynes presents a few core ideas and requirements for his rational system.  Probability emerges as the representation of circumstances in which any given realization of a process is either TRUE or FALSE but both are possible and can be expressed by probabilities.
+
+- that sum to one for all events
+- are greater than or equal to zero for any given event
+
+---
+# Some Language
+
+*Sensitivity* refers to the ability of a test to designate an individual with a disease as positive.  *Specificity* refers to the ability of a test to designate an individual without a disease as negative.
+
+*False positives* are then the complement/opposite of specificity and *false negatives* are the complement/opposite of sensitivity.
+
+---
+# Random Variables
+
+I do not love the book definition of this.  Technically, it is a variable whose values are generated according to some random process; your book implies that these are limited to quantities.  **It is really a measurable function defined on a probability space that maps from the sample space [the set of possible outcomes] to the real numbers.**
+
+---
+# A Core Idea: Independence
+
+What does it mean to say something **is independent** of something else?  The simplest way to think about it is, "do I learn something more about x by knowing y than not".  If two things are independent, I don't need to care about y if x is my objective.
+
+---
+# General Representation of Probability Distributions
+
+Is of necessity two-dimensional,
+
+- We have `\(x\)` and 
+- we have `\(Pr(X=x)\)` in one of two forms (Pr or f).
+
+
+---
+
+&lt;img src="index_files/figure-html/P1-1.jpeg" width="504" /&gt;
+
+---
+
+## Probability Distributions of Two Forms
+
+Our core concept is a probability distribution just as above.  These come in two forms for two types [discrete (qualitative)] and continuous (quantitative)]:
+
+
+- Assumed
+- Derived
+
+---
+
+## [The Poster](https://github.com/robertwwalker/DADMStuff/raw/master/Distribution-Poster.pdf) and Examples
+
+Distributions are nouns.  Sentences are incomplete without verbs -- parameters.  We need both; it is for this reason that the former slide is true.  We do not always have a grounding for either the name or the parameter.
+
+---
+
+## Continuous vs. Discrete Distributions
+
+The differences are sums versus integrals.  Why?  
+
+- Histograms or  
+- Density Plots  
+
+The probability of exactly any given value is zero on a true continuum.
+
+---
+
+Expectation
+
+`$$E(X) = \sum_{x \in X} x \cdot Pr(X=x)$$`
+`$$E(X) = \int_{x \in X} x \cdot f(x)dx$$`
+
+Variance
+
+`$$E[(X-\mu)^2] = \sum_{x \in X} (x-\mu)^2 \cdot Pr(X=x)$$`
+`$$E((X-\mu)^2) = \int_{x \in X} (x-\mu)^2 \cdot f(x)dx$$`
+
+---
+# Functions
+
+Probability distributions are mathematical formulae expressing likelihood for some set of qualities or quantities.  They have names: nouns.  They also have verbs: parameters.  Like a proper English sentence, both are required.
+
+---
+# Models
+
+For our purposes, it is a systematic description of a phenomenon that shares important and essential features of that phenomenon.  Models frequently give us leverage on problems in the absence of alternative approaches.
+
+---
+# Our Applications
+
+* The uniform will be defined by a minimum and maximum.  
+* The normal will be defined by a mean `\(\mu\)` (mu) and standard deviation `\(\sigma\)` - sigma [or variance, `\(\sigma^2\)`]  
+* The Poisson will be defined an arrival rate `\(\lambda\)` -- lambda.   
+* Variations on Bernoulli trials: Two outcomes occur with probability `\(\pi\)` and `\(1-\pi\)`.    
+       * The *binomial distribution* will be defined by a number of trials `\(n\)` and a probability `\(\pi\)`.  
+       * The *geometric distribution* defines the first success of `\(n\)` trials with probability `\(\pi\)`.  
+       * The *negative binomial distribution* defines the probability of `\(k\)` successes in `\(n\)` trials with probability `\(\pi\)`.  It is related to the **Poisson**.
+
+
+---
+class: inverse
+# The Uniform Distribution
+
+*  Is flat, each value is equally likely.  
+* Defined on 0 to 1 gives a random cumulative probability `\(X \leq x\)`.  
+* `\(\uparrow\)` *It's a random probability in 0 and 1.*   
+* Is also known as the rectangular distribution.
+
+
+---
+# Uniform(0,1)
+
+
+```r
+library(patchwork)
+Unif &lt;- data.frame(x=seq(0, 1, by = 0.005)) %&gt;% mutate(p.x = punif(x), d.x = dunif(x))
+p1 &lt;- ggplot(Unif) + aes(x=x, y=p.x) + geom_step() + labs(title="Distribution Function [cdf/cmf]")
+p2 &lt;- ggplot(Unif) + aes(x=x, y=d.x) + geom_step() + labs(title="Density Function [pdf/pmf]")
+p2 + p1
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-1-1.jpeg" width="504" /&gt;
+
+
+---
+# The Normal [Gaussian]
+
+`$$f(x|\mu,\sigma^2 ) = \frac{1}{\sqrt{2\pi\sigma^{2}}} \exp \left[ -\frac{1}{2} \left(\frac{x - \mu}{\sigma}\right)^{2}\right]$$`
+
+Is the workhorse of statistics.  Key features:
+
+- Is self-replicating: sums of normals are normal.  
+- If `\(X\)` is normal, then $$ Z = \frac{(X - \mu)}{\sigma} $$ is normal.  
+- Aside, `$$z_{x} = \frac{(x - \overline{x})}{s_{x}}$$` has mean 0 and variance/std. dev. 1.  
+
+
+---
+# The z-transform
+
+The generic z-transformation applied to a variable `\(x\)` centers [mean$\approx$ 0] and scales [std. dev. `\(\approx\)` variance `\(\approx\)` 1] to `\(z_{x}\)` for population parameters.  `\(\approx\)` is approximately equal to.
+
+`$$z = \frac{x - \mu}{\sigma}$$`
+
+---
+
+
+```r
+data.frame(Norm = rnorm(10000)) %&gt;% ggplot() + aes(x=Norm) + geom_density() + labs(x="Z - Normal(0,1)")
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-2-1.jpeg" width="504" /&gt;
+
+
+
+---
+
+In samples, the 0 and 1 are exact; these are features of the mean and *degrees of freedom*. **If I know the mean and any `\(n-1\)` observations, the `\(n^{th}\)` observation is exactly the value such that the deviations add up to zero/cancel out.**
+
+$$ z = \frac{x - \overline{x}}{s_{x}} $$.
+
+where `\(\overline{x}\)` is the sample mean of `\(x\)` and `\(s_{x}\)` is the sample standard deviation of `\(x\)`.  Take the example of earnings.  
+
+---
+
+Suppose earnings in a community have mean 55,000 and standard deviation 10,000.  This is in dollars.  Suppose I earn 75,000 dollars.  First, if we take the top part of the fraction in the `\(z\)` equation, we see that I earn 20,000 dollars more than the average (75000 - 55000).  Finishing the calculation of z, I would divide that 20,000 dollars by 10,000 dollars per standard deviation.  Let's show that.
+
+$$ z = \frac{75000 dollars - 55000 dollars}{\frac{10000 dollars}{SD}} = +2 SD $$.
+
+I am 2 standard deviations above the average (the +) earnings.  All `\(z\)` does is re-scale the original data to standard deviations with zero as the mean.  The metric is the standard deviation.
+
+---
+
+Suppose I earn 35,000.  That makes me 20,000 below the average and gives me a z score of -2.  I am 2 standard deviations below average (the -) earnings.
+
+`\(z\)` is an easy way to assess symmetry.  The mean of z is always zero but the distribution of z to the left and right of zero is informative.  If they are roughly even, then symmetry is likely.  If the signs are uneven, then symmetry is unlikely.  In R, `\(z\)` is automated with the *scale()* command.  The last line uses a table and the *sign* command to show me the positive and negative z.
+
+---
+
+
+```r
+# Generate random normal income
+DataF &lt;- data.frame(Hypo.Income = rnorm(1000, 55000, 10000)) %&gt;%
+# z-transform income [mean 55000ish, std. dev. 10000ish]
+mutate(z.Income = scale(Hypo.Income))
+# Show the data.frame
+head(DataF)
+```
+
+```
+##   Hypo.Income  z.Income
+## 1    62222.38 0.7074450
+## 2    59894.54 0.4746450
+## 3    73113.82 1.7966655
+## 4    63878.50 0.8730690
+## 5    74518.34 1.9371277
+## 6    55499.27 0.0350867
+```
+
+```r
+table(sign(DataF$z.Income))
+```
+
+```
+## 
+##  -1   1 
+## 493 507
+```
+
+---
+# Probability Distributions
+
+Distributions in R are defined by four core parts: 
+
+- r, for random variables
+- p, for cumulative probability (given x) [counting from left] `\(Pr(X\leq x)\)`
+- d, for density/probability that `\(Pr(X=x)\)` or `\(f(x)\)`
+- q, for quantile (given p): x such that `\(Pr(X\leq q)=p\)`
+
+---
+
+## A Grape Escape?
+
+A filling process is supposed to fill jars with 16 ounces of grape jelly, according to the label, and regulations require that each jar contain between 15.95 and 16.05 ounces.
+
+1.	*Suppose that the uniform random process of filling in known to fill between 15.9 and 16.1 ounces uniformly.*
+
+---
+
++ Plot the histogram of 1000 simulated values.  NB: *unif* is the noun with boundaries a (default 0) and b(default 1). 
+
+
+```r
+Jars &lt;- runif(1000, 15.9, 16.1)
+Jars %&gt;% data.frame() %&gt;% ggplot() + aes(x=Jars) + geom_histogram(binwidth=0.005)
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-3-1.jpeg" width="504" /&gt;
+
+---
+
++ What is the probability that a random jar is outside of requirements?
+
+**Exactly?  50 percent because 25 percent are between 15.9 and 15.95 and 25 percent are between 16.05 and 16.1.**
+
+
+```r
+table(Jars &lt; 15.95 | Jars &gt; 16.05) # | captures or
+```
+
+```
+## 
+## FALSE  TRUE 
+##   521   479
+```
+
+---
+
++ Scale (z) the jars and summarise them.
+
+
+```r
+summary(scale(Jars))
+```
+
+```
+##        V1           
+##  Min.   :-1.777670  
+##  1st Qu.:-0.858420  
+##  Median : 0.005463  
+##  Mean   : 0.000000  
+##  3rd Qu.: 0.833462  
+##  Max.   : 1.743651
+```
+
+```r
+sd(scale(Jars))
+```
+
+```
+## [1] 1
+```
+
+---
+
+2.	*The mean of the normal random process of filling is known to be 16.004 ounces with standard deviation 0.028 ounces.*
+
+---
+
++ What is the probability that a random jar is outside of requirements?  NB: *norm* is the noun with mean (default 0) and sd (default 1).
+
+
+```r
+pnorm(15.95, 16.004, 0.028) + pnorm(16.05, 16.004, 0.028, lower.tail=FALSE)
+```
+
+```
+## [1] 0.07709829
+```
+
+---
+
++ What is the probability that a random jar contains more than 16.1 ounces?
+
+
+```r
+1-pnorm(16.1, 16.004, 0.028)
+```
+
+```
+## [1] 0.0003033834
+```
+
+---
+
++ What is the probability that a random jar contains less than 16.04 ounces?
+
+
+```r
+pnorm(16.04, 16.004, 0.028)
+```
+
+```
+## [1] 0.9007286
+```
+
+---
+
++ 95% of jars, given a normal, will contain between XXX and XXX ounces of jelly.
+
+
+```r
+qnorm(c(0.025,0.975), 16.004, 0.028)
+```
+
+```
+## [1] 15.94912 16.05888
+```
+
+---
+
++ The bottom 5% of jars contain, at most, XXX ounces of jelly.
+
+
+```r
+qnorm(0.05, 16.004, 0.028)
+```
+
+```
+## [1] 15.95794
+```
+
+---
+
++ The top 25% of jars contain at least XXX ounces of jelly.
+
+
+```r
+qnorm(0.75, 16.004, 0.028)
+```
+
+```
+## [1] 16.02289
+```
+
+
+---
+# Why Normals?
+
+- The Central Limit Theorem
+- They Dominate Ops [$6\sigma$]
+- Normal Approximations Abound
+
+
+---
+# Events: The Poisson
+
+![Poisson](https://github.com/robertwwalker/DADMStuff/raw/master/Poisson.jpg)
+
+---
+
+Take a binomial with `\(p\)` very small and let `\(n \rightarrow \infty\)`.  We get the Poisson distribution ($y$) given an arrival rate `\(\lambda\)` specified in events per period.
+
+`$$f(y|\lambda) = \frac{\lambda^{y}e^{-\lambda}}{y!}$$`
+
+---
+
+# Examples: The Poisson
+- Walk in customers
+- *Emergency Room Arrivals*
+- Births, deaths, marriages
+- *Prussian Cavalry Deaths by Horse Kick*
+- Fish?
+
+
+---
+# Air Traffic Controllers
+
+FAA Decision: Expend or do not expend scarce resources investigating claimed staffing shortages at the Cleveland Air Route Traffic Control Center.
+
+Essential facts: The Cleveland ARTCC is the US's busiest in routing cross-country air traffic.  In mid-August of 1998, it was reported that the first week of August experienced 3 errors in a one week period; an error occurs when flights come within five miles of one another by horizontal distance or 2000 feet by vertical distance.  The Controller's union claims a staffing shortage though other factors could be responsible.  21 errors per year (21/52 errors per week) has been the norm in Cleveland for over a decade.  
+
+---
+
+1. Plot a histogram of 1000 random weeks.  NB: *pois* is the noun with no default for `\(\lambda\)` -- the arrival rate.
+
+
+```r
+DF &lt;- data.frame(Close.Calls = rpois(1000, 21/52))
+ggplot(DF) + aes(x=Close.Calls) + geom_histogram()
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-12-1.jpeg" width="504" /&gt;
+
+---
+
+
+```r
+ggplot(DF) + aes(x=Close.Calls) + stat_ecdf(geom="step")
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-13-1.jpeg" width="504" /&gt;
+
+---
+
++ Plot a sequence on the x axis from 0 to 5 and the probability of that or fewer incidents along the y.  *seq(0,5)*
+
+
+```r
+DF &lt;- data.frame(x=0:5, y=ppois(0:5, 21/52))
+ggplot(DF) + aes(x=x, y=y) + geom_col()
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-14-1.jpeg" width="504" /&gt;
+
+---
+
+2. What would you do and why?  *Not impossible*
+
+---
+
+3. After analyzing the initial data, you discover that the first two weeks of August have experienced 6 errors.  What would you now decide?  *Well, once is 0.0081342.*  Twice, at random, is that squared.  We have a problem.
+
+---
+
+### Deaths by Horse Kick in the Prussian cavalry?
+
+
+```r
+library(vcd)
+data(VonBort)
+head(VonBort)
+```
+
+```
+##   deaths year corps fisher
+## 1      0 1875     G     no
+## 2      0 1875     I     no
+## 3      0 1875    II    yes
+## 4      0 1875   III    yes
+## 5      0 1875    IV    yes
+## 6      0 1875     V    yes
+```
+
+```r
+mean(VonBort$deaths)
+```
+
+```
+## [1] 0.7
+```
+
+---
+
+&lt;img src="index_files/figure-html/VBG1-1.jpeg" width="504" /&gt;
+
+
+
+---
+# Bernoulli Trials
+
+Suppose the variable of interest is discrete and takes only two values: yes and no.  For example, is a customer satisfied with the outcomes of a given service visit?  
+
+For each individual, because the probability of yes (1) `\(\pi\)` and no (0) 1-$\pi$ must sum to one, we can write:
+
+`$$f(x|\pi) = \pi^{x}(1-\pi)^{1-x}$$`
+
+---
+# Binomial Distribution
+
+For multiple identical trials, we have the Binomial:
+
+`$$f(x|n,\pi) = {n \choose k} \pi^{x}(1-\pi)^{n-x}$$`
+where `$${n \choose k} = \frac{n!}{(n-k)!}$$`
+
+---
+# The Binomial
+
+![BinomialR](https://github.com/robertwwalker/DADMStuff/raw/master/BinomialR.PNG)
+
+
+---
+## Scottish Pounds
+
+*Informal surveys suggest that 15% of Essex shopkeepers will not accept Scottish pounds.  There are approximately 200 shops in the general High Street square.*
+
+---
+
+1. Draw a plot of the distribution and the cumulative distribution of shopkeepers that do not accept Scottish pounds.
+
+
+```r
+Scots &lt;- data.frame(Potential.Refusers = 0:200) %&gt;% mutate(Prob = round(pbinom(Potential.Refusers, size=200, 0.15), digits=4))
+Scots %&gt;% ggplot() + aes(x=Potential.Refusers, y=Prob) + geom_point() + labs(x="Refusers", y="Prob. of x or Less Refusers") -&gt; Plot1
+Plot1
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-15-1.jpeg" width="504" /&gt;
+
+
+---
+
+# A Nicer Plot
+
+
+```r
+library(plotly)
+p &lt;- ggplotly(Plot1)
+p
+```
+
+<div id="htmlwidget-70109ad9ecdccdba4aed" style="width:504px;height:432px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-70109ad9ecdccdba4aed">{"x":{"data":[{"x":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200],"y":[0,0,0,0,0,0,0,0,0,0,0,0,0.0001,0.0002,0.0004,0.001,0.0021,0.0043,0.0082,0.0149,0.0255,0.0415,0.0645,0.0959,0.1368,0.1876,0.248,0.3166,0.3914,0.4697,0.5485,0.6247,0.6958,0.7596,0.815,0.8613,0.8987,0.928,0.9502,0.9665,0.978,0.986,0.9913,0.9947,0.9969,0.9982,0.999,0.9995,0.9997,0.9998,0.9999,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"text":["Potential.Refusers:   0<br />Prob: 0.0000","Potential.Refusers:   1<br />Prob: 0.0000","Potential.Refusers:   2<br />Prob: 0.0000","Potential.Refusers:   3<br />Prob: 0.0000","Potential.Refusers:   4<br />Prob: 0.0000","Potential.Refusers:   5<br />Prob: 0.0000","Potential.Refusers:   6<br />Prob: 0.0000","Potential.Refusers:   7<br />Prob: 0.0000","Potential.Refusers:   8<br />Prob: 0.0000","Potential.Refusers:   9<br />Prob: 0.0000","Potential.Refusers:  10<br />Prob: 0.0000","Potential.Refusers:  11<br />Prob: 0.0000","Potential.Refusers:  12<br />Prob: 0.0001","Potential.Refusers:  13<br />Prob: 0.0002","Potential.Refusers:  14<br />Prob: 0.0004","Potential.Refusers:  15<br />Prob: 0.0010","Potential.Refusers:  16<br />Prob: 0.0021","Potential.Refusers:  17<br />Prob: 0.0043","Potential.Refusers:  18<br />Prob: 0.0082","Potential.Refusers:  19<br />Prob: 0.0149","Potential.Refusers:  20<br />Prob: 0.0255","Potential.Refusers:  21<br />Prob: 0.0415","Potential.Refusers:  22<br />Prob: 0.0645","Potential.Refusers:  23<br />Prob: 0.0959","Potential.Refusers:  24<br />Prob: 0.1368","Potential.Refusers:  25<br />Prob: 0.1876","Potential.Refusers:  26<br />Prob: 0.2480","Potential.Refusers:  27<br />Prob: 0.3166","Potential.Refusers:  28<br />Prob: 0.3914","Potential.Refusers:  29<br />Prob: 0.4697","Potential.Refusers:  30<br />Prob: 0.5485","Potential.Refusers:  31<br />Prob: 0.6247","Potential.Refusers:  32<br />Prob: 0.6958","Potential.Refusers:  33<br />Prob: 0.7596","Potential.Refusers:  34<br />Prob: 0.8150","Potential.Refusers:  35<br />Prob: 0.8613","Potential.Refusers:  36<br />Prob: 0.8987","Potential.Refusers:  37<br />Prob: 0.9280","Potential.Refusers:  38<br />Prob: 0.9502","Potential.Refusers:  39<br />Prob: 0.9665","Potential.Refusers:  40<br />Prob: 0.9780","Potential.Refusers:  41<br />Prob: 0.9860","Potential.Refusers:  42<br />Prob: 0.9913","Potential.Refusers:  43<br />Prob: 0.9947","Potential.Refusers:  44<br />Prob: 0.9969","Potential.Refusers:  45<br />Prob: 0.9982","Potential.Refusers:  46<br />Prob: 0.9990","Potential.Refusers:  47<br />Prob: 0.9995","Potential.Refusers:  48<br />Prob: 0.9997","Potential.Refusers:  49<br />Prob: 0.9998","Potential.Refusers:  50<br />Prob: 0.9999","Potential.Refusers:  51<br />Prob: 1.0000","Potential.Refusers:  52<br />Prob: 1.0000","Potential.Refusers:  53<br />Prob: 1.0000","Potential.Refusers:  54<br />Prob: 1.0000","Potential.Refusers:  55<br />Prob: 1.0000","Potential.Refusers:  56<br />Prob: 1.0000","Potential.Refusers:  57<br />Prob: 1.0000","Potential.Refusers:  58<br />Prob: 1.0000","Potential.Refusers:  59<br />Prob: 1.0000","Potential.Refusers:  60<br />Prob: 1.0000","Potential.Refusers:  61<br />Prob: 1.0000","Potential.Refusers:  62<br />Prob: 1.0000","Potential.Refusers:  63<br />Prob: 1.0000","Potential.Refusers:  64<br />Prob: 1.0000","Potential.Refusers:  65<br />Prob: 1.0000","Potential.Refusers:  66<br />Prob: 1.0000","Potential.Refusers:  67<br />Prob: 1.0000","Potential.Refusers:  68<br />Prob: 1.0000","Potential.Refusers:  69<br />Prob: 1.0000","Potential.Refusers:  70<br />Prob: 1.0000","Potential.Refusers:  71<br />Prob: 1.0000","Potential.Refusers:  72<br />Prob: 1.0000","Potential.Refusers:  73<br />Prob: 1.0000","Potential.Refusers:  74<br />Prob: 1.0000","Potential.Refusers:  75<br />Prob: 1.0000","Potential.Refusers:  76<br />Prob: 1.0000","Potential.Refusers:  77<br />Prob: 1.0000","Potential.Refusers:  78<br />Prob: 1.0000","Potential.Refusers:  79<br />Prob: 1.0000","Potential.Refusers:  80<br />Prob: 1.0000","Potential.Refusers:  81<br />Prob: 1.0000","Potential.Refusers:  82<br />Prob: 1.0000","Potential.Refusers:  83<br />Prob: 1.0000","Potential.Refusers:  84<br />Prob: 1.0000","Potential.Refusers:  85<br />Prob: 1.0000","Potential.Refusers:  86<br />Prob: 1.0000","Potential.Refusers:  87<br />Prob: 1.0000","Potential.Refusers:  88<br />Prob: 1.0000","Potential.Refusers:  89<br />Prob: 1.0000","Potential.Refusers:  90<br />Prob: 1.0000","Potential.Refusers:  91<br />Prob: 1.0000","Potential.Refusers:  92<br />Prob: 1.0000","Potential.Refusers:  93<br />Prob: 1.0000","Potential.Refusers:  94<br />Prob: 1.0000","Potential.Refusers:  95<br />Prob: 1.0000","Potential.Refusers:  96<br />Prob: 1.0000","Potential.Refusers:  97<br />Prob: 1.0000","Potential.Refusers:  98<br />Prob: 1.0000","Potential.Refusers:  99<br />Prob: 1.0000","Potential.Refusers: 100<br />Prob: 1.0000","Potential.Refusers: 101<br />Prob: 1.0000","Potential.Refusers: 102<br />Prob: 1.0000","Potential.Refusers: 103<br />Prob: 1.0000","Potential.Refusers: 104<br />Prob: 1.0000","Potential.Refusers: 105<br />Prob: 1.0000","Potential.Refusers: 106<br />Prob: 1.0000","Potential.Refusers: 107<br />Prob: 1.0000","Potential.Refusers: 108<br />Prob: 1.0000","Potential.Refusers: 109<br />Prob: 1.0000","Potential.Refusers: 110<br />Prob: 1.0000","Potential.Refusers: 111<br />Prob: 1.0000","Potential.Refusers: 112<br />Prob: 1.0000","Potential.Refusers: 113<br />Prob: 1.0000","Potential.Refusers: 114<br />Prob: 1.0000","Potential.Refusers: 115<br />Prob: 1.0000","Potential.Refusers: 116<br />Prob: 1.0000","Potential.Refusers: 117<br />Prob: 1.0000","Potential.Refusers: 118<br />Prob: 1.0000","Potential.Refusers: 119<br />Prob: 1.0000","Potential.Refusers: 120<br />Prob: 1.0000","Potential.Refusers: 121<br />Prob: 1.0000","Potential.Refusers: 122<br />Prob: 1.0000","Potential.Refusers: 123<br />Prob: 1.0000","Potential.Refusers: 124<br />Prob: 1.0000","Potential.Refusers: 125<br />Prob: 1.0000","Potential.Refusers: 126<br />Prob: 1.0000","Potential.Refusers: 127<br />Prob: 1.0000","Potential.Refusers: 128<br />Prob: 1.0000","Potential.Refusers: 129<br />Prob: 1.0000","Potential.Refusers: 130<br />Prob: 1.0000","Potential.Refusers: 131<br />Prob: 1.0000","Potential.Refusers: 132<br />Prob: 1.0000","Potential.Refusers: 133<br />Prob: 1.0000","Potential.Refusers: 134<br />Prob: 1.0000","Potential.Refusers: 135<br />Prob: 1.0000","Potential.Refusers: 136<br />Prob: 1.0000","Potential.Refusers: 137<br />Prob: 1.0000","Potential.Refusers: 138<br />Prob: 1.0000","Potential.Refusers: 139<br />Prob: 1.0000","Potential.Refusers: 140<br />Prob: 1.0000","Potential.Refusers: 141<br />Prob: 1.0000","Potential.Refusers: 142<br />Prob: 1.0000","Potential.Refusers: 143<br />Prob: 1.0000","Potential.Refusers: 144<br />Prob: 1.0000","Potential.Refusers: 145<br />Prob: 1.0000","Potential.Refusers: 146<br />Prob: 1.0000","Potential.Refusers: 147<br />Prob: 1.0000","Potential.Refusers: 148<br />Prob: 1.0000","Potential.Refusers: 149<br />Prob: 1.0000","Potential.Refusers: 150<br />Prob: 1.0000","Potential.Refusers: 151<br />Prob: 1.0000","Potential.Refusers: 152<br />Prob: 1.0000","Potential.Refusers: 153<br />Prob: 1.0000","Potential.Refusers: 154<br />Prob: 1.0000","Potential.Refusers: 155<br />Prob: 1.0000","Potential.Refusers: 156<br />Prob: 1.0000","Potential.Refusers: 157<br />Prob: 1.0000","Potential.Refusers: 158<br />Prob: 1.0000","Potential.Refusers: 159<br />Prob: 1.0000","Potential.Refusers: 160<br />Prob: 1.0000","Potential.Refusers: 161<br />Prob: 1.0000","Potential.Refusers: 162<br />Prob: 1.0000","Potential.Refusers: 163<br />Prob: 1.0000","Potential.Refusers: 164<br />Prob: 1.0000","Potential.Refusers: 165<br />Prob: 1.0000","Potential.Refusers: 166<br />Prob: 1.0000","Potential.Refusers: 167<br />Prob: 1.0000","Potential.Refusers: 168<br />Prob: 1.0000","Potential.Refusers: 169<br />Prob: 1.0000","Potential.Refusers: 170<br />Prob: 1.0000","Potential.Refusers: 171<br />Prob: 1.0000","Potential.Refusers: 172<br />Prob: 1.0000","Potential.Refusers: 173<br />Prob: 1.0000","Potential.Refusers: 174<br />Prob: 1.0000","Potential.Refusers: 175<br />Prob: 1.0000","Potential.Refusers: 176<br />Prob: 1.0000","Potential.Refusers: 177<br />Prob: 1.0000","Potential.Refusers: 178<br />Prob: 1.0000","Potential.Refusers: 179<br />Prob: 1.0000","Potential.Refusers: 180<br />Prob: 1.0000","Potential.Refusers: 181<br />Prob: 1.0000","Potential.Refusers: 182<br />Prob: 1.0000","Potential.Refusers: 183<br />Prob: 1.0000","Potential.Refusers: 184<br />Prob: 1.0000","Potential.Refusers: 185<br />Prob: 1.0000","Potential.Refusers: 186<br />Prob: 1.0000","Potential.Refusers: 187<br />Prob: 1.0000","Potential.Refusers: 188<br />Prob: 1.0000","Potential.Refusers: 189<br />Prob: 1.0000","Potential.Refusers: 190<br />Prob: 1.0000","Potential.Refusers: 191<br />Prob: 1.0000","Potential.Refusers: 192<br />Prob: 1.0000","Potential.Refusers: 193<br />Prob: 1.0000","Potential.Refusers: 194<br />Prob: 1.0000","Potential.Refusers: 195<br />Prob: 1.0000","Potential.Refusers: 196<br />Prob: 1.0000","Potential.Refusers: 197<br />Prob: 1.0000","Potential.Refusers: 198<br />Prob: 1.0000","Potential.Refusers: 199<br />Prob: 1.0000","Potential.Refusers: 200<br />Prob: 1.0000"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(0,0,0,1)","opacity":1,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)"}},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":24.5235920852359,"r":7.30593607305936,"b":38.4779299847793,"l":48.9497716894977},"plot_bgcolor":"rgba(235,235,235,1)","paper_bgcolor":"rgba(255,255,255,1)","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-10,210],"tickmode":"array","ticktext":["0","50","100","150","200"],"tickvals":[0,50,100,150,200],"categoryorder":"array","categoryarray":["0","50","100","150","200"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.65296803652968,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(255,255,255,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y","title":{"text":"Refusers","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-0.05,1.05],"tickmode":"array","ticktext":["0.00","0.25","0.50","0.75","1.00"],"tickvals":[0,0.25,0.5,0.75,1],"categoryorder":"array","categoryarray":["0.00","0.25","0.50","0.75","1.00"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.65296803652968,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(255,255,255,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":{"text":"Prob. of x or Less Refusers","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":false,"legend":{"bgcolor":"rgba(255,255,255,1)","bordercolor":"transparent","borderwidth":1.88976377952756,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"c15b6ce01606":{"x":{},"y":{},"type":"scatter"}},"cur_data":"c15b6ce01606","visdat":{"c15b6ce01606":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+
+---
+
+2. What is the probability that 24 or fewer will not accept Scottish pounds?
+
+
+```r
+pbinom(24, 200, 0.15)
+```
+
+```
+## [1] 0.1368173
+```
+
+---
+
+3. What is the probability that 25 or more shopkeepers will not accept Scottish pounds?
+
+
+```r
+1-pbinom(24, 200, 0.15)
+```
+
+```
+## [1] 0.8631827
+```
+
+---
+
+4. With probability 0.9 [90 percent], XXX or fewer shopkeepers will not accept Scottish pounds.
+
+
+```r
+qbinom(0.9, 200, 0.15)
+```
+
+```
+## [1] 37
+```
+
+---
+## Application: The Median is a Binomial with p=0.5
+
+Interestingly, any given observation has a 50-50 chance of being *over* or *under* the median.  Suppose that I have five datum.  
+1. What is the probability that all are under?
+
+
+```r
+pbinom(0,size=5, p=0.5)
+```
+
+```
+## [1] 0.03125
+```
+
+---
+
+2. What is the probability that all are over?
+
+
+```r
+dbinom(5,size=5, p=0.5)
+```
+
+```
+## [1] 0.03125
+```
+
+---
+
+3. What is the probability that the median is somewhere in between our smallest and largest sampled values?
+
+**Everything else**.
+
+This is called the *Rule of Five* by Hubbard in his *How to Measure Anything*.
+
+
+---
+# Geometric Distributions
+
+How many failures before the first success?  Now defined exclusively by `\(p\)`.  In each case, (1-p) happens `\(k\)` times.  Then, on the `\(k+1^{th}\)` try, p.  Note 0 failures can happen...
+
+`$$Pr(y=k) = (1-p)^{k}p$$`
+
+---
+
+Example: Entrepreneurs
+
+Suppose any startup has a `\(p=0.1\)` chance of success.  How many failures?
+
+---
+
+&lt;img src="index_files/figure-html/GP1-1.jpeg" width="504" /&gt;
+
+---
+
+# Example: Entrepreneurs
+
+Suppose any startup has a `\(p=0.1\)` chance of success.  How many failures for the average/median person?
+
+
+```r
+qgeom(0.5,0.1)
+```
+
+```
+## [1] 6
+```
+
+---
+
+5. [Geometric] Plot 1000 random draws of "How many vendors until one refuses my Scottish pounds?"
+
+
+```r
+Geoms.My &lt;- data.frame(Vendors=rgeom(1000, 0.15))
+Geoms.My %&gt;% ggplot() + aes(x=Vendors) + geom_histogram(binwidth=1)
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-23-1.jpeg" width="504" /&gt;
+
+---
+
+We could also do something like.
+
+
+```r
+plot(seq(0,60), pgeom(seq(0,60), 0.15))
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-24-1.jpeg" width="504" /&gt;
+
+---
+# Negative Binomial Distributions
+
+How many failures before the `\(r^{th}\)` success?  In each case, (1-p) happens `\(k\)` times.  Then, on the `\(k+1^{th}\)` try, we get our `\(r^{th}\)` p.  Note 0 failures can happen...
+
+`$$Pr(y=k) = {k+r-1 \choose r-1}(1-p)^{k}p^{r}$$`
+---
+# Needed Sales
+
+I need to make 5 sales to close for the day.  How many customers will I have to get those five sales when each customer purchases with probability 0.2.
+
+
+```r
+library(patchwork)
+DF &lt;-  data.frame(Customers = c(0:70)) %&gt;% 
+  mutate(m.Customers = dnbinom(Customers, size=5, prob=0.2), 
+         p.Customers = pnbinom(Customers, size=5, prob=0.2)) 
+pl1 &lt;- DF %&gt;% ggplot() + aes(x=Customers) + geom_line(aes(y=p.Customers)) 
+pl2 &lt;- DF %&gt;% ggplot() + aes(x=Customers) + geom_point(aes(y=m.Customers))
+```
+---
+
+&lt;img src="index_files/figure-html/unnamed-chunk-26-1.jpeg" width="504" /&gt;
+
+---
+# Simulation: A Powerful Tool
+
+In this last example, I was concerned with sales.  I might also want to generate revenues because I know the rough mean and standard deviation of sales.  Combining such things together forms the basis of a Monte Carlo simulation.
+
+Some of the basics are covered in a swirl on *simulation*.
+
+---
+# An Example
+
+Customers arrive at a rate of 7 per hour.
+You convert customers to buyers at a rate of 85%.
+Buyers spend, on average 600 dollars with a standard deviation of 150 dollars.
+
+
+```r
+Sim &lt;- 1:1000
+Customers &lt;- rpois(1000, 7)
+Buyers &lt;- rbinom(1000, size=Customers, prob = 0.85)
+Data &lt;- data.frame(Sim, Buyers, Customers)
+Data &lt;- Data %&gt;% group_by(Sim) %&gt;% mutate(Revenue = sum(rnorm(Buyers, 600, 150))) %&gt;% ungroup()
+```
+
+---
+# Simulation Results
+
+&lt;img src="index_files/figure-html/Plot1-1.jpeg" width="504" /&gt;
+
+
+---
+# A Summary
+
+Distributions are how variables and probability relate.  They are a graph that we can enter in two ways.  From the probability side to solve for values or from values to solve for probability.  It is always a function of the graph.
+
+Distributions generally have to be sentences; the name is a noun but it also has parameters -- verbs -- that makes the noun tangible.
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

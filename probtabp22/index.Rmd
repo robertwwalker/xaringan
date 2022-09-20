@@ -1,0 +1,433 @@
+---
+title: "Tidy, Probability and Tables"
+subtitle: "The Core of Statistical Thinking"
+author: "Robert W. Walker"
+institute: "Atkinson Graduate School of Management"
+date: "2022/09/20"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+
+---
+# Tidy thinking
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message=FALSE, warning=FALSE)
+options(htmltools.dir.version = FALSE)
+library(tidyverse)
+library(kableExtra)
+library(xaringanthemer)
+style_solarized_dark(
+#  base_color = "#1c5253",
+  header_font_google = google_font("Josefin Sans"),
+  text_font_google   = google_font("Montserrat", "300", "300i"),
+  code_font_google   = google_font("Fira Mono")
+)
+```
+
+
+First, how did I import my data?
+
+```{r, eval=FALSE}
+library(tidyverse)
+library(readxl)
+Bonds <- read_excel("probtabSMBAP21/data/Week-2.xlsx", sheet = "Bonds")
+CEOComp <- read_excel("probtabSMBAP21/data/Week-2.xlsx", sheet = "CEOComp")
+FastFood <- read_excel("probtabSMBAP21/data/Week-2.xlsx", sheet = "FastFood", na="NA")
+DisabilityExp <- read_excel("probtabSMBAP21/data/Week-2.xlsx", sheet = "DisabilityExp")
+UCBAdmit <- read_excel("probtabSMBAP21/data/Week-2.xlsx", sheet = "UCBAdmit")
+```
+
+---
+# Easier
+
+```{r}
+load(url("https://github.com/robertwwalker/DADMStuff/raw/master/Week3Data.RData"))
+```
+
+
+---
+class: inverse, center
+
+# Probability and Tables
+
+
+---
+class: inverse, center
+
+# Probability
+
+```{r, echo=FALSE}
+library(png); library(here); library(kableExtra)
+Prob.Def <- readPNG(here("probtabp22/data","ETJ-Probability.png"))
+grid::grid.raster(Prob.Def)
+```
+
+
+---
+class: inverse
+
+# Probability
+
+.font150[
+Two rules:
+1. Probabilities sum to one.
+2. The probability of any event is greater than or equal to zero.
+]
+---
+class: inverse
+
+# Where does Probability Come From?
+
+There are three common sources of probabilities:
+
+--
+
+- Known formula [Dice, Coins, etc.]
+
+--
+
+- Empirical frequency
+
+--
+
+- Subjective belief
+
+
+---
+class: inverse
+
+# A priori probability
+
+The probability of a given integer on a k-sided die: $\frac{1}{k}$.
+
+The probability of **heads** with a fair coin: $\frac{1}{2}$.
+
+The probability of a Queen?  $\frac{4}{52}$
+
+The probability of a Diamond?  $\frac{13}{52}$
+
+The Queen of Diamonds? $\frac{1}{52}$ or   $(\frac{4}{52}\times\frac{13}{52})$
+
+**Quasirandom numbers**
+
+---
+class: inverse
+
+# Empirical probability: frequency
+
+How often does something happen?
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/tgC-vZp07YM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+
+---
+class: inverse
+
+# This is Historical Statistics
+
+How likely am I to be admitted? *Consult the admissions rate*
+
+How fast do I drive? *Likelihood of law enforcement and need for speed*
+
+In data: this is tables.
+
+---
+# Berkeley
+
+.pull-left[
+```{r MD1, echo=FALSE}
+library(tidyverse)
+library(janitor)
+table(UCBAdmit$M.F,UCBAdmit$Admit)
+UCBAdmit %>% tabyl(M.F, Admit)
+```
+]
+
+.pull-right[
+```{r MD2, eval=FALSE}
+library(tidyverse)
+library(janitor)
+table(UCBAdmit$M.F,UCBAdmit$Admit)
+UCBAdmit %>% tabyl(M.F, Admit)
+```
+]
+
+---
+class:inverse
+
+# Three Versions
+
+.pull-left[
+```{r MD1B}
+prop.table(table(UCBAdmit$M.F,UCBAdmit$Admit), 1)
+prop.table(table(UCBAdmit$M.F,UCBAdmit$Admit), 2)
+prop.table(table(UCBAdmit$M.F,UCBAdmit$Admit))
+```
+]
+
+.pull-right[
+```{r MD2B}
+UCBAdmit %>% tabyl(M.F, Admit) %>% adorn_percentages("row")
+UCBAdmit %>% tabyl(M.F, Admit) %>% adorn_percentages("col")
+UCBAdmit %>% tabyl(M.F, Admit) %>% adorn_percentages("all")
+```
+]
+
+```{r, echo=FALSE}
+UCBM <- ggplot(UCBAdmit) + aes(x=M.F, fill=Admit) + geom_bar(position="dodge") + scale_fill_viridis_d()
+ggsave("./UCBM.png", height=8, units="in", device="png")
+```
+
+---
+background-image: url("UCBM.png")
+background-size: contain
+class: bottom
+
+# Plot It
+
+```{r, eval=FALSE}
+( UCBM <- ggplot(UCBAdmit) + aes(x=M.F, fill=Admit) + geom_bar(position="dodge") + scale_fill_viridis_d() )
+```
+
+More on this later.
+
+---
+class: inverse
+
+# Subjective Probability
+
+How likely **do we believe** something is?
+
+---
+class: inverse
+
+# The Great Divide
+
+Empirical frequency vs. subjective belief
+
+---
+class: inverse
+
+# Empirical Frequency: She's Right  
+
+## Physics Disagrees: We Goin Nova.....
+
+--
+
+## Annie's a liar.
+
+What matters in group decision making is probably as much the beliefs [subjective] as the evidence [frequency].
+
+How should we reflect this in strategies of argumentation/persuasion?
+
+---
+class: inverse
+
+```{r, eval=TRUE}
+# RUN ME
+# may need to install.packages("countdown")
+library(countdown)
+countdown_fullscreen(
+  minutes = 5, seconds = 0,
+  margin = "5%",
+  font_size = "8em",
+)
+```
+
+---
+# Three Concepts from Set Theory
+
+- Intersection [and]
+- Union [or] **avoid double counting the intersection**
+- Complement [not]
+
+---
+
+# Three Distinct Probabilities
+
+- Joint: Pr(x=x and y=y)
+- Marginal: Pr(x=x) or Pr(y=y)
+- Conditional: Pr(x=x | y=y) or Pr(y =y | x = x)
+
+---
+
+# Joint Probability
+
+**The table sums to one**.  
+
+For Berkeley:
+
+```{r}
+UCBAdmit %>% tabyl(M.F, Admit) %>% adorn_percentages("all")
+prop.table(table(UCBAdmit$M.F,UCBAdmit$Admit))
+```
+
+---
+# Marginal Probability
+
+**The row/column sums to one**.  We collapse the table to a single margin.  Here, two can be identified.  The probability of Admit and the probability of M.F.  
+
+.pull-left[
+```{r}
+UCBAdmit %>% tabyl(M.F)
+UCBAdmit %>% tabyl(Admit)
+```
+
+]
+
+.pull-right[
+```{r}
+prop.table(table(UCBAdmit$M.F))
+prop.table(table(UCBAdmit$Admit))
+```
+]
+
+---
+# Conditional Probability
+
+How does one margin of the table break down given values of another?  **Each row or column sums to one**  
+
+Four can be identified, the probability of admission/rejection for Male, for Female; the probability of male or female for admits/rejects.
+
+For Berkeley:
+
+.pull-left[
+```{r}
+UCBAdmit %>% tabyl(M.F, Admit) %>% adorn_percentages("row")
+prop.table(table(UCBAdmit$M.F,UCBAdmit$Admit), 1)
+```
+]
+
+.pull-right[
+```{r}
+UCBAdmit %>% tabyl(M.F, Admit) %>% adorn_percentages("col")
+prop.table(table(UCBAdmit$M.F,UCBAdmit$Admit), 2)
+```
+]
+
+---
+# Law of Total Probability
+
+Is a combination of the distributive property of multiplication and the fact that probabilities sum to one.
+
+For example, the probability of Admitted and Male is the probability of admission for males times the probability of male.
+
+$$ Pr(x=x, y=y) = Pr(y | x)Pr(x) $$
+
+Or it is the probability of being admitted times the probabilty of being male among admits.
+
+$$ Pr(x=x, y=y) = Pr(x | y)Pr(y) $$
+
+---
+
+# Now the Substance
+
+.pull-left[
+The `ggplot` fill aesthetic is great for displaying these things.   For example, are males and females equally likely to be admitted to Berkeley?
+
+**Plaintiffs say no.**
+
+```{r, echo=TRUE, eval=FALSE}
+ggplot(UCBAdmit) + aes(x=M.F, fill=Admit) + geom_bar() + scale_fill_viridis_d()
+```
+]
+
+.pull-right[
+```{r, echo=FALSE}
+ggplot(UCBAdmit) + aes(x=M.F, fill=Admit) + geom_bar() + scale_fill_viridis_d()
+```
+]
+
+
+
+---
+
+# Is that an Adequate Comparison?
+
+
+.pull-left[
+The University says no.  Why?  The most important factor in the probability of admission is likely to be the department.  This has a huge impact on what we see.
+
+
+```{r, eval=FALSE}
+ggplot(UCBAdmit) + 
+  aes(x=M.F, fill=Admit) + 
+  geom_bar(position="fill") + 
+  scale_fill_viridis_d() + 
+  facet_wrap(vars(Dept))
+```
+]
+
+.pull-right[
+```{r, eval=TRUE, echo=FALSE}
+ggplot(UCBAdmit) + aes(x=M.F, fill=Admit) + geom_bar(position="fill") + scale_fill_viridis_d() + facet_wrap(vars(Dept))
+```
+
+]
+
+
+
+---
+
+# The Magic of Bayes Rule
+
+To find the joint probability [the intersection] of x and y, we can use either of the aforementioned methods.  To turn this into a conditional probability, we simply take it is a proportion of the relevant margin.
+
+$$ Pr(x | y) = \frac{Pr(y | x) Pr(x)}{Pr(y)} $$
+
+By itself, this is algebra.  It is magic in an application.
+
+$$ Pr(User | +) = \frac{Pr(+ | User) Pr(User)}{Pr(+)} $$
+
+This poses the question: what does a positive test mean?
+
+---
+# Working an Example
+
+Suppose a test is 99% accurate for Users and 95% accurate for non-Users.  Moreover, suppose that Users make up 10% of the population.  So given some population to which this applies, we have:
+
+$Pr(User, +) = Pr(+ | User)*Pr(User)$
+
+$Pr(User, -) = Pr(- | User)*Pr(User)$
+
+$Pr(\overline{User}, +) = Pr(+ | \overline{User})*Pr(\overline{User})$
+
+and
+
+$Pr(\overline{User}, -) = Pr(- | \overline{User})*Pr(\overline{User})$
+
+
+
+---
+## The Table
+
+
+ Status  |  Positive | Negative | Total
+---------|-----------|----------|------
+ User    | 0.099     | 0.001    | 0.1
+non-User | 0.045     | 0.855    | 0.9
+---------|-----------|----------|------
+Total    | 0.144     | 0.856    | 1.0
+
+$Pr(User | +) = \frac{Pr(+ | User) Pr(User)}{Pr(+)}$
+
+yields:
+
+$Pr(User | +) = \frac{0.099 [0.99*0.1]}{0.144[0.99*0.1 + 0.05*0.9]} = 0.6875$
+
+
+---
+# Dichotomization is Prone to Error
+
+As Jaynes suggests, probability is the extension of Aristotellian logic, but we are trying to go back to binary.
+
+---
+# A Bit of Decision Theory
+
+Juries

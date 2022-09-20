@@ -1,0 +1,631 @@
+---
+title: "Probability Distributions"
+subtitle: "Linking Probability and Data"  
+author: 
+  - "Robert W. Walker"
+date: '`r Sys.Date()`'
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    css: xaringan-themer.css
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE, knitr.table.format = "html")
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, fig.showtext = TRUE, fig.height=6, fig.retina=3, dev="CairoJPEG")
+library(tidyverse)
+library(xaringanExtra)
+```
+
+
+```{r xaringan-themer, eval=TRUE, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+extra_css <- list(
+  ".small" = list("font-size" = "90%"),
+  ".scroll-output" = list("font-size" = "90%", "height" = "75%", "overflow-y" = "scroll")
+  )
+style_mono_light(base_color = "#301934",
+          text_font_google   = google_font("EB Garamond"), 
+          code_font_google   = google_font("Fira Mono"),
+          extra_css = extra_css)
+```
+
+## An Admin Note
+
+There is a very nice graphical user interface for parts of R called radiant that is especially useful for probability distributions.  To acquire it, try:
+
+```
+install.packages("radiant")
+```
+
+It can be started via Add-ins.
+
+---
+# Probability: The Logic of Science
+
+Jaynes presents a few core ideas and requirements for his rational system.  Probability emerges as the representation of circumstances in which any given realization of a process is either TRUE or FALSE but both are possible and can be expressed by probabilities.
+
+- that sum to one for all events
+- are greater than or equal to zero for any given event
+
+---
+# Some Language
+
+*Sensitivity* refers to the ability of a test to designate an individual with a disease as positive.  *Specificity* refers to the ability of a test to designate an individual without a disease as negative.
+
+*False positives* are then the complement/opposite of specificity and *false negatives* are the complement/opposite of sensitivity.
+
+---
+# Random Variables
+
+I do not love the book definition of this.  Technically, it is a variable whose values are generated according to some random process; your book implies that these are limited to quantities.  **It is really a measurable function defined on a probability space that maps from the sample space [the set of possible outcomes] to the real numbers.**
+
+---
+# A Core Idea: Independence
+
+What does it mean to say something **is independent** of something else?  The simplest way to think about it is, "do I learn something more about x by knowing y than not".  If two things are independent, I don't need to care about y if x is my objective.
+
+---
+# General Representation of Probability Distributions
+
+Is of necessity two-dimensional,
+
+- We have $x$ and 
+- we have $Pr(X=x)$ in one of two forms (Pr or f).
+
+
+---
+
+```{r P1, echo=FALSE}
+plot(x=NA, y=NA, xlab="x", ylab="Pr(X=x)", xlim=c(-5,5), ylim=c(0,1), bty="n", main="A General Probability Distribution")
+```
+
+---
+
+## Probability Distributions of Two Forms
+
+Our core concept is a probability distribution just as above.  These come in two forms for two types [discrete (qualitative)] and continuous (quantitative)]:
+
+
+- Assumed
+- Derived
+
+---
+
+## [The Poster](https://github.com/robertwwalker/DADMStuff/raw/master/Distribution-Poster.pdf) and Examples
+
+Distributions are nouns.  Sentences are incomplete without verbs -- parameters.  We need both; it is for this reason that the former slide is true.  We do not always have a grounding for either the name or the parameter.
+
+---
+
+## Continuous vs. Discrete Distributions
+
+The differences are sums versus integrals.  Why?  
+
+- Histograms or  
+- Density Plots  
+
+The probability of exactly any given value is zero on a true continuum.
+
+---
+
+Expectation
+
+$$E(X) = \sum_{x \in X} x \cdot Pr(X=x)$$
+$$E(X) = \int_{x \in X} x \cdot f(x)dx$$
+
+Variance
+
+$$E[(X-\mu)^2] = \sum_{x \in X} (x-\mu)^2 \cdot Pr(X=x)$$
+$$E((X-\mu)^2) = \int_{x \in X} (x-\mu)^2 \cdot f(x)dx$$
+
+---
+# Functions
+
+Probability distributions are mathematical formulae expressing likelihood for some set of qualities or quantities.  They have names: nouns.  They also have verbs: parameters.  Like a proper English sentence, both are required.
+
+---
+# Models
+
+For our purposes, it is a systematic description of a phenomenon that shares important and essential features of that phenomenon.  Models frequently give us leverage on problems in the absence of alternative approaches.
+
+---
+# Our Applications
+
+* The uniform will be defined by a minimum and maximum.  
+* The normal will be defined by a mean $\mu$ (mu) and standard deviation $\sigma$ - sigma [or variance, $\sigma^2$]  
+* The Poisson will be defined an arrival rate $\lambda$ -- lambda.   
+* Variations on Bernoulli trials: Two outcomes occur with probability $\pi$ and $1-\pi$.    
+       * The *binomial distribution* will be defined by a number of trials $n$ and a probability $\pi$.  
+       * The *geometric distribution* defines the first success of $n$ trials with probability $\pi$.  
+       * The *negative binomial distribution* defines the probability of $k$ successes in $n$ trials with probability $\pi$.  It is related to the **Poisson**.
+
+
+---
+class: inverse
+# The Uniform Distribution
+
+*  Is flat, each value is equally likely.  
+* Defined on 0 to 1 gives a random cumulative probability $X \leq x$.  
+* $\uparrow$ *It's a random probability in 0 and 1.*   
+* Is also known as the rectangular distribution.
+
+
+---
+# Uniform(0,1)
+
+```{r, warning=FALSE, message=FALSE, fig.height=5}
+library(patchwork)
+Unif <- data.frame(x=seq(0, 1, by = 0.005)) %>% mutate(p.x = punif(x), d.x = dunif(x))
+p1 <- ggplot(Unif) + aes(x=x, y=p.x) + geom_step() + labs(title="Distribution Function [cdf/cmf]")
+p2 <- ggplot(Unif) + aes(x=x, y=d.x) + geom_step() + labs(title="Density Function [pdf/pmf]")
+p2 + p1
+```
+
+
+---
+# The Normal [Gaussian]
+
+$$f(x|\mu,\sigma^2 ) = \frac{1}{\sqrt{2\pi\sigma^{2}}} \exp \left[ -\frac{1}{2} \left(\frac{x - \mu}{\sigma}\right)^{2}\right]$$
+
+Is the workhorse of statistics.  Key features:
+
+- Is self-replicating: sums of normals are normal.  
+- If $X$ is normal, then $$ Z = \frac{(X - \mu)}{\sigma} $$ is normal.  
+- Aside, $$z_{x} = \frac{(x - \overline{x})}{s_{x}}$$ has mean 0 and variance/std. dev. 1.  
+
+
+---
+# The z-transform
+
+The generic z-transformation applied to a variable $x$ centers [mean$\approx$ 0] and scales [std. dev. $\approx$ variance $\approx$ 1] to $z_{x}$ for population parameters.  $\approx$ is approximately equal to.
+
+$$z = \frac{x - \mu}{\sigma}$$
+
+---
+
+```{r}
+data.frame(Norm = rnorm(10000)) %>% ggplot() + aes(x=Norm) + geom_density() + labs(x="Z - Normal(0,1)")
+```
+
+
+
+---
+
+In samples, the 0 and 1 are exact; these are features of the mean and *degrees of freedom*. **If I know the mean and any $n-1$ observations, the $n^{th}$ observation is exactly the value such that the deviations add up to zero/cancel out.**
+
+$$ z = \frac{x - \overline{x}}{s_{x}} $$.
+
+where $\overline{x}$ is the sample mean of $x$ and $s_{x}$ is the sample standard deviation of $x$.  Take the example of earnings.  
+
+---
+
+Suppose earnings in a community have mean 55,000 and standard deviation 10,000.  This is in dollars.  Suppose I earn 75,000 dollars.  First, if we take the top part of the fraction in the $z$ equation, we see that I earn 20,000 dollars more than the average (75000 - 55000).  Finishing the calculation of z, I would divide that 20,000 dollars by 10,000 dollars per standard deviation.  Let's show that.
+
+$$ z = \frac{75000 dollars - 55000 dollars}{\frac{10000 dollars}{SD}} = +2 SD $$.
+
+I am 2 standard deviations above the average (the +) earnings.  All $z$ does is re-scale the original data to standard deviations with zero as the mean.  The metric is the standard deviation.
+
+---
+
+Suppose I earn 35,000.  That makes me 20,000 below the average and gives me a z score of -2.  I am 2 standard deviations below average (the -) earnings.
+
+$z$ is an easy way to assess symmetry.  The mean of z is always zero but the distribution of z to the left and right of zero is informative.  If they are roughly even, then symmetry is likely.  If the signs are uneven, then symmetry is unlikely.  In R, $z$ is automated with the *scale()* command.  The last line uses a table and the *sign* command to show me the positive and negative z.
+
+---
+
+```{r SimD1}
+# Generate random normal income
+DataF <- data.frame(Hypo.Income = rnorm(1000, 55000, 10000)) %>%
+# z-transform income [mean 55000ish, std. dev. 10000ish]
+mutate(z.Income = scale(Hypo.Income))
+# Show the data.frame
+head(DataF)
+table(sign(DataF$z.Income))
+```
+
+---
+# Probability Distributions
+
+Distributions in R are defined by four core parts: 
+
+- r, for random variables
+- p, for cumulative probability (given x) [counting from left] $Pr(X\leq x)$
+- d, for density/probability that $Pr(X=x)$ or $f(x)$
+- q, for quantile (given p): x such that $Pr(X\leq q)=p$
+
+---
+
+## A Grape Escape?
+
+A filling process is supposed to fill jars with 16 ounces of grape jelly, according to the label, and regulations require that each jar contain between 15.95 and 16.05 ounces.
+
+1.	*Suppose that the uniform random process of filling in known to fill between 15.9 and 16.1 ounces uniformly.*
+
+---
+
++ Plot the histogram of 1000 simulated values.  NB: *unif* is the noun with boundaries a (default 0) and b(default 1). 
+
+```{r}
+Jars <- runif(1000, 15.9, 16.1)
+Jars %>% data.frame() %>% ggplot() + aes(x=Jars) + geom_histogram(binwidth=0.005)
+```
+
+---
+
++ What is the probability that a random jar is outside of requirements?
+
+**Exactly?  50 percent because 25 percent are between 15.9 and 15.95 and 25 percent are between 16.05 and 16.1.**
+
+```{r}
+table(Jars < 15.95 | Jars > 16.05) # | captures or
+```
+
+---
+
++ Scale (z) the jars and summarise them.
+
+```{r}
+summary(scale(Jars))
+sd(scale(Jars))
+```
+
+---
+
+2.	*The mean of the normal random process of filling is known to be 16.004 ounces with standard deviation 0.028 ounces.*
+
+---
+
++ What is the probability that a random jar is outside of requirements?  NB: *norm* is the noun with mean (default 0) and sd (default 1).
+
+```{r}
+pnorm(15.95, 16.004, 0.028) + pnorm(16.05, 16.004, 0.028, lower.tail=FALSE)
+```
+
+---
+
++ What is the probability that a random jar contains more than 16.1 ounces?
+
+```{r}
+1-pnorm(16.1, 16.004, 0.028)
+```
+
+---
+
++ What is the probability that a random jar contains less than 16.04 ounces?
+
+```{r}
+pnorm(16.04, 16.004, 0.028)
+```
+
+---
+
++ 95% of jars, given a normal, will contain between XXX and XXX ounces of jelly.
+
+```{r}
+qnorm(c(0.025,0.975), 16.004, 0.028)
+```
+
+---
+
++ The bottom 5% of jars contain, at most, XXX ounces of jelly.
+
+```{r}
+qnorm(0.05, 16.004, 0.028)
+```
+
+---
+
++ The top 25% of jars contain at least XXX ounces of jelly.
+
+```{r}
+qnorm(0.75, 16.004, 0.028)
+```
+
+
+---
+# Why Normals?
+
+- The Central Limit Theorem
+- They Dominate Ops [$6\sigma$]
+- Normal Approximations Abound
+
+
+---
+# Events: The Poisson
+
+![Poisson](https://github.com/robertwwalker/DADMStuff/raw/master/Poisson.jpg)
+
+---
+
+Take a binomial with $p$ very small and let $n \rightarrow \infty$.  We get the Poisson distribution ($y$) given an arrival rate $\lambda$ specified in events per period.
+
+$$f(y|\lambda) = \frac{\lambda^{y}e^{-\lambda}}{y!}$$
+
+---
+
+# Examples: The Poisson
+- Walk in customers
+- *Emergency Room Arrivals*
+- Births, deaths, marriages
+- *Prussian Cavalry Deaths by Horse Kick*
+- Fish?
+
+
+---
+# Air Traffic Controllers
+
+FAA Decision: Expend or do not expend scarce resources investigating claimed staffing shortages at the Cleveland Air Route Traffic Control Center.
+
+Essential facts: The Cleveland ARTCC is the US's busiest in routing cross-country air traffic.  In mid-August of 1998, it was reported that the first week of August experienced 3 errors in a one week period; an error occurs when flights come within five miles of one another by horizontal distance or 2000 feet by vertical distance.  The Controller's union claims a staffing shortage though other factors could be responsible.  21 errors per year (21/52 errors per week) has been the norm in Cleveland for over a decade.  
+
+---
+
+1. Plot a histogram of 1000 random weeks.  NB: *pois* is the noun with no default for $\lambda$ -- the arrival rate.
+
+```{r}
+DF <- data.frame(Close.Calls = rpois(1000, 21/52))
+ggplot(DF) + aes(x=Close.Calls) + geom_histogram()
+```
+
+---
+
+```{r}
+ggplot(DF) + aes(x=Close.Calls) + stat_ecdf(geom="step")
+```
+
+---
+
++ Plot a sequence on the x axis from 0 to 5 and the probability of that or fewer incidents along the y.  *seq(0,5)*
+
+```{r}
+DF <- data.frame(x=0:5, y=ppois(0:5, 21/52))
+ggplot(DF) + aes(x=x, y=y) + geom_col()
+```
+
+---
+
+2. What would you do and why?  *Not impossible*
+
+---
+
+3. After analyzing the initial data, you discover that the first two weeks of August have experienced 6 errors.  What would you now decide?  *Well, once is `r ppois(2, 21/52, lower.tail=FALSE)`.*  Twice, at random, is that squared.  We have a problem.
+
+---
+
+### Deaths by Horse Kick in the Prussian cavalry?
+
+```{r VB1}
+library(vcd)
+data(VonBort)
+head(VonBort)
+mean(VonBort$deaths)
+```
+
+---
+
+```{r VBG1, echo=FALSE}
+par(mfrow=c(1,2))
+hist(VonBort$deaths, main="Deaths by Horse Kick: 1875-94", xlab="Deaths")
+plot(x=seq(0,5,1),y=1-ppois(seq(0,5,1),0.7), ylim=c(0,1), xlab="Expected Deaths", ylab="Pr")
+```
+
+
+
+---
+# Bernoulli Trials
+
+Suppose the variable of interest is discrete and takes only two values: yes and no.  For example, is a customer satisfied with the outcomes of a given service visit?  
+
+For each individual, because the probability of yes (1) $\pi$ and no (0) 1-$\pi$ must sum to one, we can write:
+
+$$f(x|\pi) = \pi^{x}(1-\pi)^{1-x}$$
+
+---
+# Binomial Distribution
+
+For multiple identical trials, we have the Binomial:
+
+$$f(x|n,\pi) = {n \choose k} \pi^{x}(1-\pi)^{n-x}$$
+where $${n \choose k} = \frac{n!}{(n-k)!}$$
+
+---
+# The Binomial
+
+![BinomialR](https://github.com/robertwwalker/DADMStuff/raw/master/BinomialR.PNG)
+
+
+---
+## Scottish Pounds
+
+*Informal surveys suggest that 15% of Essex shopkeepers will not accept Scottish pounds.  There are approximately 200 shops in the general High Street square.*
+
+---
+
+1. Draw a plot of the distribution and the cumulative distribution of shopkeepers that do not accept Scottish pounds.
+
+```{r}
+Scots <- data.frame(Potential.Refusers = 0:200) %>% mutate(Prob = round(pbinom(Potential.Refusers, size=200, 0.15), digits=4))
+Scots %>% ggplot() + aes(x=Potential.Refusers, y=Prob) + geom_point() + labs(x="Refusers", y="Prob. of x or Less Refusers") -> Plot1
+Plot1
+```
+
+
+---
+
+# A Nicer Plot
+
+```{r}
+library(plotly)
+p <- ggplotly(Plot1)
+p
+```
+
+---
+
+2. What is the probability that 24 or fewer will not accept Scottish pounds?
+
+```{r}
+pbinom(24, 200, 0.15)
+```
+
+---
+
+3. What is the probability that 25 or more shopkeepers will not accept Scottish pounds?
+
+```{r}
+1-pbinom(24, 200, 0.15)
+```
+
+---
+
+4. With probability 0.9 [90 percent], XXX or fewer shopkeepers will not accept Scottish pounds.
+
+```{r}
+qbinom(0.9, 200, 0.15)
+```
+
+---
+## Application: The Median is a Binomial with p=0.5
+
+Interestingly, any given observation has a 50-50 chance of being *over* or *under* the median.  Suppose that I have five datum.  
+1. What is the probability that all are under?
+
+```{r}
+pbinom(0,size=5, p=0.5)
+```
+
+---
+
+2. What is the probability that all are over?
+
+```{r}
+dbinom(5,size=5, p=0.5)
+```
+
+---
+
+3. What is the probability that the median is somewhere in between our smallest and largest sampled values?
+
+**Everything else**.
+
+This is called the *Rule of Five* by Hubbard in his *How to Measure Anything*.
+
+
+---
+# Geometric Distributions
+
+How many failures before the first success?  Now defined exclusively by $p$.  In each case, (1-p) happens $k$ times.  Then, on the $k+1^{th}$ try, p.  Note 0 failures can happen...
+
+$$Pr(y=k) = (1-p)^{k}p$$
+
+---
+
+Example: Entrepreneurs
+
+Suppose any startup has a $p=0.1$ chance of success.  How many failures?
+
+---
+
+```{r GP1, echo=FALSE}
+par(mfrow=c(1,2))
+plot(x=seq(0,30,1),y=dgeom(seq(0,30,1),0.1), xlab="Failures", ylab="Pr(Exactly XXX Failures)", main="Pr(Success)=0.1", type="h")
+plot(x=seq(0,30,1),y=pgeom(seq(0,30,1),0.1), xlab="Failures", ylab="Pr(Less or XXX Failures)", main="Pr(Success)=0.1", type="h")
+```
+
+---
+
+# Example: Entrepreneurs
+
+Suppose any startup has a $p=0.1$ chance of success.  How many failures for the average/median person?
+
+```{r}
+qgeom(0.5,0.1)
+```
+
+---
+
+5. [Geometric] Plot 1000 random draws of "How many vendors until one refuses my Scottish pounds?"
+
+```{r}
+Geoms.My <- data.frame(Vendors=rgeom(1000, 0.15))
+Geoms.My %>% ggplot() + aes(x=Vendors) + geom_histogram(binwidth=1)
+```
+
+---
+
+We could also do something like.
+
+```{r}
+plot(seq(0,60), pgeom(seq(0,60), 0.15))
+```
+
+---
+# Negative Binomial Distributions
+
+How many failures before the $r^{th}$ success?  In each case, (1-p) happens $k$ times.  Then, on the $k+1^{th}$ try, we get our $r^{th}$ p.  Note 0 failures can happen...
+
+$$Pr(y=k) = {k+r-1 \choose r-1}(1-p)^{k}p^{r}$$
+---
+# Needed Sales
+
+I need to make 5 sales to close for the day.  How many customers will I have to get those five sales when each customer purchases with probability 0.2.
+
+```{r}
+library(patchwork)
+DF <-  data.frame(Customers = c(0:70)) %>% 
+  mutate(m.Customers = dnbinom(Customers, size=5, prob=0.2), 
+         p.Customers = pnbinom(Customers, size=5, prob=0.2)) 
+pl1 <- DF %>% ggplot() + aes(x=Customers) + geom_line(aes(y=p.Customers)) 
+pl2 <- DF %>% ggplot() + aes(x=Customers) + geom_point(aes(y=m.Customers))
+```
+---
+
+```{r, echo=FALSE}
+pl1 + pl2
+```
+
+---
+# Simulation: A Powerful Tool
+
+In this last example, I was concerned with sales.  I might also want to generate revenues because I know the rough mean and standard deviation of sales.  Combining such things together forms the basis of a Monte Carlo simulation.
+
+Some of the basics are covered in a swirl on *simulation*.
+
+---
+# An Example
+
+Customers arrive at a rate of 7 per hour.
+You convert customers to buyers at a rate of 85%.
+Buyers spend, on average 600 dollars with a standard deviation of 150 dollars.
+
+```{r}
+Sim <- 1:1000
+Customers <- rpois(1000, 7)
+Buyers <- rbinom(1000, size=Customers, prob = 0.85)
+Data <- data.frame(Sim, Buyers, Customers)
+Data <- Data %>% group_by(Sim) %>% mutate(Revenue = sum(rnorm(Buyers, 600, 150))) %>% ungroup()
+```
+
+---
+# Simulation Results
+
+```{r Plot1, echo=FALSE}
+library(patchwork)
+p1 <- ggplot(Data) + aes(x=Customers) + geom_histogram(binwidth = 1) + theme_minimal()
+p2 <- ggplot(Data) + aes(x=Buyers) + geom_histogram(binwidth=1) + theme_minimal()
+p3 <- ggplot(Data) + aes(x=Revenue) + geom_density() + theme_minimal()
+(p1 + p2) / p3
+```
+
+
+---
+# A Summary
+
+Distributions are how variables and probability relate.  They are a graph that we can enter in two ways.  From the probability side to solve for values or from values to solve for probability.  It is always a function of the graph.
+
+Distributions generally have to be sentences; the name is a noun but it also has parameters -- verbs -- that makes the noun tangible.
