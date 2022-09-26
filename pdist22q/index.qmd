@@ -106,7 +106,15 @@ Our core concept is a probability distribution just as above.  These come in two
 
 ## [The Poster](https://github.com/robertwwalker/DADMStuff/raw/master/Distribution-Poster.pdf) and Examples
 
-Distributions are nouns.  Sentences are incomplete without verbs -- parameters.  We need both; it is for this reason that the former slide is true.  We do not always have a grounding for either the name or the parameter.
+- Distributions are nouns.  
+
+- Sentences are incomplete without verbs -- parameters.
+
+- We need both; it is for this reason that the former slide is true.  
+
+- We do not always have a grounding for either the name or the parameter.
+
+- For now, we will work with **univariate** distributions though **multivariate** distributions do exist.
 
 ## Continuous vs. Discrete Distributions
 
@@ -133,10 +141,19 @@ $$E((X-\mu)^2) = \int_{x \in X} (x-\mu)^2 \cdot f(x)dx$$
 
 ## Functions
 
-Probability distributions are mathematical formulae expressing likelihood for some set of qualities or quantities.  They have names: nouns.  They also have verbs: parameters.  Like a proper English sentence, both are required.
+Probability distributions are mathematical formulae expressing likelihood for some set of qualities or quantities.  
+
+- They have names: nouns.  
+- They also have verbs: parameters.  
+
+Like a proper English sentence, both are required.
 
 
 ## Models
+
+### What is a model?
+
+. . .
 
 For our purposes, it is a systematic description of a phenomenon that shares important and essential features of that phenomenon.  Models frequently give us leverage on problems in the absence of alternative approaches.
 

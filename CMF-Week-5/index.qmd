@@ -1,0 +1,577 @@
+---
+title: "Choice and Forecasting: Week 5"
+author: "Robert W. Walker"
+format: 
+   revealjs:
+     theme: [custom.scss]
+     scrollable: true
+     logo: AGSMlogo.jpeg
+     footer: "Models of Choice and Forecasting"
+     self-contained: true
+     html-math-method: katex
+     incremental: true
+     slide-number: c/t
+     transition: convex
+     multiplex: true
+     preview-links: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=TRUE, tidy=TRUE, comment=NA, prompt=FALSE, fig.height=6, fig.width=6.5, fig.retina = 3, dev = 'svg', eval=TRUE)
+library(tidyverse)
+```
+
+# Regression for Categorical Variables
+
+## Ordered Outcomes
+
+My preferred method of thinking about ordered regression involves latent variables.  So what is a latent variable?  It is something that is unobservable, hence latent, and we only observe coarse realizations in the form of qualitative categories.  Consider the example from [Li in the *Journal of Politics*](https://www.journals.uchicago.edu/doi/abs/10.1111/j.1468-2508.2006.00370.x).
+
+## Li's Study {.smaller}
+
+Li investigates the determinants of tax incentives for Foreign Direct Investment in a sample of countries driven by data availability.  There are four distinct claims:
+
+![1 and 2](./img/Screen Shot 2022-09-19 at 1.28.48 PM.png)
+
+![3](./img/Screen Shot 2022-09-19 at 1.29.23 PM.png)
+
+![4](./img/Screen Shot 2022-09-19 at 1.29.40 PM.png)
+
+
+### Motivating the Model
+
+Suppose there is some unobserved continuous variable, call it $y^{*}$ that measures the willingness/utility to be derived from tax incentives to FDI.  Unfortunately, this latent quantity is unobservable; we instead observe how many incentives are offered and posit that the number of incentives is a manifestation of increasing utility with unknown points of separation -- cutpoints -- that separate these latent utilities into a mutually exclusive and exhaustive partition.  In a simplified example, consider this.
+
+```{r}
+plot(density(rlogis(1000)))
+abline(v=c(-3,-2,-1,0,2,4))
+```
+
+So anything below -3 is zero incentives; anything between -3 and -2 is one incentive, ... , and anything above 4 should be all six incentives.
+
+## The Model Structure
+
+What we have is a regression problem but the outcome is unobserved and takes the form of a logistic random variable.  Indeed, one could write the equation as:
+
+$$y^{*} = X\beta + \epsilon$$
+where $\epsilon$ is assumed to have a logistic distribution but this is otherwise just a linear regression.  Indeed, the direct interpretation of the slopes is the effect of a one-unit change in X on that logistic random variable.
+
+## The Data
+
+This should give us an idea of what is going on.  The data come in Stata format; we can read these via the `foreign` or `haven` libraries in R.
+
+```{r}
+library(MASS); library(foreign)
+Li.Data <- read.dta("./img/li-replication.dta")
+table(Li.Data$generosityg)
+Li.Data$generositygF <- as.factor(Li.Data$generosityg)
+```
+
+## Model 1
+
+First, let us have a look at Model 1.
+
+```{r}
+li.mod1 <- polr(generositygF ~ law00log + transition, data=Li.Data)
+summary(li.mod1)
+```
+
+## Commentary
+
+We can read these by stars.  There is nothing that is clearly different from zero as a slope or 1 as an odds-ratio.  The authors deploy a common strategy for adjusting standard errors that, in this case, is necessary to find a relationship with statistical confidence.  That's a diversion.  To the story.  In general, the sign of the rule of law indicator is negative, so as rule of law increases, incentives decrease though we cannot rule out no effect.  Transitions also have a negative sign; regime changes have no clear influence on incentives.  There is additional information that is commonly given short-shrift.  What do the cutpoints separating the categories imply?  Let's think this through recongizing that the estimates have an underlying t/normal distribution.  `4|5` is within one standard error of both `3|4` and `5|6`.  The model cannot really tell these values apart.  Things do improve in the lower part of the scale but we should note that this is where the vast majority of the data are actually observed.
+
+## Odds Ratios
+
+Next, I will turn the estimates into odds-ratios by exponentiating the estimates.
+
+```{r}
+exp(li.mod1$coefficients)
+```
+
+## Model 4
+
+```{r}
+li.mod4 <- polr(generositygF ~ law00log + transition + fdiinf + democfdi + democ + autocfdi2 + autocfdir + reggengl + reggengl2 + gdppclog + gdplog, data=Li.Data)
+summary(li.mod4)
+```
+
+## Odds Ratios
+
+Measured via odds-ratios, we can obtain those:
+
+```{r}
+exp(li.mod4$coefficients)
+```
+
+## Diagnostics and Commentary
+
+Goodness of Fit:
+
+```{r}
+DescTools::PseudoR2(
+  li.mod1, 
+  which = c("McFadden", "CoxSnell", "Nagelkerke", "AIC")
+)
+DescTools::PseudoR2(
+  li.mod4, 
+  which = c("McFadden", "CoxSnell", "Nagelkerke", "AIC")
+)
+```
+
+The last model is clearly better than the first by any of these measures.  That said, there are a lot of additional predictors that add much complexity to the model and the difference in AIC is not very large.
+
+## Constructing Predictions Together
+
+Let's do this.
+
+To get the data, we will need the following.
+
+```{r, eval=FALSE}
+Li.Data <- read.dta("https://github.com/robertwwalker/xaringan/raw/master/CMF-Week-4/img/li-replication.dta")
+```
+
+## The Model
+
+```{r}
+li.mod4 <- polr(generositygF ~ law00log + transition + fdiinf + democfdi + democ + autocfdi2 + autocfdir + reggengl + reggengl2 + gdppclog + gdplog, data=Li.Data)
+```
+
+## What Counterfactual?
+
+And what does this mean....
+
+# Hierarchical and SEM Models
+
+## Fixed and Random Effects
+
+![Text description](./img/Screen Shot 2022-09-26 at 4.05.23 PM.png)
+
+## A Created Example
+
+Random effects and pooled regressions can be terribly wrong when the pooled and random effects moment condition fails.  Let's show some data here to illustrate the point.  The true model here is $$ y_{it} = \alpha_{i} + X_{it}\beta + \epsilon_{it} $$ where the $\beta=1$ and $\alpha_{i}=\{6,0,-6\}$ and $\epsilon \sim \mathcal{N}(0,1)$.  Here is the plot.
+
+```{r SimData}
+X.FE <- c(seq(-2.5,-0.5,by=0.05),seq(-2,0,by=0.05),seq(-1.5,0.5,by=0.05))
+y.FE <- -3*c(rep(-2,41),rep(0,41),rep(2,41))+X.FE + rnorm(123,0,1)
+FE.data <- data.frame(y.FE,X.FE,unit=c(rep(1,41),rep(2,41),rep(3,41)), time=rep(seq(1,41,1),3))
+```
+
+## A Plot of FE v RE
+
+```{r, echo=FALSE}
+par(mfrow=c(1,2))
+with(FE.data, plot(X.FE,y.FE, bty="n", main="Pooled"))
+with(FE.data, abline(lm(y.FE~X.FE), lty=2, col="brown"))
+with(FE.data, plot(X.FE,y.FE, bty="n", col=unit, main="Fixed Effects"))
+abline(a=-6,b=1, col="blue")
+abline(a=0,b=1, col="blue")
+abline(a=6,b=1, col="blue")
+```
+
+## Three Models
+
+```{r Res1, message=FALSE}
+library(plm)
+FE.pdata <- pdata.frame(FE.data, c("unit","time"))
+mod.RE <- plm(y.FE~X.FE, data=FE.pdata, model="random")
+mod.RE2 <- plm(y.FE~X.FE, data=FE.pdata, model="random", random.method = "amemiya")
+mod.RE3 <- plm(y.FE~X.FE, data=FE.pdata, model="random", random.method = "walhus")
+mod.RE4 <- plm(y.FE~X.FE, data=FE.pdata, model="random", random.method = "nerlove")
+mod.FE <- plm(y.FE~X.FE, data=FE.pdata, model="within")
+mod.pool <- plm(y.FE~X.FE, data=FE.pdata, model="pooling")
+```
+
+## Omitted Fixed Effects can be Very Bad
+
+As we can see, the default random effects model for panel data in R is actually pretty horrible.  
+
+```{r Table, results='asis', message=FALSE}
+library(stargazer)
+stargazer(mod.RE,mod.RE2,mod.RE3,mod.RE4,mod.pool,mod.FE, type="html", column.labels=c("RE","RE-WalHus","RE-Amemiya","RE-Nerlove","Pooled","FE"))
+```
+
+## Discussion
+
+The random method matters quite a bit though; many of them are very close to the truth. Models containing much or all of the between information are wrong.  
+
+If the X and unit effects are dependent, then there are serious threats to proper inference.
+
+## Hierarchical Models: An Example
+
+To examine a hierarchical model, I am going to choose some interesting data on popularity.  A description appears below; these data come from an Intro to Multilevel Analysis.
+
+![Popularity Data](./img/Screen Shot 2022-09-26 at 2.13.53 PM.png)
+
+Though the data are technically ordered, this feature is not exploited to build a hierarchical ordered regression model, though it could be done.  Instead, the outcome of interest is an average of *ordered scales*.
+
+## Data
+
+```{r}
+library(tidyverse)
+library(haven)
+popular2data <- read_sav(file ="https://github.com/MultiLevelAnalysis/Datasets-third-edition-Multilevel-book/blob/master/chapter%202/popularity/SPSS/popular2.sav?raw=true")
+popular2data <- popular2data %>% dplyr::select(pupil, class, extrav, sex, texp, popular) %>% mutate(sex = as.factor(sex))
+```
+
+## A Summary
+
+```{r}
+summary(popular2data)
+head(popular2data)
+```
+
+## A plot of the relationship of interest
+
+```{r, echo=FALSE}
+ggplot(data    = popular2data,
+       aes(x   = extrav,
+           y   = popular,
+           col = class))+ #to add the colours for different classes
+  geom_point(size     = 0.8,
+             alpha    = .8,
+             position = "jitter")+ #to add some random noise for plotting purposes
+  theme_minimal()+
+  theme(legend.position = "none")+
+  scale_color_gradientn(colours = rainbow(100))+
+  labs(title    = "Popularity vs. Extraversion",
+       subtitle = "add colours for different classes",
+       x = "Extroversion",
+       y = "Average Popularity")
+```
+
+## With the lines
+
+```{r, echo=FALSE}
+ggplot(data      = popular2data,
+       aes(x     = extrav,
+           y     = popular,
+           col   = class,
+           group = class))+ #to add the colours for different classes
+  geom_point(size     = 1.2,
+             alpha    = .8,
+             position = "jitter")+ #to add some random noise for plotting purposes
+  theme_minimal()+
+  theme(legend.position = "none")+
+  scale_color_gradientn(colours = rainbow(100))+
+  geom_smooth(method = lm,
+              se     = FALSE,
+              size   = .5, 
+              alpha  = .8)+ # to add regression line
+  labs(title    = "Popularity vs. Extraversion",
+       subtitle = "add colours for different classes and regression lines",
+       x = "Extroversion",
+       y = "Average Popularity")
+```
+
+
+## A Graphic of the Model
+
+```{r, echo=FALSE}
+ggplot(data = popular2data, 
+       aes(x   = extrav,
+           y   = popular, 
+           col = sex))+
+  geom_point(size     = 1, 
+             alpha    = .7, 
+             position = "jitter")+
+  geom_smooth(method   = lm,
+              se       = T, 
+              size     = 1.5, 
+              linetype = 1, 
+              alpha    = .7)+
+  theme_minimal()+
+  labs(title    = "Popularity and Extraversion for 2 Genders", 
+       subtitle = "The linear relationship between the two is similar for both genders")+
+  scale_color_manual(name   =" Gender",
+                     labels = c("Boys", "Girls"),
+                     values = c("lightblue", "pink"))
+```
+
+## Model Structure
+
+A standard regression [with nothing random]
+
+```{r}
+Model.LM <- lm(popular ~ sex + extrav, data=popular2data)
+summary(Model.LM)
+```
+
+
+## A Random Intercept
+
+```{r, warning=FALSE, message=FALSE}
+library(lme4)
+options(scipen=7)
+library(lmerTest)
+model1 <- lmer(formula = popular ~ 1 + sex + extrav + (1|class), data = popular2data)
+summary(model1)
+```
+
+## Comparisons
+
+```{r}
+AIC(Model.LM)
+AIC(model1)
+```
+The random intercepts fit better.
+
+## Two-level Model
+
+Now let's add a **second-level** predictor.  Teacher experience does not vary within a given classroom, only across the 100 classrooms.  Let's look at this model.
+
+```{r}
+model2 <- lmer(popular ~ 1 + sex + extrav + texp + (1 | class), data=popular2data)
+summary(model2)
+```
+
+**More experienced teachers lead to higher reported average popularity.**
+
+## Random slopes
+
+```{r, eval=FALSE, message=FALSE, warning=FALSE}
+model3 <- lmer(formula = popular ~ 1 + sex + extrav + texp + (1 + sex + extrav | class),
+               data    = popular2data, control=lmerControl(optCtrl=list(maxfun=100000) ))
+summary(model3)
+```
+
+## Result
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+model3 <- lmer(formula = popular ~ 1 + sex + extrav + texp + (1 + sex + extrav | class),
+               data    = popular2data, control=lmerControl(optCtrl=list(maxfun=100000) ))
+summary(model3)
+```
+
+## Examining the Model
+
+`sex` does not seem to make much difference.
+
+```{r}
+ranova(model3)
+```
+
+## Comparison
+
+```{r}
+AIC(Model.LM)
+AIC(model1)
+AIC(model2)
+AIC(model3)
+```
+
+## Crossed-effects
+
+```{r, eval=FALSE}
+model5<-lmer(formula = popular ~ 1 + sex + extrav + texp+ extrav*texp + (1 + extrav | class), 
+             data    = popular2data)
+summary(model5)
+```
+
+## Crossed-effects result
+
+```{r, echo=FALSE}
+model5<-lmer(formula = popular ~ 1 + sex + extrav + texp+ extrav*texp + (1 + extrav | class), 
+             data    = popular2data)
+summary(model5)
+```
+
+## Comparison
+
+```{r}
+AIC(Model.LM)
+AIC(model1)
+AIC(model2)
+AIC(model3)
+AIC(model5)
+```
+
+
+## A Picture
+
+```{r, echo=FALSE}
+ggplot(data = popular2data,
+       aes(x = extrav, 
+           y = popular, 
+           col = as.factor(texp)))+
+  viridis::scale_color_viridis(discrete = TRUE)+
+  geom_point(size     = .7,
+             alpha    = .8, 
+             position = "jitter")+
+  geom_smooth(method = lm,
+              se     = FALSE,
+              size   = 1,
+              alpha  = .4)+
+  theme_minimal()+
+  labs(title    = "Interaction btw. Experience and Extraversion", 
+       subtitle = "The relationship changes", 
+       col      = "Years of\nTeacher\nExperience")
+```
+
+## A Linear Model that is nearly equivalent
+
+```{r, echo=FALSE}
+model5a <-lm(formula = popular ~ sex + extrav + texp+ extrav*texp, data = popular2data)
+summary(model5a)
+AIC(model5a)
+```
+
+
+## Structural Equations Models {.smaller}
+
+A few weeks ago, Jack mentioned the use of principal components as a means for combining collinear variables.  There is a more general language for describing models of this sort.  The following example will play off of work I am currently finishing up with Elliot Maltz and a co-author.
+
+First, the data.
+
+```{r}
+library(lavaan)
+load(url("https://github.com/robertwwalker/ChoiceAndForecasting/raw/main/posts/week-5/data/EMData.RData"))
+```
+
+There is a ton of data in here.  Let me pay particular attention to specific parts we are interested in.
+
+## Agentic
+
+```{r}
+names(EMData)[[76]]
+table(EMData.Anonymous$...76)
+names(EMData)[[77]]
+table(EMData.Anonymous$...77)
+names(EMData)[[78]]
+table(EMData.Anonymous$...78)
+names(EMData)[[79]]
+table(EMData.Anonymous$...79)
+```
+
+## Agentic: Model
+
+```{r}
+AB <- cfa('Agentic =~ ...76 + ...77 + ...78 + ...79', data=EMData.Anonymous, ordered = TRUE)
+summary(AB, fit.measures = TRUE, standardized = TRUE)
+```
+
+## Picture
+
+```{r}
+library(lavaanPlot)
+lavaanPlot(model=AB, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), covs = TRUE, coefs=TRUE)
+```
+
+## Communal
+
+```{r}
+names(EMData)[[80]]
+table(EMData.Anonymous$...80)
+names(EMData)[[81]]
+table(EMData.Anonymous$...81)
+names(EMData)[[84]]
+table(EMData.Anonymous$...84)
+CB <- cfa('Communal =~ ...80 + ...81 + ...84', data=EMData.Anonymous, ordered = TRUE)
+summary(CB, fit.measures = TRUE, standardized = TRUE)
+```
+
+
+
+## Plot Code
+
+```{r, eval=FALSE}
+lavaanPlot(model = CB, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
+
+## Plot Code
+
+```{r, echo=FALSE}
+lavaanPlot(model = CB, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
+
+
+
+## Mentoring
+
+```{r}
+names(EMData)[[13]]
+table(EMData.Anonymous$...13)
+names(EMData)[[14]]
+table(EMData.Anonymous$...14)
+names(EMData)[[15]]
+table(EMData.Anonymous$...15)
+M <- cfa('Mentoring =~ ...13 + ...14 + ...15', data=EMData.Anonymous, ordered = TRUE)
+summary(M, fit.measures = TRUE, standardized = TRUE)
+```
+
+## Plot Code
+
+```{r, eval=FALSE}
+lavaanPlot(model = M, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
+
+## Plot Code
+
+```{r, echo=FALSE}
+lavaanPlot(model = M, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
+
+
+
+## Social Influence
+
+```{r}
+names(EMData)[[37]]
+table(EMData.Anonymous$...37)
+names(EMData)[[38]]
+table(EMData.Anonymous$...38)
+names(EMData)[[39]]
+table(EMData.Anonymous$...39)
+SI <- cfa('Social.Influence =~ ...37 + ...38 + ...39', data=EMData.Anonymous, ordered = TRUE)
+summary(SI, fit.measures = TRUE, standardized = TRUE)
+```
+
+## Plot Code
+
+```{r, eval=FALSE}
+lavaanPlot(model = SI, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
+
+## Plot Code
+
+```{r, echo=FALSE}
+lavaanPlot(model = SI, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
+
+
+## An SEM
+
+Now let me combine those `measurement` models to produce a set of two structural equations.  I wish to explain income and employment given these factors.
+
+```{r, eval=FALSE, warning=FALSE, message=FALSE}
+names(EMData)[c(5,59)]
+Struct <- sem('Agentic =~ ...76 + ...77 + ...78 + ...79
+          Communal =~ ...80 + ...81 + ...84
+          Mentoring =~ ...13 + ...14 + ...15
+          Social.Influence =~ ...37 + ...38 + ...39
+          ...59 ~ Agentic + Communal + Mentoring + Social.Influence
+          ...5 ~ Agentic + Communal + Mentoring + Social.Influence', data=EMData.Anonymous, ordered = c("...13","...14", "...15", "...80","...81", "...84", "...76","...77", "...78", "...79","...37", "...38", "...39"))
+summary(Struct, fit.measures=TRUE, standardized=TRUE)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+names(EMData)[c(5,59)]
+Struct <- sem('Agentic =~ ...76 + ...77 + ...78 + ...79
+          Communal =~ ...80 + ...81 + ...84
+          Mentoring =~ ...13 + ...14 + ...15
+          Social.Influence =~ ...37 + ...38 + ...39
+          ...59 ~ Agentic + Communal + Mentoring + Social.Influence
+          ...5 ~ Agentic + Communal + Mentoring + Social.Influence', data=EMData.Anonymous, ordered = c("...13","...14", "...15", "...80","...81", "...84", "...76","...77", "...78", "...79","...37", "...38", "...39"))
+summary(Struct, fit.measures=TRUE, standardized=TRUE)
+```
+
+## Plot Code
+
+```{r, eval=FALSE}
+lavaanPlot(model=Struct, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
+
+## Plot Code
+
+```{r, echo=FALSE}
+lavaanPlot(model=Struct, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
