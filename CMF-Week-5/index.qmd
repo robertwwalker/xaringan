@@ -38,9 +38,11 @@ Li investigates the determinants of tax incentives for Foreign Direct Investment
 ![4](./img/Screen Shot 2022-09-19 at 1.29.40 PM.png)
 
 
-### Motivating the Model
+## Motivating the Model
 
 Suppose there is some unobserved continuous variable, call it $y^{*}$ that measures the willingness/utility to be derived from tax incentives to FDI.  Unfortunately, this latent quantity is unobservable; we instead observe how many incentives are offered and posit that the number of incentives is a manifestation of increasing utility with unknown points of separation -- cutpoints -- that separate these latent utilities into a mutually exclusive and exhaustive partition.  In a simplified example, consider this.
+
+## A Picture
 
 ```{r}
 plot(density(rlogis(1000)))
