@@ -1,0 +1,404 @@
+---
+title: "Choice and Forecasting: Week 6"
+author: "Robert W. Walker"
+format: 
+   revealjs:
+     theme: [custom.scss]
+     scrollable: true
+     logo: AGSMlogo.jpeg
+     footer: "Models of Choice and Forecasting"
+     self-contained: true
+     html-math-method: katex
+     incremental: true
+     slide-number: c/t
+     transition: convex
+     multiplex: true
+     preview-links: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=TRUE, tidy=TRUE, comment=NA, prompt=FALSE, fig.height=6, fig.width=6.5, fig.retina = 3, dev = 'svg', eval=TRUE)
+library(tidyverse)
+```
+
+# Regression for Categorical Variables
+
+## Structural Equations Models {.smaller}
+
+A few weeks ago, Jack mentioned the use of principal components as a means for combining collinear variables.  There is a more general language for describing models of this sort.  The following example will play off of work I am currently finishing up with Elliot Maltz and a co-author.
+
+First, the data.
+
+```{r}
+library(lavaan)
+load(url("https://github.com/robertwwalker/ChoiceAndForecasting/raw/main/posts/week-5/data/EMData.RData"))
+```
+
+There is a ton of data in here.  Let me pay particular attention to specific parts we are interested in.
+
+## Agentic
+
+```{r}
+names(EMData)[[76]]
+table(EMData.Anonymous$...76)
+names(EMData)[[77]]
+table(EMData.Anonymous$...77)
+names(EMData)[[78]]
+table(EMData.Anonymous$...78)
+names(EMData)[[79]]
+table(EMData.Anonymous$...79)
+```
+
+## Agentic: Model
+
+```{r}
+AB <- cfa('Agentic =~ ...76 + ...77 + ...78 + ...79', data=EMData.Anonymous, ordered = TRUE)
+summary(AB, fit.measures = TRUE, standardized = TRUE)
+```
+
+## Picture
+
+```{r}
+library(lavaanPlot)
+lavaanPlot(model=AB, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), covs = TRUE, coefs=TRUE)
+```
+
+## Communal
+
+```{r}
+names(EMData)[[80]]
+table(EMData.Anonymous$...80)
+names(EMData)[[81]]
+table(EMData.Anonymous$...81)
+names(EMData)[[84]]
+table(EMData.Anonymous$...84)
+CB <- cfa('Communal =~ ...80 + ...81 + ...84', data=EMData.Anonymous, ordered = TRUE)
+summary(CB, fit.measures = TRUE, standardized = TRUE)
+```
+
+
+
+## Plot Code
+
+```{r, eval=FALSE}
+lavaanPlot(model = CB, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
+
+## Plot Code
+
+```{r, echo=FALSE}
+lavaanPlot(model = CB, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
+
+
+
+## Mentoring
+
+```{r}
+names(EMData)[[13]]
+table(EMData.Anonymous$...13)
+names(EMData)[[14]]
+table(EMData.Anonymous$...14)
+names(EMData)[[15]]
+table(EMData.Anonymous$...15)
+M <- cfa('Mentoring =~ ...13 + ...14 + ...15', data=EMData.Anonymous, ordered = TRUE)
+summary(M, fit.measures = TRUE, standardized = TRUE)
+```
+
+## Plot Code
+
+```{r, eval=FALSE}
+lavaanPlot(model = M, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
+
+## Plot Code
+
+```{r, echo=FALSE}
+lavaanPlot(model = M, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
+
+
+
+## Social Influence
+
+```{r}
+names(EMData)[[37]]
+table(EMData.Anonymous$...37)
+names(EMData)[[38]]
+table(EMData.Anonymous$...38)
+names(EMData)[[39]]
+table(EMData.Anonymous$...39)
+SI <- cfa('Social.Influence =~ ...37 + ...38 + ...39', data=EMData.Anonymous, ordered = TRUE)
+summary(SI, fit.measures = TRUE, standardized = TRUE)
+```
+
+## Plot Code
+
+```{r, eval=FALSE}
+lavaanPlot(model = SI, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
+
+## Plot Code
+
+```{r, echo=FALSE}
+lavaanPlot(model = SI, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
+
+
+## An SEM
+
+Now let me combine those `measurement` models to produce a set of two structural equations.  I wish to explain income and employment given these factors.
+
+```{r, eval=FALSE, warning=FALSE, message=FALSE}
+names(EMData)[c(5,59)]
+Struct <- sem('Agentic =~ ...76 + ...77 + ...78 + ...79
+          Communal =~ ...80 + ...81 + ...84
+          Mentoring =~ ...13 + ...14 + ...15
+          Social.Influence =~ ...37 + ...38 + ...39
+          ...59 ~ Agentic + Communal + Mentoring + Social.Influence
+          ...5 ~ Agentic + Communal + Mentoring + Social.Influence', data=EMData.Anonymous, ordered = c("...13","...14", "...15", "...80","...81", "...84", "...76","...77", "...78", "...79","...37", "...38", "...39"))
+summary(Struct, fit.measures=TRUE, standardized=TRUE)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+names(EMData)[c(5,59)]
+Struct <- sem('Agentic =~ ...76 + ...77 + ...78 + ...79
+          Communal =~ ...80 + ...81 + ...84
+          Mentoring =~ ...13 + ...14 + ...15
+          Social.Influence =~ ...37 + ...38 + ...39
+          ...59 ~ Agentic + Communal + Mentoring + Social.Influence
+          ...5 ~ Agentic + Communal + Mentoring + Social.Influence', data=EMData.Anonymous, ordered = c("...13","...14", "...15", "...80","...81", "...84", "...76","...77", "...78", "...79","...37", "...38", "...39"))
+summary(Struct, fit.measures=TRUE, standardized=TRUE)
+```
+
+## Plot Code
+
+```{r, eval=FALSE}
+lavaanPlot(model=Struct, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
+
+## Plot Code
+
+```{r, echo=FALSE}
+lavaanPlot(model=Struct, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, covs = TRUE)
+```
+
+# Survival Models
+
+There are two classes of models commonly used for **survival data**.  The text focuses on the Cox model though there are also AFT [accelerated failure time] models for parametric analysis of survival-time data.  First, on the data structure.
+
+## Data for Survival models
+
+The most common applications are in `statistics for life tables`.  How long do individuals live beyond some intervention?  In people analytics, how long do employees stay with a firm or how long do customers maintain a relationship with a firm or service provider?
+
+## Two Classes of Survival Models
+
+- Time-varying covariates
+- Time-constant covariates
+
+## Some Survival Time Data
+
+There will be two key components: events and time.
+
+```{r}
+url <- "http://peopleanalytics-regression-book.org/data/job_retention.csv"
+job_retention <- read.csv(url)
+library(survival)
+retention <- Surv(event = job_retention$left, 
+                  time = job_retention$month)
+```
+
+## A Time-Varying Covariates Example
+
+```{r}
+library(haven)
+BKT.Data <- read_dta("./img/bkt98ajps.dta")
+BKT.Data
+```
+
+
+## On Censoring
+
+What happens when the event has yet to happen?  The observation is **censored**.  Those are the `+` in the table below.  What does it mean?  Data collection ended before the event.
+
+```{r}
+unique(retention)
+```
+
+What's the logic?  We know the unit survived at least that long.
+
+## A First Very Simple Model
+
+```{r}
+job_retention$sentiment_category <- ifelse(
+  job_retention$sentiment >= 7, 
+  "High", 
+  "Not High"
+)
+kmestimate_sentimentcat <- survival::survfit(
+  formula = Surv(event = left, time = month) ~ sentiment_category,
+  data = job_retention
+)
+```
+
+## The output
+
+```{r}
+summary(kmestimate_sentimentcat)
+```
+
+
+## Plotting Survival Data
+
+The canonical plot is the Kaplan-Meier survival curve.
+
+```{r}
+library(survminer)
+
+# show survival curves with p-value estimate and confidence intervals
+survminer::ggsurvplot(
+  kmestimate_sentimentcat,
+  pval = TRUE,
+  conf.int = TRUE,
+  palette = c("blue", "red"),
+  linetype = c("solid", "dashed"),
+  xlab = "Month",
+  ylab = "Retention Rate"
+)
+```
+
+## The Cox Model
+
+The key to such modelling is the definition of a **hazard function**.  Let $h(t)$ be the proportion that have **not** survived to time $t$, we can write:
+
+$$h(t) = h_{0}(t)\exp(\beta_{1}x_{1} + \beta_{2}x_{2} + \ldots + \beta_{k}x_{k})$$
+
+## Proportional Hazards
+
+![PH Model](./img/Screen Shot 2022-10-03 at 12.33.48 PM.png)
+
+## Estimating the Model
+
+The outcome will need to be a double: the event and the time.  Let's model this as a function of gender, field, level, and sentiment.
+
+```{r}
+cox_model <- survival::coxph(
+  formula = Surv(event = left, time = month) ~ gender + 
+    field + level + sentiment,
+  data = job_retention
+)
+```
+
+## A Summary
+
+```{r}
+summary(cox_model)
+```
+
+## Examining PH
+
+As a table:
+
+```{r}
+(ph_check <- survival::cox.zph(cox_model))
+```
+
+## Or Graphically
+
+```{r}
+survminer::ggcoxzph(ph_check, 
+                    font.main = 10, 
+                    font.x = 10, 
+                    font.y = 10)
+```
+
+## Models of Frailty
+
+Frailty models combine the insights of hierarchical models from the last chapter with survival analysis.
+
+A frailty model seeks to augment the baseline hazard with some parametric random-effects.  In this example, let's allow the `field` variable to have shared frailty.
+
+
+
+## Estimation
+
+```{r}
+library(frailtypack)
+
+(frailty_model <- frailtypack::frailtyPenal(
+  formula = Surv(event = left, time = month) ~ gender + 
+    level + sentiment + cluster(field),
+  data = job_retention,
+  n.knots = 12, 
+  kappa = 10000
+))
+```
+
+Two comments.  First, there is a test of the frailty; is there evidence of variation?  This is the test of the **Theta** parameter.  Second, do the parameters change?
+
+## Comparison
+
+```{r}
+exp(cbind(frailty_model$coef,coef(cox_model)))
+```
+
+
+## Time-Varying Covariates
+
+```{r}
+options(scipen=7)
+cox_model <- survival::coxph(
+  formula = Surv(`_t0`, `_t`, dispute) ~ dem + growth+allies+contig+capratio+trade,
+  data = BKT.Data
+)
+summary(cox_model)
+```
+
+## Binary Choice Model
+
+```{r}
+library(haven)
+BKT.Data <- read_dta("./img/bkt98ajps.dta")
+cloglog_model <- glm(dispute ~ dem + growth+allies+contig+capratio+trade+as.factor(py),
+  data = BKT.Data, family=binomial(link = "cloglog"))
+summary(cloglog_model)
+```
+## Visualizing the Strata
+
+```{r}
+stratified_base <- frailtypack::frailtyPenal(
+  formula = Surv(event = left, time = month) ~ 
+    strata(sentiment_category),
+  data = job_retention,
+  n.knots = 12,
+  kappa = rep(5000, 2))
+```
+## Visual
+
+```{r}
+plot(stratified_base, type.plot = "Survival", 
+     pos.legend = "topright", Xlab = "Month",
+     Ylab = "Baseline retention rate",
+     color = 1)
+```
+
+## A Result on Baseline Hazards
+
+In a paper by Carter and Signorino, they argue that a cubic function is sufficient for the analysis of most baseline hazards.  Because it is cubic, that requires only the insertion of time, time-squared, and time-cubed among the set of predictors in a binary choice model with the `cloglog` link.
+
+## Modified disputes
+
+```{r}
+cloglog_model.s <- glm(dispute ~ dem + growth+allies+contig+capratio+trade+poly(py, 3),
+  data = BKT.Data, family=binomial(link = "cloglog"))
+summary(cloglog_model.s)
+```
+
+## A Plot
+
+```{r}
+newdf <- data.frame(dem=0, allies=0, growth=0, contig=0, capratio=1, trade=0, py=seq(0,33))
+newdf$pred <- predict(cloglog_model.s, newdata=newdf, type="response")
+ggplot(newdf) + aes(x=py, y=pred) + geom_line() + theme_minimal() + labs(x="Years of Peace", y="Pr(Dispute)")
+```
+
