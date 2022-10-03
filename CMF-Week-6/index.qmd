@@ -358,7 +358,7 @@ summary(cox_model)
 
 ```{r}
 library(haven)
-BKT.Data <- read_dta("./img/bkt98ajps.dta")
+BKT.Data <- read_dta("https://github.com/robertwwalker/xaringan/raw/master/CMF-Week-6/img/bkt98ajps.dta")
 cloglog_model <- glm(dispute ~ dem + growth+allies+contig+capratio+trade+as.factor(py),
   data = BKT.Data, family=binomial(link = "cloglog"))
 summary(cloglog_model)
