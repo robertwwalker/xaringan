@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Inference</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Robert W. Walker" />
+    <meta name="date" content="2021-09-28" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <script src="libs/htmlwidgets/htmlwidgets.js"></script>
+    <link href="libs/datatables-css/datatables-crosstalk.css" rel="stylesheet" />
+    <script src="libs/datatables-binding/datatables.js"></script>
+    <script src="libs/jquery/jquery-3.6.0.min.js"></script>
+    <link href="libs/dt-core/css/jquery.dataTables.min.css" rel="stylesheet" />
+    <link href="libs/dt-core/css/jquery.dataTables.extra.css" rel="stylesheet" />
+    <script src="libs/dt-core/js/jquery.dataTables.min.js"></script>
+    <link href="libs/crosstalk/css/crosstalk.css" rel="stylesheet" />
+    <script src="libs/crosstalk/js/crosstalk.min.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Inference
+## Discrimination at Berkeley
+### Robert W. Walker
+### 2021-09-28
+
+---
+
+
+
+
+
+
+
+
+# Some Terminology
+
+- *Sensitivity* refers to the ability of a test to designate an individual with a disease as positive.  *False negatives* are the complement/opposite of sensitivity.  These will also be known as Type II errors.   
+
+- *Specificity* refers to the ability of a test to designate an individual without a disease as negative.  *False positives* are then the complement/opposite of specificity.  These will also be known as Type I errors.
+
+
+---
+# How do we learn from data?
+
+
+--
+
+.center[![](https://media.giphy.com/media/frBS2qxvbV9SzizdSX/giphy.gif)]
+
+--
+
+### It is probably better posed as, what can we learn from data?
+
+---
+# The Big Idea
+
+## **Inference**
+
+In the most basic form, learning something about data that we do not have from data that we do.  In the jargon of statistics, we characterize the probability distribution of some feature of the population of interest from a sample drawn randomly from that population. 
+  
+--
+
+### Quantities of Interest:  
+**Single Proportion**  
+*The probability of some qualitative outcome with appropriate uncertainty.&lt;sup&gt;1&lt;/sup&gt;*   
+
+.footnote[
+&lt;sup&gt;1&lt;/sup&gt; Which will itself be a probability measure.
+]
+
+
+---
+# The Big Idea
+## **Inference**
+
+In the most basic form, learning something about data that we do not have from data that we do.  In the jargon of statistics, we characterize the probability distribution of some feature of the population of interest from a sample drawn randomly from that population.  
+
+
+### Quantities of Interest:  
+**Compare Proportions**  
+*Compare key probabilities across two groups with appropriate uncertainty.&lt;sup&gt;1&lt;/sup&gt;*  
+
+.footnote[
+&lt;sup&gt;1&lt;/sup&gt; Which will itself be a probability measure.
+]
+
+
+---
+# The Big Idea
+
+## **Inference**
+
+In the most basic form, learning something about data that we do not have from data that we do.  In the jargon of statistics, we characterize the probability distribution of some feature of the population of interest from a sample drawn randomly from that population. 
+
+### Study Planning  
+
+*Plan studies of adequate size to assess key probabilities of interest.*   
+
+---
+# Inference for Data
+
+Of two forms:
+
+1. Binary/Qualitative
+
+--
+
+But before we do, one new concept.  
+
+---
+## The **standard error**  
+
+It is the *degree of variability of a statistic* just as the standard deviation is the *variability in data*.  
+
+- The standard error of a proportion is `\(\sqrt{\frac{\pi(1-\pi)}{n}}\)` while the standard deviation of a binomial sample would be `\(\sqrt{n*\pi(1-\pi)}\)`.  
+- The standard deviation of a sample is `\(s\)` while the standard error of the mean is `\(\frac{s}{\sqrt{n}}\)`.  The average has less variability than the data and it shrinks as n increases.
+
+---
+## Let's think about an election....
+
+We are in the election season.  The key to modeling the winner of a presidential election is the electoral college in the United States.  In almost all cases, this involves a series of binomial variables.
+
+In particular, almost all states award electors for the statewide winner of the election and DC has electoral votes.  We have polls that give us likely vote percentages at the state level.  Call it `p.win` for the probability of winning.  We can then deploy `rbinom(1000, size=1, p.win)` to derive a hypothetical election.  Rinse and repeat to calculate a hypothetical electoral college winner.  But how do we calculate `p-win`?
+
+** We infer it from polling data **
+
+---
+## Qualitative: The Binomial
+
+Is entirely defined by two parameters, `\(n\)` -- the number of subjects -- and `\(\pi\)` -- the probability of a positive response.  The probability of exactly `\(x\)` positive responses is given by:
+
+$$ Pr(X = x | \pi, n) = {n \choose x} \pi^x (1-\pi)^{n-x} $$
+
+The binomial is the `canonical` distribution for binary outcomes.  *Assuming all `\(n\)` subjects are alike and the outcome occurs with `\(\pi\)` probability*,&lt;sup&gt;1&lt;/sup&gt; then we must have a sample from a binomial.  *A binomial with `\(n=1\)` is known as a Bernoulli trial* 
+
+Two key features:
+1. Expectation: `\(n \cdot \pi\)` or number of subjects times probability, `\(\pi \textrm{ if } n=1\)`.
+2. Variance is `\(n \cdot \pi \cdot (1 - \pi)\)`  or `\(\pi(1-\pi) \textrm{ if } n=1\)` and standard deviation is `\(\sqrt{n \cdot \pi \cdot (1 - \pi)}\)` or `\(\sqrt{\pi(1-\pi)} \textrm{ if } n=1\)`.
+
+--
+
+Now let's grab some data and frame a question.
+
+
+```r
+load(url("https://github.com/robertwwalker/DADMStuff/raw/master/Big-Week-6-RSpace.RData"))
+```
+
+
+.footnote[&lt;sup&gt;1&lt;/sup&gt; **If this does not hold, we will seek the homogenous groups in which it does.**]
+
+---
+## Berkeley Admissions  
+  
+What is the probability of being admitted to UC Berkeley Graduate School?&lt;sup&gt;2&lt;/sup&gt;  
+  
+--
+  
+I have three variables: Admitted or not, Gender, and Department applied to.  
+&lt;span style="color: yellow;"&gt;Admission is the key.&lt;/span&gt;
+
+
+```r
+*library(janitor)
+UCBTab &lt;- data.frame(UCBAdmissions) %&gt;% reshape::untable(., .$Freq) %&gt;% select(-Freq) 
+UCBTab %&gt;% tabyl(Admit)  # Could also use UCBTab %$% table(Admit) 
+```
+
+```
+##     Admit    n   percent
+##  Admitted 1755 0.3877596
+##  Rejected 2771 0.6122404
+```
+
+The proportion is denoted as `\(\hat{p}\)`.  We can also do this with *table*.
+
+.footnote[&lt;sup&gt;2&lt;/sup&gt; **We probably think this depends on a bunch of applicant specific features but we will put that to the side for now.**]
+
+---
+
+
+```r
+UCBTab %&gt;% DT::datatable(.,fillContainer = FALSE, options = list(pageLength = 8), rownames=FALSE)
+```
+
+<div id="htmlwidget-f4dca3b18425bde47e11" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-f4dca3b18425bde47e11">{"x":{"filter":"none","vertical":false,"fillContainer":false,"data":[["Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Admitted","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected","Rejected"],["Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female","Female"],["A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th>Admit<\/th>\n      <th>Gender<\/th>\n      <th>Dept<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"pageLength":8,"order":[],"autoWidth":false,"orderClasses":false,"lengthMenu":[8,10,25,50,100]}},"evals":[],"jsHooks":[]}</script>
+
+---
+## A Visual
+
+
+```r
+UCBTab %&gt;% ggplot(.) + aes(x = Gender, fill = Admit) + geom_bar(color="darkgreen") + theme_xaringan() + scale_xaringan_fill_discrete()
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-5-1.jpeg" width="504" style="display: block; margin: auto;" /&gt;
+
+---
+
+# The Idea
+
+Suppose we want to know `\(\pi(Admit)\)` -- the probability of being admitted -- with 90% probability.  We want to take the data that we saw and use it to **infer** the likely values of `\(\pi(Admit)\)`.  
+
+--
+
+### Three interchangeable methods
+
+1. Resampling/Simulation
+
+--
+
+2. Exact binomial computation
+
+--
+
+3. A normal approximation
+
+
+---
+## Method 1: Resampling
+
+**Suppose I have 4526 chips with 1755 &lt;span style="color: green;"&gt;green&lt;/span&gt; and 2771 &lt;span style="color: red;"&gt;red&lt;/span&gt;.**  
+
+--
+
+I toss them all on the floor
+
+--
+
+and pick them up, one at a time, 
+
+--
+
+record the value (&lt;span style="color: green;"&gt;green&lt;/span&gt;/&lt;span style="color: red;"&gt;red&lt;/span&gt;), 
+--
+
+put the chip back,  
+*[NB: I put it back to avoid getting exactly the same `sample` every time.]*
+
+--
+
+and repeat 4526 times.  
+
+--
+
+**Each count of &lt;span style="color: green;"&gt;green chips&lt;/span&gt; as a proportion of 4526 total chips constitutes an estimate of the probability of Admit.**
+
+--
+
+I wrote a little program to do just this -- `ResampleProps`.  
+```
+remotes::install_github("robertwwalker/ResampleProps")
+```
+---
+class: inverse
+# Resampling Result
+
+
+```r
+library(ResampleProps)
+RSMP &lt;- ResampleProp(UCBTab$Admit, k = 10000, tab.col = 1) %&gt;% data.frame(Pi.Admit=., Gender=as.character("All"), frameN = 1) 
+quantile(RSMP$Pi.Admit, probs = c(0.05,0.95))
+```
+
+```
+##        5%       95% 
+## 0.3758285 0.3996907
+```
+
+What is our estimate of `\(\pi\)` with 90% confidence?   
+
+*The probability of admission ranges from 0.376 to 0.4.*
+
+---
+# A Plot
+
+
+```r
+library(ggthemes)
+RSMP %&gt;%  ggplot(., aes(x=Pi.Admit)) + geom_density(outline.type = "upper", color="maroon") +labs(x=expression(pi)) + theme_minimal() + theme_xaringan()
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-7-1.jpeg" width="504" style="display: block; margin: auto;" /&gt;
+
+
+
+---
+## Another Way: Exact binomial
+
+That last procedure is correct but it is overkill.
+
+1. With probability of 0.05, how small could `\(\pi\)` be to have gotten 1755 of 4526 or more?  
+
+2. With probability 0.95, how big could `\(\pi\)` be to have gotten  fewer than 1755 of 4526?
+
+
+```r
+*UCBTab %$% table(Admit)
+```
+
+```
+## Admit
+## Admitted Rejected 
+##     1755     2771
+```
+
+--
+
+**`binom.test` does exactly this.**
+
+---
+class: inverse
+## binom.test()
+
+
+```r
+UCBTab %$% table(Admit) %&gt;% binom.test(conf.level = 0.9)
+```
+
+```
+## 
+## 	Exact binomial test
+## 
+## data:  .
+## number of successes = 1755, number of trials = 4526, p-value &lt;
+## 2.2e-16
+## alternative hypothesis: true probability of success is not equal to 0.5
+## 90 percent confidence interval:
+##  0.3757924 0.3998340
+## sample estimates:
+## probability of success 
+##              0.3877596
+```
+
+```r
+Plot.Me &lt;- binom.test(1755, 1755+2771, conf.level=0.9)$conf.int %&gt;% data.frame()
+```
+
+**With 90% probability, now often referred to as 90% confidence to avoid using the word probability twice, the probability of being admitted ranges between 0.3758 and 0.3998.**
+
+---
+class: inverse
+## Illustrating the Binomial
+
+
+```r
+UCBTab %$% table(Admit) %&gt;% binom.test(conf.level = 0.9)
+```
+
+```
+## 
+## 	Exact binomial test
+## 
+## data:  .
+## number of successes = 1755, number of trials = 4526, p-value &lt;
+## 2.2e-16
+## alternative hypothesis: true probability of success is not equal to 0.5
+## 90 percent confidence interval:
+##  0.3757924 0.3998340
+## sample estimates:
+## probability of success 
+##              0.3877596
+```
+
+```r
+c(pbinom(1755, 1755+2771, 0.3998340), pbinom(1754, 1755+2771, 0.3757924))
+```
+
+```
+## [1] 0.05000037 0.95000004
+```
+
+---
+
+
+```r
+Binomial.Search &lt;- data.frame(x=seq(0.33,0.43, by=0.001)) %&gt;% mutate(Too.Low = pbinom(1755, 1755+2771, x), Too.High = 1-pbinom(1754, 1755+2771, x))
+Binomial.Search %&gt;% pivot_longer(cols=c(Too.Low,Too.High)) %&gt;% ggplot(., aes(x=x, y=value, color=name)) + geom_line() + geom_hline(aes(yintercept=0.05)) + geom_hline(aes(yintercept=0.95))  + geom_vline(data=Plot.Me, aes(xintercept=.), linetype=3) + labs(title="Using the Binomial to Search", color="Greater/Lesser", x=expression(pi), y="Probability") + theme_xaringan() + scale_xaringan_color_discrete()
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-11-1.jpeg" width="720" style="display: block; margin: auto;" /&gt;
+
+---
+## A Third Way: The normal approximation
+
+As long as `\(n\)` and `\(\pi\)` are sufficiently large, we can approximate this with a normal distribution.  **This will also prove handy for a related reason.**  
+
+As long as `\(n*\pi\)` &gt; 10, we can write that a standard normal `\(z\)` describes the distribution of `\(\pi\)`, given `\(n\)` -- the sample size and `\(\hat{p}\)` -- the proportion of yes's/true's in the sample.
+
+$$ Pr(\pi) = \hat{p} \pm z \cdot \left( \sqrt{\frac{\hat{p}*(1-\hat{p})}{n}} \right) $$
+
+`\(R\)` implements this in `prop.test`.  By default, R implements a modified version that corrects for discreteness/continuity.  To get the above formula exactly, `prop.test(table, correct=FALSE)`.
+
+---
+class: inverse
+### A first look at hypotheses
+
+$$ z = \frac{\hat{p} - \pi}{\sqrt{\frac{\pi(1-\pi)}{n}}} $$
+
+With some proportion calculated from data `\(\hat{p}\)` and some claim about `\(\pi\)` -- hereafter called an hypothesis -- we can use `\(z\)` to calculate/evaluate the claim.  
+
+These claims are *hypothetical* values of `\(\pi\)`.  They can be evaluated against a specific alternative considered in three ways:  
+- two-sided, that is `\(\pi = value\)` against not equal.  
+- `\(\pi \geq value\)` against something smaller.  
+- `\(\pi \leq value\)` against something greater.  
+
+In the first case, either much bigger or much smaller values could be evidence against equal.  The second and third cases are always about smaller and bigger; they are one-sided.
+
+Just as `\(z\)` has metric standard deviations now referred to as standard errors of the proportion, the z here will measure where the data fall with respect to the hypothetical `\(\pi\)`.  
+
+*With z sufficiently large, and in the proper direction, our hypothetical `\(\pi\)` becomes unlikely given the evidence and should be dismissed.*
+
+---
+class: inverse
+## Three hypothesis tests
+
+
+```r
+( Z.ALL &lt;- (0.3877596 - 0.5)/(sqrt(0.5^2 / 4526)) ) # Calculate z 
+```
+
+```
+## [1] -15.10207
+```
+
+*The estimate is 15.1 standard errors below the hypothesized value.*
+
+.pull-left[
+
+## Two Sided
+
+`\(\pi = 0.5\)` against `\(\pi \neq 0.5\)`.
+
+```r
+pnorm(-abs(Z.ALL)) + (1-pnorm(abs(Z.ALL))) 
+```
+
+```
+## [1] 7.846435e-52
+```
+
+Any `\(|z| &gt; 1.64\)` -- probability 0.05 above and below -- is sufficient to dispense with the hypothesis.
+
+]
+
+.pull-right[
+
+## One-Sided
+
+`\(\pi \leq 0.5\)` against `\(\pi \gt 0.5\)`.
+
+With 90% confidence, `\(z &gt; 1.28\)` is sufficient.
+
+`\(\pi \geq 0.5\)` against `\(\pi \lt 0.5\)`.
+
+With 90% confidence, `\(z &lt; -1.28\)` is sufficient.
+
+]
+
+
+---
+class: inverse
+
+# The normal approximation
+
+
+```r
+prop.test(table(UCBTab$Admit), conf.level = 0.9, correct=FALSE)
+```
+
+```
+## 
+## 	1-sample proportions test without continuity correction
+## 
+## data:  table(UCBTab$Admit), null probability 0.5
+## X-squared = 228.07, df = 1, p-value &lt; 2.2e-16
+## alternative hypothesis: true p is not equal to 0.5
+## 90 percent confidence interval:
+##  0.3759173 0.3997361
+## sample estimates:
+##         p 
+## 0.3877596
+```
+
+`\(R\)` reports the result as `\(z^2\)` not `\(z\)` which is `\(\chi^2\)` not normal; we can obtain the `\(z\)` by taking a square root: $$\sqrt{228.08} \approx 15.1 $$
+
+This approximation yields an estimate of `\(\pi\)`, with 90% confidence, that ranges between 0.376 and 0.4.
+
+
+---
+# A Cool Consequence of Normal
+
+The formal equation defines:
+
+$$ z = \frac{\hat{p} - \pi}{\sqrt{\frac{\pi(1-\pi)}{n}}} $$
+--
+
+Some language:
+1. Margin of error is `\(\hat{p} - \pi\)`.  [MOE]
+2. Confidence: the probability coverage given z [two-sided].
+3. We need a guess at the true `\(\pi\)` because variance/std. dev. depend on `\(\pi\)`.  0.5 is common because it maximizes the variance; we will have enough no matter what the true value.
+
+--
+
+Algebra allows us to solve for `\(n\)`.
+
+$$ n = \frac{z^2 \cdot \pi(1-\pi)}{(\hat{p} - \pi)^2} $$
+
+
+---
+class:inverse
+### Example
+
+Estimate the probability of supporting an initiative to within 0.03 with 95% confidence.  Assume that the probability is 0.5 [it maximizes the variance and renders a conservative estimate -- an upper bound on the sample size]
+
+
+```r
+Sample.Size &lt;- function(MOE, B.pi=0.5, Conf.lev=0.95) { 
+  My.n &lt;- ((qnorm((1-Conf.lev)/2)^2)*(B.pi*(1-B.pi))) / MOE^2 
+  Necessary.sample &lt;- ceiling(My.n) 
+  return(Necessary.sample) 
+}
+Sample.Size(MOE=0.03, B.pi=0.5, Conf.lev = 0.95)
+```
+
+```
+## [1] 1068
+```
+
+**I need 1068 people to estimate support to within plus or minus 0.03 with 95% confidence.**
+
+---
+class: inverse
+### In the Real World
+
+
+&lt;img src="./y1.png" width="900px" height="300px" /&gt;
+
+[A real poll](https://navigatorresearch.org/wp-content/uploads/2020/04/Navigator-Daily-Tracker-Topline-F04.13.20.pdf).  They do not have quite enough for a 3% margin of error.  But 1006 is enough for a 3.1 percent margin of error...
+
+
+```r
+Sample.Size(MOE=0.031, B.pi=0.5, Conf.lev = 0.95)
+```
+
+```
+## [1] 1000
+```
+
+---
+# One More Oddity
+
+What is our estimate of `\(\pi\)` with 90% confidence?  
+
+**The probability of admission ranges from 0.3758285 to 0.3996907.**
+
+If we wish to express this using the normal approximation, a central interval is the observed proportion plus/minus `\(z\)` times the *standard error of the proportion* -- $$ SE(\hat{p}) = \sqrt{\frac{\hat{p}(1-\hat{p})}{n}} $$  NB: The sample value replaces our assumed true value because `\(\pi\)` is to be solved for.  For 90%, the probability of admissions ranges from
+
+
+```r
+0.3877596 + qnorm(c(0.05,0.95))*(sqrt(0.3877596*(1-0.3877596)/4526))
+```
+
+```
+## [1] 0.3758468 0.3996724
+```
+
+---
+# Back to the Story
+
+**Does the probability of admission depend on whether the applicant is Male or Female?**
+
+---
+# Analysis by Group
+
+
+```r
+library(janitor); UCBTab %&gt;% tabyl(Gender,Admit) %&gt;% adorn_totals("col")
+```
+
+```
+##  Gender Admitted Rejected Total
+##    Male     1198     1493  2691
+##  Female      557     1278  1835
+```
+
+```r
+UCBTab %&gt;% tabyl(Gender,Admit) %&gt;% adorn_percentages("row")
+```
+
+```
+##  Gender  Admitted  Rejected
+##    Male 0.4451877 0.5548123
+##  Female 0.3035422 0.6964578
+```
+
+```r
+UCBTF &lt;- UCBTab %&gt;% filter(Gender=="Female")
+UCBTF.Pi &lt;- ResampleProp(UCBTF$Admit, k = 10000) %&gt;%  data.frame(Pi.Admit=., Gender=as.character("Female"), frameN=2) # Estimates for females
+UCBTM &lt;- UCBTab %&gt;% filter(Gender=="Male")
+UCBTM.Pi &lt;- ResampleProp(UCBTM$Admit, k = 10000) %&gt;%  data.frame(Pi.Admit=., Gender = as.character("Male"), frameN = 2)  # Estimates for males
+```
+
+---
+class:inverse
+# Binomial Result: Males
+
+
+```r
+UCBTM %$% table(Admit) %&gt;% binom.test(., conf.level = 0.9)
+```
+
+```
+## 
+## 	Exact binomial test
+## 
+## data:  .
+## number of successes = 1198, number of trials = 2691, p-value =
+## 1.403e-08
+## alternative hypothesis: true probability of success is not equal to 0.5
+## 90 percent confidence interval:
+##  0.4292930 0.4611706
+## sample estimates:
+## probability of success 
+##              0.4451877
+```
+
+The probability of being admitted, conditional on being Male, ranges from 0.43 to 0.46 with 90% confidence.
+
+---
+
+## The Thought Experiment: Male
+
+
+```r
+UCBTM.Pi %&gt;%  ggplot(., aes(x=Pi.Admit)) + geom_density(color="maroon") + labs(x=expression(pi)) + theme_xaringan()
+```
+
+&lt;img src="index_files/figure-html/BMPlot-1.jpeg" width="504" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: inverse
+## Binomial Result: Females
+
+
+```r
+UCBTF %$% table(Admit) %&gt;% binom.test(., conf.level = 0.9)
+```
+
+```
+## 
+## 	Exact binomial test
+## 
+## data:  .
+## number of successes = 557, number of trials = 1835, p-value &lt;
+## 2.2e-16
+## alternative hypothesis: true probability of success is not equal to 0.5
+## 90 percent confidence interval:
+##  0.2858562 0.3216944
+## sample estimates:
+## probability of success 
+##              0.3035422
+```
+
+The probability of being of Admitted, given a Female, ranges from 0.286 to 0.322 with 90% confidence.
+
+---
+## The Thought Experiment: Female
+
+
+```r
+UCBTF.Pi %&gt;%  ggplot(., aes(x=Pi.Admit)) + geom_density(color="maroon") + labs(x=expression(pi)) + theme_xaringan()
+```
+
+&lt;img src="index_files/figure-html/BFPlot-1.jpeg" width="504" style="display: block; margin: auto;" /&gt;
+
+---
+# Succinctly
+
+.left-column[
+Female: from 0.286 to 0.322  
+Male: from 0.43 to 0.46  
+All: from 0.3758 to 0.3998  
+]
+.right-column[
+&lt;img src="index_files/figure-html/patch1-1.jpeg" width="648" /&gt;
+]
+
+---
+class: inverse
+## A Key Visual
+
+
+```r
+UCB.Pi &lt;- bind_rows(UCBTF.Pi, UCBTM.Pi)
+UCB.Pi %&gt;% ggplot(., aes(x=Gender, y=Pi.Admit, fill=Gender)) + geom_violin() + geom_label(aes(x=1.5, y=0.375), label="Too small to be male \n Too large to be female?", size=14, fill="black", color="white", inherit.aes = FALSE) + guides(size=FALSE) + theme_xaringan_inverse() + labs(x="")
+```
+
+&lt;img src="index_files/figure-html/Yellow-1.jpeg" width="648" style="display: block; margin: auto;" /&gt;
+
+---
+class: inverse
+
+
+```r
+UCB.Pi &lt;- bind_rows(UCBTF.Pi, UCBTM.Pi, RSMP)
+UCB.Pi %&gt;% ggplot(., aes(x=Pi.Admit, fill=Gender)) + geom_density(alpha=0.5) + theme_minimal() +  scale_fill_viridis_d() + transition_states(frameN, state_length = 40, transition_length = 20) + enter_fade() + exit_fade() -&gt; SaveAnim
+anim_save(SaveAnim, renderer = gifski_renderer(height=500, width=1000), filename=here("static/xaringan/testest","Anim1.gif"))
+```
+.center[
+![](./Anim1.gif)
+]
+
+---
+# Can We Measure the Difference?
+
+.pull-left[
+How much more likely are Males to be admitted when compared to Females?
+
+**We can take the difference in our estimates for Male and Female.**
+
+
+```r
+UCB.Diff &lt;- UCB.Pi %&gt;% filter(frameN != 1) %&gt;% select(Pi.Admit, Gender) %&gt;% mutate(obs = rep(seq(1:10000),2)) %&gt;% pivot_wider(., id_cols = obs, values_from=Pi.Admit, names_from=Gender) %&gt;% mutate(Diff = Male - Female)
+quantile(UCB.Diff$Diff, probs=c(0.05,0.95))
+```
+
+```
+##        5%       95% 
+## 0.1176662 0.1651037
+```
+
+
+```r
+ggplot(UCB.Diff) + aes(x=Diff) + geom_density() + labs(title="Difference in Probability of Admission", subtitle="[Male - Female]") + theme_xaringan()
+```
+]
+.pull-right[
+&lt;img src="index_files/figure-html/unnamed-chunk-20-1.jpeg" width="504" /&gt;
+]
+
+---
+class: inverse
+
+## Or Use the Normal Approximation
+
+`$$[\hat{p}_{M} - \hat{p}_{F}] \pm z*\sqrt{ \underbrace{\frac{\hat{p}_{M}(1-\hat{p}_{M})}{n_{M}}}_{Males} + \underbrace{\frac{\hat{p}_{F}(1-\hat{p}_{F})}{n_{F}}}_{Females}}$$`
+
+
+```r
+# prop.test(table(UCBTab$Gender,UCBTab$Admit), conf.level=0.9, correct=FALSE)
+UCBTab %$% table(Gender, Admit) %&gt;% prop.test(conf.level = 0.9, correct=FALSE)
+```
+
+```
+## 
+## 	2-sample test for equality of proportions without continuity
+## 	correction
+## 
+## data:  .
+## X-squared = 92.205, df = 1, p-value &lt; 2.2e-16
+## alternative hypothesis: two.sided
+## 90 percent confidence interval:
+##  0.1179805 0.1653103
+## sample estimates:
+##    prop 1    prop 2 
+## 0.4451877 0.3035422
+```
+
+With 90% confidence, a Female is 0.118 to 0.165 [0.1416] less likely to be admitted.
+
+---
+class: inverse
+
+### The Standard Error of the Difference
+
+Following something akin to the FOIL method, we can show that the variance of a difference in two random variables is the sum of the variances minus twice the covariance between them.
+
+$$Var(X - Y) = Var(X) + Var(Y) - 2*Cov(X,Y) $$
+
+If we assume [or recognize it is generally unknownable] that the male and female samples are independent, the covariance is zero, and the variance of the difference is simply the sum of the variance for male and female, respectively, and **zero covariance**.
+
+`$$SE(\hat{p}_{M} - \hat{p}_{F}) =  \sqrt{ \underbrace{\frac{\hat{p}_{M}(1-\hat{p}_{M})}{n_{M}}}_{Males} + \underbrace{\frac{\hat{p}_{F}(1-\hat{p}_{F})}{n_{F}}}_{Females}}$$`  
+
+---
+# The chi-square and the test of independence
+
+The sum of `\(k\)` squared standard normal (z or Normal(0,1)) variates has a `\(\chi^2\)` distribution with `\(k\)` degrees of freedom.  Two sample tests of proportions can be reported using the chi-square metric as well.  `\(R\)`'s `prop.test` does this by default.
+
+**In Radiant, this is basics and cross-tabs.**
+
+---
+# Inference for Data
+
+Of two forms [for next time]:
+
+1. Binary/Qualitative (Proportions)  **and comparison**  
+
+--
+
+2. **Quantitative (Means)**
+
+---
+# An Example on COVID vaccines
+
+Combining a little idea from probability distributions with evidence from COVID-19 vaccines in Israel.
+
+---
+# A Little Homework
+
+```
+load(url("https://github.com/robertwwalker/DADMStuff/raw/master/UCB.RData"))
+```
+
+1. Characterize the probability of Admission `Admit` for each department `Dept` with 90% probability.  [Hint: You will need to filter the data in both questions; there are a few ways to do it.]
+
+2. Characterize the probability of Admission for each department for Male and then for Female `M.F`.  How do they compare within each department?  
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"ratio": "16:9"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+<style>
+.logo {
+  background-image: url(logo.png);
+  background-size: contain;
+  background-repeat: no-repeat;
+  position: absolute;
+  top: 1em;
+  right: 1em;
+  width: 110px;
+  height: 128px;
+  z-index: 0;
+}
+</style>
+
+<script>
+document
+  .querySelectorAll(
+    '.remark-slide-content' +
+    ':not(.title-slide)' +
+    // add additional classes to exclude here, e.g.
+    // ':not(.inverse)' +
+    ':not(.hide-logo)'
+  )
+  .forEach(el => {
+    el.innerHTML += '<div class="logo"></div>';
+  });
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
