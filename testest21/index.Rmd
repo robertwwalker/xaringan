@@ -37,6 +37,7 @@ library(DT)
 library(here)
 library(svglite)
 library(magrittr)
+options(scipen=8)
 ```
 
 ```{r xaringan-themer, include=FALSE}
@@ -547,7 +548,7 @@ All: from 0.3758 to 0.3998
 .right-column[
 ```{r patch1, fig.width=9, echo=FALSE}
 library(patchwork)
-ggplot(UCBTab) +aes(x = Gender, fill = Admit) + geom_bar(color="darkgreen", position = "dodge") + scale_xaringan_fill_discrete() + theme_xaringan() + labs(x="") + ggplot(UCBTab) +aes(x = Gender, fill = Admit) + geom_bar(color="darkgreen", position = "fill") + scale_xaringan_fill_discrete() + theme_xaringan() + guides(fill=FALSE) + labs(y="Proportion", x="")
+ggplot(UCBTab) +aes(x = Gender, fill = Admit) + geom_bar(color="darkgreen", position = "dodge") + scale_xaringan_fill_discrete() + theme_xaringan() + labs(x="") + ggplot(UCBTab) +aes(x = Gender, fill = Admit) + geom_bar(color="darkgreen", position = "fill") + scale_xaringan_fill_discrete() + theme_xaringan() + guides(fill="none") + labs(y="Proportion", x="")
 ```
 ]
 
@@ -557,7 +558,7 @@ class: inverse
 
 ```{r Yellow, message=FALSE, warning=FALSE, fig.width=9, fig.height=5, fig.align='center'}
 UCB.Pi <- bind_rows(UCBTF.Pi, UCBTM.Pi)
-UCB.Pi %>% ggplot(., aes(x=Gender, y=Pi.Admit, fill=Gender)) + geom_violin() + geom_label(aes(x=1.5, y=0.375), label="Too small to be male \n Too large to be female?", size=14, fill="black", color="white", inherit.aes = FALSE) + guides(size=FALSE) + theme_xaringan_inverse() + labs(x="")
+UCB.Pi %>% ggplot(., aes(x=Gender, y=Pi.Admit, fill=Gender)) + geom_violin() + geom_label(aes(x=1.5, y=0.375), label="Too small to be male \n Too large to be female?", size=14, fill="black", color="white", inherit.aes = FALSE) + guides(size="none") + theme_xaringan_inverse() + labs(x="")
 ```
 
 ---
@@ -913,3 +914,19 @@ With proportions: If we claim a value of $\pi$, then use it for the standard err
 With quantities: If comparing them, are samples independent or dependent?  All the relevant quantities are known [or assumed] functions of the data.
 
 For differences, the `magic number` is nearly always zero -- no difference.
+
+---
+class: inverse
+
+# A Workflow
+
+1. Do we want an hypothesis test or a confidence interval?
+
+2. Choose a level of confidence/significance/probability.
+
+3. If hypothesis test, derive the relevant critical value by combining the reference distribution with the level of confidence/significance/probability.  What value of $z$ or $t$ would be required to reject the hypothesis?  If an confidence interval, how many standard errors from the mean are covered by the given level of probability.
+
+4. If an hypothesis test, calculate the test statistic.
+
+5. Compute the confidence interval or compare the test statistic to the relevant critical value.
+
