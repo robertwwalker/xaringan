@@ -57,6 +57,10 @@ tourism <- tourism %>%
 
 ![hopecast](figs/hopecasts2.png)
 
+## Bad Forecasts
+
+![Bad](./figs/bad_forecasts.jpg)
+
 ## What can we forecast?
 
 ## Weather 
