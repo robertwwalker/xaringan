@@ -59,7 +59,7 @@ tourism <- tourism %>%
 
 ## Bad Forecasts
 
-![Bad](./figs/bad_forecasts.jpg)
+![Bad Forecasts](./figs/bad_forecasts.jpg)
 
 ## What can we forecast?
 
