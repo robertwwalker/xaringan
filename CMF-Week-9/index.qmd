@@ -54,6 +54,12 @@ beer <- aus_production %>%
   filter(year(Quarter) >= 1992)
 ```
 
+# Getting Started
+
+```{r}
+load(url("https://github.com/robertwwalker/xaringan/raw/master/CMF-Week-9/data/FullWorkspace.RData"))
+```
+
 # Autocorrelation and autocovariance
 
 # Lag plots and autocorrelation
