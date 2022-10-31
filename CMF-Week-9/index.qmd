@@ -1,0 +1,1467 @@
+---
+title: "Choice and Forecasting: Week 9"
+author: "Robert W. Walker"
+format: 
+   revealjs:
+     theme: [custom.scss]
+     scrollable: true
+     logo: AGSMlogo.jpeg
+     footer: "Models of Choice and Forecasting"
+     self-contained: true
+     html-math-method: katex
+     incremental: true
+     slide-number: c/t
+     transition: convex
+     multiplex: true
+     preview-links: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=TRUE, tidy=TRUE, comment=NA, prompt=FALSE, fig.height=6, fig.width=6.5, fig.retina = 3, dev = 'svg', eval=TRUE)
+library(tidyverse)
+library(patchwork)
+library(gganimate)
+options(
+  digits = 3,
+  width = 75,
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis",
+  ggplot2.discrete.colour = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442"),
+  ggplot2.discrete.fill = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442")
+)
+library(fpp3)
+austa <- readr::read_csv("http://OTexts.com/fpp3/extrafiles/austa.csv") %>%
+  as_tsibble(index = Year)
+melsyd <- tsibbledata::ansett %>%
+  filter(Airports == "MEL-SYD")
+global_economy <- global_economy %>%
+  select(Year, Country, GDP, Imports, Exports, Population)
+tourism <- tourism %>%
+  mutate(
+    State = recode(State,
+      "Australian Capital Territory" = "ACT",
+      "New South Wales" = "NSW",
+      "Northern Territory" = "NT",
+      "Queensland" = "QLD",
+      "South Australia" = "SA",
+      "Tasmania" = "TAS",
+      "Victoria" = "VIC",
+      "Western Australia" = "WA"
+    )
+  )
+beer <- aus_production %>%
+  select(Quarter, Beer) %>%
+  filter(year(Quarter) >= 1992)
+```
+
+# Autocorrelation and autocovariance
+
+# Lag plots and autocorrelation
+
+## Example: Beer production
+
+```{r}
+new_production <- aus_production %>%
+  filter(year(Quarter) >= 1992)
+new_production
+```
+
+## Example: Beer production
+
+```{r, fig.height=6, fig.width=6, out.width="6.5cm"}
+new_production %>% gg_lag(Beer)
+```
+
+## Example: Beer production
+
+```{r, fig.height=6, fig.width=6, out.width="6.5cm"}
+new_production %>% gg_lag(Beer, geom='point')
+```
+
+
+
+## Lagged scatterplots
+
+Each graph shows $y_t$ plotted against $y_{t-k}$ for
+different values of $k$.
+
+- The autocorrelations are the correlations associated
+with these scatterplots.
+- ACF (autocorrelation function):
+   - $r_1=\text{Correlation}(y_{t}, y_{t-1})$
+   - $r_2=\text{Correlation}(y_{t}, y_{t-2})$
+   - $r_3=\text{Correlation}(y_{t}, y_{t-3})$
+   - etc.
+
+## Autocorrelation
+
+**Covariance** and **correlation**: measure extent of **linear relationship** between two variables ($y$ and $X$).
+
+**Autocovariance** and **autocorrelation**: measure linear relationship between **lagged values** of a time series $y$.
+
+We measure the relationship between:
+
+- $y_{t}$ and $y_{t-1}$
+- $y_{t}$ and $y_{t-2}$
+- $y_{t}$ and $y_{t-3}$
+- etc.
+
+## Autocorrelation
+
+We denote the sample autocovariance at lag $k$ by $c_k$ and the sample autocorrelation at lag $k$ by $r_k$.  Then define
+
+$$
+c_k = \frac{1}{T}\sum_{t=k+1}^T (y_t-\bar{y})(y_{t-k}-\bar{y})
+$$
+$$
+r_{k} = c_k/c_0
+$$
+
+- $r_1$ indicates how successive values of  $y$  relate to each other
+- $r_2$ indicates how  $y$ values two periods apart relate to each other
+- $r_k$ is \textit{almost} the same as the sample correlation between $y_t$ and $y_{t-k}$.
+
+## Autocorrelation
+
+Results for first 9 lags for beer data:
+
+```{r, echo=TRUE}
+new_production <- aus_production %>%
+  filter(year(Quarter) >= 1992)
+new_production %>% ACF(Beer, lag_max = 9)
+```
+
+## Autocorrelation
+
+Results for first 9 lags for beer data:
+
+```{r beeracf, fig.height=2}
+new_production %>% ACF(Beer, lag_max = 9) %>% autoplot()
+```
+
+  * Together, the autocorrelations at lags 1, 2, \dots, make up the \emph{autocorrelation} or ACF.
+  * The plot is known as a **correlogram**
+
+
+## Autocorrelation
+
+```{r beeracf2, fig.height=2}
+new_production %>% ACF(Beer) %>% autoplot()
+```
+
+  * $r_{4}$  higher than for the other lags. This is due to **the seasonal pattern in the data**: the peaks tend to be **4 quarters** apart and the troughs tend to be **2 quarters** apart.
+  * $r_2$ is more negative than for the other lags because troughs tend to be 2 quarters behind peaks.
+
+## Trend and seasonality in ACF plots
+
+- When data have a trend, the autocorrelations for small lags tend to be large and positive.
+- When data are seasonal, the autocorrelations will be larger at the seasonal lags (i.e., at multiples of the seasonal frequency)
+- When data are trended and seasonal, you see a combination of these effects.
+
+## Autocorrelation functions
+
+[AutoCorrelation Functions by Allison Horst](https://allisonhorst.com/time-series-acf)
+
+## US retail trade employment
+
+```{r}
+retail <- us_employment %>%
+  filter(Title == "Retail Trade", year(Month) >= 1980)
+retail %>% autoplot(Employed)
+```
+
+## US retail trade employment
+
+```{r}
+retail %>%
+  ACF(Employed, lag_max = 48) %>%
+  autoplot()
+```
+
+## Google stock price
+
+```{r}
+google_2015 <- gafa_stock %>%
+  filter(Symbol == "GOOG", year(Date) == 2015) %>%
+  select(Date, Close)
+google_2015
+```
+
+## Google stock price
+
+```{r}
+google_2015 %>% autoplot(Close)
+```
+
+## Google stock price
+
+```{r}
+google_2015 %>%
+  ACF(Close, lag_max=100)
+```
+
+## Google stock price
+
+```{r}
+google_2015 %>%
+  ACF(Close, lag_max = 100) %>%
+  autoplot()
+```
+
+## Which is which?
+
+```{r, fig.height=6, fig.width=12, echo=FALSE, warning=FALSE, out.width="15cm"}
+cowtemp <- as_tsibble(fma::cowtemp)
+USAccDeaths <- as_tsibble(USAccDeaths)
+AirPassengers <- as_tsibble(AirPassengers)
+mink <- as_tsibble(fma::mink)
+tp1 <- autoplot(cowtemp, value) +
+  labs(x = "", y = "chirps per minute", title = "1. Daily temperature of cow")
+tp2 <- autoplot(USAccDeaths, value) +
+  labs(x = "", y = "thousands", title = "2. Monthly accidental deaths")
+tp3 <- autoplot(AirPassengers, value) +
+  labs(x = "", y = "thousands", title = "3. Monthly air passengers")
+tp4 <- autoplot(mink, value) +
+  labs(x = "", y = "thousands", title = "4. Annual mink trappings")
+acfb <- ACF(cowtemp, value) %>% autoplot() +
+  labs(x="", title="B") + ylim(-0.4,1)
+acfa <- ACF(USAccDeaths, value) %>% autoplot() +
+  labs(x = "", title = "A") + ylim(-0.4,1)
+acfd <- ACF(AirPassengers, value) %>% autoplot() +
+  labs(x = "", title = "D") + ylim(-0.4,1)
+acfc <- ACF(mink, value) %>% autoplot() +
+  labs(x = "", title ="C") + ylim(-0.4,1)
+(tp1 | tp2 | tp3 | tp4) / (acfa | acfb | acfc | acfd)
+```
+
+# White noise
+
+## Example: White noise
+
+```{r wn}
+set.seed(30)
+wn <- tsibble(t = 1:50, y = rnorm(50), index = t)
+wn %>% autoplot(y)
+```
+
+**White noise data is uncorrelated across time with zero mean and constant variance.**
+
+(Technically, we require independence as well.)
+
+## Example: White noise
+
+```r
+wn %>% ACF(y)
+```
+
+```{r wnacf, echo=FALSE, dependson="wn"}
+wn %>%
+  ACF(y, lag_max = 10) %>%
+  as_tibble() %>%
+  mutate(lag = as.numeric(lag)) %>%
+  pivot_wider(names_from = lag, values_from = acf) %>%
+  rename_all(function(x) {
+    paste("$r_{", x, "}$", sep = "")
+  }) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    escape = FALSE, align = "c", digits = 3,
+    format.args = list(nsmall = 3)
+  )
+```
+
+```{r, echo=FALSE, fig.height=1.5}
+wn %>%
+  ACF(y) %>%
+  autoplot()
+```
+
+
+- Sample autocorrelations for white noise series.
+- Expect each autocorrelation to be close to zero.
+- Blue lines show 95% critical values.
+
+
+## Sampling distribution of autocorrelations
+
+Sampling distribution of $r_k$ for white noise data is asymptotically N(0,$1/T$).\pause
+
+-  95% of all $r_k$ for white noise must lie within $\pm 1.96/\sqrt{T}$.
+- If this is not the case, the series is probably not WN.
+- Common to plot lines at $\pm 1.96/\sqrt{T}$ when plotting ACF.
+These are the **critical values**.
+
+## Example: Pigs slaughtered
+
+```{r, fig.height=2.7}
+pigs <- aus_livestock %>%
+  filter(State == "Victoria", Animal == "Pigs", year(Month) >= 2014)
+pigs %>% autoplot(Count/1e3) +
+  labs(y = "Thousands", title = "Number of pigs slaughtered in Victoria")
+```
+
+## Example: Pigs slaughtered
+
+
+```{r}
+pigs %>% ACF(Count) %>% autoplot()
+```
+
+## Example: Pigs slaughtered
+
+Monthly total number of pigs slaughtered
+in the state of Victoria, Australia, from January 2014 through December 2018
+(Source: Australian Bureau of Statistics.)
+
+- Difficult to detect pattern in time plot.
+- ACF shows significant autocorrelation for lag 2 and 12.
+- Indicate some slight seasonality.
+
+These show the series is **not a white noise series**.
+
+## Let's Try One
+
+You can compute the daily changes in the Google stock price in 2018 using
+
+
+```{r, eval = FALSE}
+dgoog <- gafa_stock %>%
+  filter(Symbol == "GOOG", year(Date) >= 2018) %>%
+  mutate(diff = difference(Close))
+```
+
+Does `diff` look like white noise?
+
+# Chapter 3: Decomposition
+
+# Transformations and adjustments
+
+---
+
+Getting started
+
+```
+library(tidyverse)
+library(fpp3)
+library(purrr)
+library(gganimate)
+```
+
+## Filter Australia
+
+```{r gdp-per-capita}
+global_economy %>%
+  filter(Country == "Australia") %>%
+  autoplot(GDP)
+```
+
+
+# How to Adjust?
+
+
+## Per capita adjustments
+
+```{r gdp-per-capita2}
+global_economy %>%
+  filter(Country == "Australia") %>%
+  autoplot(GDP / Population)+ hrbrthemes::theme_ipsum_rc()
+```
+
+## Have a look....  
+
+Consider the GDP information in `global_economy`. Plot the GDP per capita for each country over time. Which country has the highest GDP per capita? How has this changed over time?
+
+```{r}
+global_economy %>% mutate(GDPPC = GDP / Population) %>% select(Country, Year, GDPPC) %>% top_n(., 10, wt=GDPPC)
+```
+
+## Plot
+
+```{r}
+global_economy %>% autoplot(GDP / Population) + guides(color=FALSE) + hrbrthemes::theme_ipsum_rc()
+```
+
+
+## Inflation adjustments
+
+```{r retail_cpi, message=FALSE, warning=FALSE, fig.show='hide'}
+global_economy <- tsibbledata::global_economy
+print_retail <- aus_retail %>%
+  filter(Industry == "Newspaper and book retailing") %>%
+  group_by(Industry) %>%
+  index_by(Year = year(Month)) %>%
+  summarise(Turnover = sum(Turnover))
+aus_economy <- filter(global_economy, Code == "AUS")
+print_retail %>%
+  left_join(aus_economy, by = "Year") %>%
+  mutate(Adj_turnover = Turnover / CPI) %>%
+  pivot_longer(c(Turnover, Adj_turnover),
+    names_to = "Type", values_to = "Turnover"
+  ) %>%
+  ggplot(aes(x = Year, y = Turnover)) +
+  geom_line() +
+  facet_grid(vars(Type), scales = "free_y") +
+  xlab("Years") + ylab(NULL) +
+  ggtitle("Turnover: Australian print media industry")  + hrbrthemes::theme_ipsum_rc()
+```
+
+---
+
+```{r retail_cpi2, message=FALSE, warning=FALSE, echo=FALSE}
+print_retail <- aus_retail %>%
+  filter(Industry == "Newspaper and book retailing") %>%
+  group_by(Industry) %>%
+  index_by(Year = year(Month)) %>%
+  summarise(Turnover = sum(Turnover))
+aus_economy <- filter(global_economy, Code == "AUS")
+print_retail %>%
+  left_join(aus_economy, by = "Year") %>%
+  mutate(Adj_turnover = Turnover / CPI) %>%
+  pivot_longer(c(Turnover, Adj_turnover),
+    names_to = "Type", values_to = "Turnover"
+  ) %>%
+  ggplot(aes(x = Year, y = Turnover)) +
+  geom_line() +
+  facet_grid(vars(Type), scales = "free_y") +
+  xlab("Years") + ylab(NULL) +
+  ggtitle("Turnover: Australian print media industry")  + hrbrthemes::theme_ipsum_rc()
+```
+
+## Mathematical transformations
+
+If the data show different variation at different levels of the series, then a transformation can be useful.
+
+Denote original observations as $y_1,\dots,y_n$ and transformed
+observations as $w_1, \dots, w_n$.
+
+|Transformations |  | 
+|---------|----|
+|Square root | $w_t = \sqrt{y_t}$   | $\downarrow$
+|Cube root   | $w_t = \sqrt[3]{y_t}$| Increasing
+|Logarithm   | $w_t = \log(y_t)$    | strength
+
+Logarithms, in particular, are useful because they are more interpretable: changes in a log value are **relative (percent) changes on the original scale**.
+
+---
+
+## Mathematical transformations
+
+```{r food, echo=TRUE}
+food <- aus_retail %>%
+  filter(Industry == "Food retailing") %>%
+  summarise(Turnover = sum(Turnover))
+```
+
+---
+
+```{r food-plot, echo = FALSE}
+food %>% autoplot(Turnover) +
+  labs(y = "Turnover ($AUD)")  + hrbrthemes::theme_ipsum_rc()
+```
+
+
+## Mathematical transformations
+
+```{r food-sqrt1, echo=TRUE, fig.height=4}
+food %>% autoplot(sqrt(Turnover)) +
+  labs(y = "Square root turnover")  + hrbrthemes::theme_ipsum_rc()
+```
+
+
+## Mathematical transformations
+
+```{r food-cbrt, echo=TRUE, fig.height=4}
+food %>% autoplot(Turnover^(1/3)) +
+  labs(y = "Cube root turnover")  + hrbrthemes::theme_ipsum_rc()
+```
+
+
+## Mathematical transformations
+
+```{r food-log, echo=TRUE, fig.height=4}
+food %>% autoplot(log(Turnover)) +
+  labs(y = "Log turnover")  + hrbrthemes::theme_ipsum_rc()
+```
+
+
+## Mathematical transformations
+
+```{r food-inverse, echo=TRUE, fig.height=4}
+food %>% autoplot(-1/Turnover) +
+  labs(y = "Inverse turnover")  + hrbrthemes::theme_ipsum_rc()
+```
+
+
+## Box-Cox transformations
+
+Each of these transformations is close to a member of the
+family of **Box-Cox transformations**:
+$$w_t = \left\{\begin{array}{ll}
+        \log(y_t),      & \quad \lambda = 0; \\
+        (y_t^\lambda-1)/\lambda ,         & \quad \lambda \ne 0.
+\end{array}\right.$$
+
+- $\lambda=1$: (No substantive transformation)
+- $\lambda=\frac12$: (Square root plus linear transformation)
+- $\lambda=0$: (Natural logarithm)
+- $\lambda=-1$: (Inverse plus 1)
+
+## Box-Cox transformations
+
+```{r food-anim, interval=1/10, message=FALSE, eval=FALSE}
+food %>%
+  mutate(!!!set_names(map(seq(0, 1, 0.01), ~ expr(fabletools::box_cox(Turnover, !!.x))), seq(0, 1, 0.01))) %>%
+  select(-Turnover) %>%
+  pivot_longer(-Month, names_to = "lambda", values_to = "Turnover") %>%
+  mutate(lambda = as.numeric(lambda)) %>%
+  ggplot(aes(x = Month, y = Turnover)) +
+  geom_line() +
+  transition_states(1 - lambda, state_length = 0) +
+  view_follow() +
+  ggtitle("Box-CoxT(lambda = {format(1 - as.numeric(closest_state), digits = 2)})")  + hrbrthemes::theme_ipsum_rc() -> my.anim
+# save_animation("./img/Anim1.gif")
+```
+
+![Animation](./img/Anim1.gif)
+
+## Box-Cox transformations
+
+```{r food-lambda, echo=TRUE}
+food %>%
+  features(Turnover, features = guerrero)
+```
+
+- This attempts to balance the seasonal fluctuations and random variation across the series.
+- Always check the results.
+- A low value of $\lambda$ can give extremely large prediction intervals.
+
+
+## Box-Cox transformations
+
+```{r food-bc, echo=TRUE,fig.height=4}
+food %>% autoplot(box_cox(Turnover, 0.0524)) +
+  labs(y = "Box-Cox transformed turnover")  + hrbrthemes::theme_ipsum_rc()
+```
+
+## Transformations
+
+* Often no transformation needed.
+* Simple transformations are easier to explain and work well enough.
+* Transformations can have very large effect on PI.
+* If the data contains zeros, then don't take logs.
+* `logp1()` can be useful for data with zeros.
+* If some data are negative, no power transformation is possible unless a constant is added to all values.
+* Choosing logs is a simple way to force forecasts to be positive
+* Transformations must be reversed to obtain forecasts on the original scale. (Handled automatically by `fable`.)
+
+
+## Try this out...
+
+1. For the following series, find an appropriate transformation in order to stabilise the variance.
+
+- United States GDP from `global_economy`
+- Slaughter of Victorian “Bulls, bullocks and steers” in `aus_livestock`
+- Victorian Electricity Demand from `vic_elec`.
+- Gas production from `aus_production`
+
+2. Why is a Box-Cox transformation unhelpful for the `canadian_gas` data?
+
+# Time series components
+
+## Time series patterns
+
+**Recall**
+
+- *Trend* pattern exists when there is a long-term increase or decrease in the data.
+
+- *Cyclic* pattern exists when data exhibit rises and falls that are *not of fixed period* (duration usually of at least 2 years).
+
+- *Seasonal* pattern exists when a series is influenced by seasonal factors (e.g., the quarter of the year, the month, or day of the week).
+
+## A Note on DeSeasoning
+
+```{r}
+us_retail_employment <- us_employment %>%
+  filter(year(Month) >= 1990, Title == "Retail Trade") %>%
+  select(-Series_ID)
+dcmp <- us_retail_employment %>%
+  model(STL(Employed))
+autoplot(us_retail_employment, Employed, color = "gray") +
+  autolayer(components(dcmp), season_adjust, color = "blue") +
+  labs(y = "Persons (thousands)", title = "Total employment in US retail")
+```
+
+# Moving Averages
+
+The general idea is a moving window.  We will set `.before` and `.after` as follows.
+
+```{r}
+aus_exports <- global_economy %>%
+  filter(Country == "Australia") %>%
+  mutate(
+    `5-MA` = slider::slide_dbl(Exports, mean, .before = 2, .after = 2, .complete = TRUE)
+  )
+aus_exports
+```
+
+---
+
+```{r}
+autoplot(aus_exports, Exports) +
+  autolayer(aus_exports, `5-MA`, color = "red") +
+  labs(y = "Exports (% of GDP)", title = "Total Australian exports") +
+  guides(colour = guide_legend(title = "series"))+ hrbrthemes::theme_ipsum_rc()
+```
+
+
+## We can even have moving averages of moving averages.
+
+
+```{r}
+aus_exports2 <- aus_exports %>% 
+  mutate(`2x5-MA` = slider::slide_dbl(`5-MA`, mean, .before = 1, .after = 0, .complete = TRUE)
+  )
+aus_exports2
+```
+
+---
+
+```{r}
+autoplot(aus_exports2, Exports) +
+  autolayer(aus_exports2, `5-MA`, color = "red") +
+  autolayer(aus_exports2, `2x5-MA`, color = "blue") +
+  labs(y = "Exports (% of GDP)", title = "Total Australian exports") +
+  guides(colour = guide_legend(title = "series")) + hrbrthemes::theme_ipsum_rc()
+```
+
+
+## Time series decomposition
+
+$$y_t = f(S_t, T_t, R_t)$$
+
+where 
+$y_t=$: data at period $t$  
+
+$T_t=$: trend-cycle component at period $t$
+
+$S_t=$ & seasonal component at period $t$  
+
+$R_t=$ & remainder component at period $t$  
+
+**Additive decomposition:** $y_t = S_t + T_t + R_t.$
+
+**Multiplicative decomposition:** $y_t = S_t \times T_t \times R_t.$
+
+
+## Time series decomposition
+
+-  Additive model  appropriate if  magnitude of  seasonal fluctuations does not vary with level.
+-  If seasonal are proportional to level of series, then multiplicative model appropriate.
+-  Multiplicative decomposition more prevalent with economic series
+-  Alternative: use a Box-Cox transformation, and then use additive decomposition.
+-  Logs turn multiplicative relationship into an additive relationship:
+
+$$y_t = S_t \times T_t \times E_t \quad\Rightarrow\quad
+\log y_t = \log S_t + \log T_t + \log R_t.$$
+
+## US Retail Employment
+
+```{r usretail}
+us_retail_employment <- us_employment %>%
+  filter(year(Month) >= 1990, Title == "Retail Trade") %>%
+  select(-Series_ID)
+us_retail_employment
+```
+
+
+## US Retail Employment
+
+```{r dable1}
+us_retail_employment %>%
+  autoplot(Employed) +
+  xlab("Year") + ylab("Persons (thousands)") +
+  ggtitle("Total employment in US retail")  + hrbrthemes::theme_ipsum_rc()
+```
+
+---
+
+```{r}
+USREDC <- us_retail_employment %>%
+  model(classical_decomposition(Employed, type = "additive")) %>%
+  components()
+USREDC
+```
+
+---
+
+```{r}
+autoplot(USREDC) +
+  labs(title = "Classical additive decomposition of total US retail employment") + hrbrthemes::theme_ipsum_rc()
+```
+
+---
+
+## US Retail Employment
+
+```{r dable2}
+us_retail_employment %>%
+  model(stl = STL(Employed))
+```
+
+
+## US Retail Employment
+
+```{r dable3}
+dcmp <- us_retail_employment %>%
+  model(stl = STL(Employed))
+components(dcmp)
+```
+
+## US Retail Employment
+
+```{r dable4}
+us_retail_employment %>%
+  autoplot(Employed, color='gray') +
+  autolayer(components(dcmp), trend, color='red') +
+  xlab("Year") + ylab("Persons (thousands)") +
+  ggtitle("Total employment in US retail")  + hrbrthemes::theme_ipsum_rc()
+```
+
+## US Retail Employment
+
+```{r usretail-stl, fig.width=8, fig.height=5}
+components(dcmp) %>% autoplot() + xlab("Year")  + hrbrthemes::theme_ipsum_rc()
+```
+
+## US Retail Employment
+
+```{r usretail3}
+components(dcmp) %>% gg_subseries(season_year)  + hrbrthemes::theme_ipsum_rc()
+```
+
+## Seasonal adjustment
+
+-  Useful by-product of decomposition:  an easy way to calculate seasonally adjusted data.
+-  Additive decomposition: seasonally adjusted data given by
+$$y_t - S_t = T_t + R_t$$
+-  Multiplicative decomposition: seasonally adjusted data given by
+$$y_t / S_t = T_t \times R_t$$
+
+
+## US Retail Employment
+
+```{r usretail-sa}
+us_retail_employment %>%
+  autoplot(Employed, color='gray') +
+  autolayer(components(dcmp), season_adjust, color='blue') +
+  xlab("Year") + ylab("Persons (thousands)") +
+  ggtitle("Total employment in US retail")  + hrbrthemes::theme_ipsum_rc()
+```
+
+
+## Seasonal adjustment
+
+- We use estimates of $S$ based on past values to seasonally adjust a current value.
+- Seasonally adjusted series reflect **remainders** as well as **trend**. Therefore they are not "smooth" and "downturns" or "upturns" can be misleading.
+-  It is better to use the trend-cycle component to look for turning points.
+
+# History of time series decomposition
+
+
+## History of time series decomposition
+
+-  Classical method originated in 1920s.
+-  Census II method introduced in 1957. Basis for X-11 method and variants (including X-12-ARIMA, X-13-ARIMA)
+-  STL method introduced in 1983
+-  TRAMO/SEATS introduced in 1990s.
+
+## National Statistics Offices
+- ABS uses X-12-ARIMA
+- US Census Bureau uses X-13ARIMA-SEATS
+- Statistics Canada uses X-12-ARIMA
+- ONS (UK) uses X-12-ARIMA
+- EuroStat use X-13ARIMA-SEATS
+
+## X-11 decomposition
+
+**Advantages**
+
+-  Relatively robust to outliers
+-  Completely automated choices for trend and seasonal changes
+-  Very widely tested on economic data over a long period of time.
+
+**Disadvantages**
+
+-  No prediction/confidence intervals
+-  Ad hoc method with no underlying model
+-  Only developed for quarterly and monthly data
+
+---
+
+```{r}
+X11_dcmp <- us_retail_employment %>%
+    model(seats = feasts:::X_13ARIMA_SEATS(Employed)) %>% components()
+X11_dcmp
+```
+
+---
+
+```{r, fig.height = 7, fig.width=8}
+autoplot(X11_dcmp) + hrbrthemes::theme_ipsum_rc()
+```
+
+
+---
+
+## Extensions: X-12-ARIMA and X-13-ARIMA
+
+-  The X-11, X-12-ARIMA and X-13-ARIMA methods are based on Census II decomposition.
+-  These allow adjustments for trading days and other explanatory variables.
+-  Known outliers can be omitted.
+-  Level shifts and ramp effects can be modelled.
+-  Missing values estimated and replaced.
+-  Holiday factors (e.g., Easter, Labour Day) can be estimated.
+
+## X-13ARIMA-SEATS
+
+**Advantages**
+
+- Model-based
+- Smooth trend estimate
+- Allows estimates at end points
+- Allows changing seasonality
+- Developed for economic data
+
+**Disadvantages**
+
+- Only developed for quarterly and monthly data
+
+---
+
+[The details.](https://cran.r-project.org/web/packages/seasonal/vignettes/seas.pdf)
+
+---
+
+```{r}
+seats_dcmp <- us_retail_employment %>%
+    model(seats = feasts:::SEATS(Employed)) %>%
+    components()
+seats_dcmp
+```
+
+## A Plot
+
+```{r}
+autoplot(seats_dcmp) +
+  labs(title = "SEATS decomposition of total US retail employment") + hrbrthemes::theme_ipsum_rc()
+```
+
+# STL decomposition
+
+## STL decomposition
+
+-  STL: "Seasonal and Trend decomposition using Loess"
+-  Very versatile and robust.
+-  Unlike X-12-ARIMA, STL will handle any type of seasonality.
+-  Seasonal component allowed to change over time, and rate of change controlled by user.
+-  Smoothness of trend-cycle also controlled by user.
+-  Robust to outliers
+-  Not trading day or calendar adjustments.
+-  Only additive.
+-  Take logs to get multiplicative decomposition.
+-  Use Box-Cox transformations to get other decompositions.
+
+## STL decomposition
+
+
+```{r stlwindow9, echo=TRUE, warning=FALSE, fig.width=8, fig.height=4}
+us_retail_employment %>%
+  model(STL(Employed ~ season(window=9), robust=TRUE)) %>%
+  components() %>% autoplot() +
+    ggtitle("STL decomposition: US retail employment")
+```
+
+## STL decomposition
+
+```{r stlwindowanim, eval=FALSE, warning=FALSE, message=FALSE, interval=1/10,  fig.height=5.35, fig.width=8}
+s_windows <- seq(5,55,by=2)
+stl_defs <- purrr::map(s_windows, function(s_window){
+  STL(Employed ~ season(window=s_window), robust=TRUE)
+})
+names(stl_defs) <- sprintf("season(window=%02d)", s_windows)
+
+us_retail_employment %>%
+  model(!!!stl_defs) %>%
+  components() %>%
+  as_tibble() %>%
+  pivot_longer(Employed:remainder,
+               names_to = "component", names_ptypes = list(component = factor(levels = c("Employed", "trend", "season_year", "remainder"))),
+               values_to = "Employed") %>%
+  ggplot(aes(x = Month, y = Employed)) +
+  geom_line() +
+  facet_grid(rows = vars(component), scales = "free_y") +
+  labs(title = "STL decomposition of US retail employment",
+       subtitle = "{closest_state}") +
+  transition_states(.model)
+```
+
+## STL decomposition
+
+```{r echo = TRUE, results = 'hide'}
+us_retail_employment %>%
+  model(STL(Employed ~ season(window=5))) %>%
+  components()
+
+us_retail_employment %>%
+  model(STL(Employed ~ trend(window=15) +
+                       season(window="periodic"),
+            robust = TRUE)
+  ) %>% components()
+```
+
+-  `trend(window = ?)` controls wiggliness of trend component.
+-  `season(window = ?)` controls variation on seasonal component.
+-  `season(window = 'periodic')` is equivalent to an infinite window.
+
+
+## STL decomposition
+
+```{r mstl, fig.width=8, fig.height=4}
+us_retail_employment %>%
+  model(STL(Employed)) %>%
+  components() %>%
+  autoplot()
+```
+
+- `STL()` chooses `season(window=13)` by default
+- Can include transformations.
+
+---
+
+## STL decomposition
+
+- Algorithm that updates trend and seasonal components iteratively.
+- Starts with $\hat{T}_t=0$
+- Uses a mixture of loess and moving averages to successively refine the trend and seasonal estimates.
+- The trend window controls loess bandwidth applied to deasonalised values.
+- The season window controls loess bandwidth applied to detrended subseries.
+- Robustness weights based on remainder.
+- Default season `window = 13`
+0 Default trend `window = nextodd(ceiling((1.5*period)/(1-(1.5/s.window)))`
+
+# When things go wrong
+
+## The ABS stuff-up
+
+```{r abs1, echo=FALSE}
+employed <- tsibble(
+  Time = yearmonth("1978 Feb") + 0:439,
+  Employed = c(
+    5985.7, 6040.6, 6054.2, 6038.3, 6031.3, 6036.1, 6005.4, 6024.3, 6045.9, 6033.8, 6125.4, 5971.3,
+    6050.7, 6096.2, 6087.7, 6075.6, 6095.7, 6103.9, 6078.5, 6157.8, 6164.0, 6188.8, 6257.2, 6112.9,
+    6207.2, 6278.7, 6224.9, 6273.4, 6269.9, 6314.1, 6281.4, 6360.0, 6320.2, 6342.0, 6426.6, 6253.0,
+    6356.5, 6428.1, 6426.3, 6412.4, 6413.9, 6425.3, 6393.7, 6502.7, 6445.3, 6433.3, 6506.9, 6355.5,
+    6432.4, 6497.4, 6431.6, 6440.9, 6414.3, 6425.9, 6379.3, 6443.5, 6421.1, 6366.8, 6370.1, 6172.0,
+    6263.9, 6310.3, 6254.5, 6272.8, 6266.5, 6295.0, 6241.2, 6358.2, 6336.1, 6377.5, 6456.5, 6251.4,
+    6365.4, 6503.2, 6477.6, 6489.7, 6499.0, 6528.7, 6466.1, 6579.8, 6553.2, 6576.1, 6636.0, 6452.4,
+    6595.7, 6657.4, 6588.8, 6657.9, 6659.4, 6703.4, 6675.5, 6814.7, 6771.1, 6881.9, 6910.8, 6753.6,
+    6861.9, 6961.9, 6997.9, 6979.0, 7007.7, 6991.5, 6918.5, 7040.6, 7030.4, 7034.2, 7116.8, 6902.5,
+    7022.3, 7133.4, 7109.6, 7103.5, 7128.9, 7175.6, 7092.3, 7186.5, 7177.4, 7182.2, 7330.7, 7169.4,
+    7247.3, 7397.4, 7383.4, 7354.8, 7378.3, 7383.1, 7353.3, 7503.2, 7477.3, 7508.6, 7622.9, 7423.8,
+    7566.5, 7634.6, 7678.4, 7720.8, 7711.0, 7740.8, 7715.3, 7841.6, 7806.5, 7862.4, 7935.5, 7707.7,
+    7803.0, 7874.1, 7887.9, 7908.5, 7900.3, 7919.4, 7808.0, 7905.5, 7848.9, 7826.9, 7915.5, 7641.3,
+    7708.7, 7715.4, 7717.2, 7703.7, 7678.1, 7583.0, 7620.7, 7713.2, 7638.0, 7614.9, 7712.2, 7518.9,
+    7597.2, 7646.2, 7644.1, 7631.4, 7637.3, 7668.3, 7613.4, 7709.7, 7665.7, 7587.4, 7693.4, 7533.7,
+    7531.0, 7645.7, 7572.6, 7620.5, 7627.9, 7646.5, 7589.4, 7747.6, 7738.8, 7744.9, 7842.1, 7646.8,
+    7738.6, 7824.2, 7827.4, 7857.9, 7878.4, 7966.0, 7861.7, 8054.4, 7997.2, 8003.3, 8135.5, 7928.4,
+    8049.9, 8118.1, 8174.6, 8165.2, 8205.6, 8229.0, 8165.9, 8300.4, 8232.6, 8300.3, 8395.7, 8166.7,
+    8246.6, 8280.4, 8248.0, 8297.1, 8311.7, 8332.1, 8265.9, 8373.0, 8319.4, 8314.4, 8431.4, 8235.2,
+    8291.4, 8347.5, 8343.1, 8330.2, 8345.6, 8374.9, 8250.3, 8474.0, 8405.2, 8462.1, 8540.5, 8334.7,
+    8413.0, 8460.0, 8499.9, 8482.5, 8516.8, 8541.9, 8455.2, 8653.2, 8601.0, 8554.3, 8696.5, 8477.4,
+    8556.5, 8618.9, 8631.9, 8606.5, 8673.2, 8706.7, 8603.6, 8777.1, 8755.3, 8763.7, 8900.7, 8628.2,
+    8754.4, 8830.7, 8882.2, 8865.0, 8922.0, 9020.0, 8911.6, 9061.3, 8973.1, 8912.7, 9059.6, 8834.9,
+    8920.9, 8956.0, 9023.6, 9004.6, 9021.9, 9048.9, 8971.9, 9105.9, 9058.7, 9055.6, 9177.1, 8993.4,
+    9092.3, 9128.5, 9129.5, 9134.7, 9180.8, 9194.5, 9150.3, 9303.5, 9249.1, 9286.7, 9439.7, 9281.7,
+    9372.6, 9362.1, 9365.6, 9380.1, 9370.4, 9363.9, 9327.0, 9486.1, 9447.8, 9427.7, 9573.6, 9363.8,
+    9434.5, 9506.4, 9512.0, 9533.5, 9543.3, 9553.1, 9462.1, 9668.6, 9662.2, 9652.9, 9807.8, 9634.4,
+    9744.6, 9828.3, 9856.3, 9850.8, 9896.6, 9912.3, 9870.3, 10004.6, 9949.7, 9945.0, 10074.7, 9842.7,
+    9961.1, 10048.7, 10041.0, 10082.1, 10120.8, 10170.8, 10105.8, 10299.5, 10212.4, 10201.6, 10404.3,
+    10156.1, 10277.0, 10349.2, 10362.9, 10412.0, 10436.3, 10456.8, 10406.4, 10588.8, 10520.5, 10535.0,
+    10710.1, 10524.9, 10622.9, 10677.4, 10706.2, 10690.3, 10745.0, 10761.9, 10710.4, 10854.5, 10807.4,
+    10757.3, 10915.6, 10681.0, 10776.7, 10775.2, 10792.7, 10786.8, 10770.9, 10808.8, 10707.3, 10882.1,
+    10845.2, 10829.2, 11010.9, 10809.9, 10889.2, 10928.9, 10940.1, 10957.4, 11009.3, 11030.5, 10973.8,
+    11159.4, 11129.0, 11144.5, 11295.0, 11063.7, 11146.2, 11217.0, 11186.5, 11196.2, 11221.3, 11227.5,
+    11130.7, 11321.2, 11274.0, 11240.6, 11354.8, 11159.0, 11236.2, 11332.4, 11328.3, 11389.0, 11350.6,
+    11363.7, 11259.8, 11452.6, 11401.9, 11375.0, 11518.4, 11304.0, 11424.3, 11436.3, 11482.2, 11495.6,
+    11497.8, 11486, 11369, 11547, 11499, 11472, 11571, 11354, 11493, 11562, 11589, 11595, 11602, 11590,
+    11622, 11593
+  ),
+  index = Time
+) %>%
+  mutate(
+    Month = month(Time, label = TRUE),
+    Year = year(Time)
+  ) %>%
+  select(Time, Month, Year, Employed)
+```
+
+---
+
+```{r abs2}
+employed
+```
+
+
+---
+
+## The ABS stuff-up
+
+[Details:](https://robjhyndman.com/hyndsight/abs-seasonal-adjustment-3/)
+
+```{r abs3, fig.height=4}
+employed %>%
+  autoplot(Employed) +
+  ggtitle("Total employed") + ylab("Thousands") + xlab("Year")
+```
+
+---
+
+## The ABS stuff-up
+
+```{r abs4, fig.height=4}
+employed %>%
+  filter(Year >= 2005) %>%
+  autoplot(Employed) +
+  ggtitle("Total employed") + ylab("Thousands") + xlab("Year")
+```
+
+---
+
+## The ABS stuff-up
+
+
+```{r abs5, fig.height=4}
+employed %>%
+  filter(Year >= 2005) %>%
+  gg_season(Employed) +
+  ggtitle("Total employed") + ylab("Thousands")
+```
+
+---
+
+## The ABS stuff-up
+
+
+```{r abs6, fig.height=2}
+employed %>%
+  mutate(diff = difference(Employed)) %>%
+  filter(Month == "Sep") %>%
+  ggplot(aes(y = diff, x = 1)) +
+  geom_boxplot() + coord_flip() +
+  ggtitle("Sep - Aug: total employed") +
+  xlab("") + ylab("Thousands") +
+  scale_x_continuous(breaks = NULL, labels = NULL)
+```
+
+---
+
+## The ABS stuff-up
+
+
+```{r abs7, fig.height=3.85}
+dcmp <- employed %>%
+  filter(Year >= 2005) %>%
+  model(stl = STL(Employed ~ season(window = 11), robust = TRUE))
+components(dcmp) %>% autoplot()
+```
+
+---
+
+## The ABS stuff-up
+
+```{r abs8, fig.height=3.5, warning=FALSE, message=FALSE}
+components(dcmp) %>%
+  filter(year(Time) == 2013) %>%
+  gg_season(season_year) +
+  ggtitle("Seasonal component") +
+  guides(colour = "none")
+```
+
+---
+
+## The ABS stuff-up
+
+
+```{r abs9, fig.height=4}
+components(dcmp) %>%
+  as_tsibble() %>%
+  autoplot(season_adjust)
+```
+
+---
+
+## The ABS stuff-up
+
+-  August 2014 employment numbers higher than expected.
+-  Supplementary survey usually conducted in August for employed people.
+-  Most likely, some employed people were claiming to be unemployed in August to avoid supplementary questions.
+-  Supplementary survey not run in 2014, so no motivation to lie about employment.
+-  In previous years, seasonal adjustment fixed the problem.
+-  The ABS has now adopted a new method to avoid the bias.
+
+## Some Data for Today and General Considerations
+
+Panel data.  Multiple time series are often described as a panel, a cross-section of time series, or a time series of cross-sections.  The data structure has two [non-overlapping] indices.  Let's review, and discuss a bit, what exactly we mean.
+
+## Extending the Data
+
+`fredr` is amazing.
+
+---
+
+```
+US.Employment <- map_dfr(
+c(rownames(table(us_employment$Series_ID))), ~fredr::fredr_series_observations(.))
+save(US.Employment, file="USEmployment.RData")
+load(url("https://github.com/robertwwalker/xaringan/CMF-Week-9/raw/main/USEmployment.RData"))
+```
+
+```{r}
+load("USEmployment.RData")
+us_employment %>% data.frame() %>% group_by(Series_ID) %>% summarise(Title = first(Title)) %>% mutate(series_id = Series_ID) %>% ungroup() %>% select(-Series_ID) -> Names.List
+US.Employment.T <- left_join(US.Employment, Names.List, by = c("series_id" = "series_id")) %>% mutate(YM = yearmonth(date)) %>% rename(Employed = value) %>% as_tsibble(., index=YM, key=Title)
+```
+
+## Additional Features
+
+For much of the study of time series, the key issue is one known as stationarity.  For now, we will do at least some hand waving to be clarified in chapters 5 and more in 9.  But we want to compute things and then build out all the details.  Let's take my new retail employment data.
+
+# A Recreation on New Data
+
+```{r, eval=FALSE}
+EMPN <- US.Employment.T %>% filter(YM > yearmonth("1990-01") & Title=="Retail Trade") %>% as_tsibble(index=YM) 
+EMPO <- us_employment %>% filter(Title=="Retail Trade" & Month > yearmonth("1990-01")) %>% as_tsibble(., index=Month) 
+Plot1 <- ggplot(EMPN, aes(x=YM, y=Employed)) + geom_line(color = "red") + geom_line(data=EMPO, aes(x=Month, y=Employed), inherit.aes=FALSE)
+Plot1
+```
+
+
+## Data are Revised Occasionally
+
+```{r P1A, echo=FALSE}
+EMPN <- US.Employment.T %>% filter(YM > yearmonth("1990-01") & Title=="Retail Trade") %>% as_tsibble(index=YM) 
+EMPO <- us_employment %>% filter(Title=="Retail Trade" & Month > yearmonth("1990-01")) %>% as_tsibble(., index=Month) 
+Plot1 <- ggplot(EMPN, aes(x=YM, y=Employed)) + geom_line(color = "red") + geom_line(data=EMPO, aes(x=Month, y=Employed), inherit.aes=FALSE)
+Plot1
+```
+
+
+---
+  
+```{r, eval=FALSE}
+library(patchwork)
+dcmp <- EMPO %>%
+  model(stl = STL(Employed))
+Plot2 <- components(dcmp) %>% autoplot()
+dcmp <- EMPN %>%
+  model(stl = STL(Employed))
+Plot3 <- components(dcmp) %>% autoplot()
+Plot1 / (Plot2 + Plot3)
+```
+
+---
+  
+```{r P2, echo=FALSE, fig.height=8, fig.width=11}
+library(patchwork)
+dcmp <- EMPO %>%
+  model(stl = STL(Employed))
+Plot2 <- components(dcmp) %>% autoplot()
+dcmp <- EMPN %>%
+  model(stl = STL(Employed))
+Plot3 <- components(dcmp) %>% autoplot()
+Plot1 / (Plot2 + Plot3)
+```
+
+
+# Three Sectors
+  
+```{r}
+USET <- US.Employment.T %>% filter(YM > yearmonth("1990-01"), Title%in%c("Retail Trade","Financial Activities","Manufacturing")) %>% as_tsibble(., index=YM, key=Title) 
+USET %>% autoplot(Employed)
+```
+
+## Retail (season)
+  
+```{r}
+US.Employment.T %>% 
+  filter(YM > yearmonth("1990-01"), 
+         Title%in%c("Retail Trade")) %>% 
+  as_tsibble(., index=YM) %>% 
+  gg_season(Employed)
+```
+
+## Retail (subseries)
+  
+```{r}
+US.Employment.T %>% 
+  filter(YM > yearmonth("1990-01"), 
+         Title%in%c("Retail Trade")) %>% 
+  as_tsibble(., index=YM) %>% 
+  gg_subseries(Employed)
+```
+
+## Retail (lag)
+  
+```{r}
+US.Employment.T %>% 
+  filter(YM > yearmonth("1990-01"), 
+         Title%in%c("Retail Trade")) %>% 
+  as_tsibble(., index=YM) %>% 
+  gg_lag(Employed)
+```
+
+
+## Manufacturing
+  
+```{r}
+US.Employment.T %>% filter(YM > yearmonth("1990-01"), Title%in%c("Manufacturing")) %>% as_tsibble(., index=YM) %>% gg_season(Employed)
+```
+
+## Manufacturing
+  
+```{r}
+US.Employment.T %>% filter(YM > yearmonth("1990-01"), Title%in%c("Manufacturing")) %>% as_tsibble(., index=YM) %>% gg_subseries(Employed)
+```
+
+## Manufacturing
+  
+```{r}
+US.Employment.T %>% filter(YM > yearmonth("1990-01"), Title%in%c("Manufacturing")) %>% as_tsibble(., index=YM) %>% gg_lag(Employed)
+```
+
+## Financial
+  
+```{r}
+US.Employment.T %>% filter(YM > yearmonth("1990-01"), Title%in%c("Financial Activities")) %>% as_tsibble(., index=YM) %>% gg_season(Employed)
+```
+
+## Financial
+  
+```{r}
+US.Employment.T %>% filter(YM > yearmonth("1990-01"), Title%in%c("Financial Activities")) %>% as_tsibble(., index=YM) %>% gg_subseries(Employed)
+```
+
+## Financial
+  
+```{r}
+US.Employment.T %>% filter(YM > yearmonth("1990-01"), Title%in%c("Financial Activities")) %>% as_tsibble(., index=YM) %>% gg_lag(Employed)
+```
+
+
+## Features: Summary
+  
+  
+The features command is the magic tool for tidy summary and statistics for time series in this index/key format.  For example, basic summary
+
+```{r}
+USET %>% features(Employed, features=list(mean=mean,min=min,max=max,sd=sd,quantile))
+```
+
+## Features: Correlation Features
+  
+Learning about the time series properties
+
+```{r}
+USET %>% features(Employed, features=feat_acf)
+```
+```{r}
+USET %>% group_by(Title) %>% ACF(Employed) %>% autoplot()
+```
+
+## For Contrast: Ford Returns
+  
+```{r}
+library(tidyquant)
+Ford <- tq_get("F", from="2000-01-01")
+FordT <- Ford %>% as_tsibble(index=date)
+FordT %>% autoplot(adjusted)
+```
+
+
+```{r}
+FC <- Ford %>% tq_transmute(adjusted, mutate_fun = periodReturn, period = "monthly") %>% mutate(YM = yearmonth(date)) %>% as_tsibble(., index=YM)
+FC %>% autoplot(monthly.returns)
+```
+
+## Ford's ACF
+  
+The 6/7 and 12/13 patterns are interesting....
+
+```{r}
+library(patchwork)
+FC1 <- FC %>% ACF(monthly.returns) %>% autoplot()
+FC2 <- FC %>% PACF(monthly.returns) %>% autoplot()
+FC1+FC2
+```
+
+## Decomposition Features
+  
+```{r}
+USET %>% features(Employed, feat_stl)
+```
+
+## With More Data
+  
+```{r}
+NUSET8k <- US.Employment.T %>% data.frame() %>% group_by(Title) %>% summarise(MaxE = max(Employed)) %>% arrange(desc(MaxE)) %>% filter(MaxE > 8000 & MaxE < 120000) 
+USET8k <- left_join(NUSET8k, US.Employment.T) %>% as_tsibble(., index=YM, key=Title)
+```
+
+## An Improvement on the Trend/Season
+  
+```{r, cache=FALSE, results='hide', echo=FALSE}
+library(plotly); library(widgetframe)
+USET8k %>%
+  features(Employed, feat_stl) %>%
+  ggplot(aes(x = trend_strength, y = seasonal_strength_year, text = Title)) +
+  geom_point() -> jj
+k <- ggplotly(jj)
+htmltools::save_html(k, file="st.html")
+```
+
+<iframe src="./st.html" width="800" height="500" seamless="seamless" frameBorder="0"> </iframe>
+  
+---
+
+The details are at the bottom [for other statistics](https://otexts.com/fpp3/stlfeatures.html).
+
+```{r}
+library(kableExtra)
+USET8k %>%
+  features(Employed, feat_stl) %>% knitr::kable(format="html") %>% scroll_box(width = "100%", height = "300px")
+```
+
+
+## `coef_hurst`
+  
+A measure of the degree to which adjacent observations depend on one another over time.  Generically, this statistic takes values between zero and one with one indicating very high levels of dependence through time.
+
+```{r}
+USET %>% features(Employed, coef_hurst)
+```
+
+
+## Middling for Ford
+  
+```{r}
+FC %>% features(monthly.returns, features=coef_hurst)
+```
+
+## `feat_spectral`
+  
+```{r}
+USET %>% features(Employed, feat_spectral)
+FC %>% features(monthly.returns, features=feat_spectral)
+```
+
+# The Absence of Correlation
+  
+Ljung-Box modifies the idea in the Box-Pierce statistic for assessing whether or not a given series [or transformation thereof] is essentially uncorrelated.  In both cases, we will get to the details next week [chapter 5].  For now, the idea is simply that $k$ squared autocorrelations will sum to a chi-squared distribution with $k$ degrees of freedom.  Large correlations reveal dependence.
+
+```{r}
+USET %>% features(Employed, features=list(box_pierce, ljung_box))
+FC %>% features(monthly.returns, features=list(box_pierce, ljung_box))
+```
+
+
+## `feat_pacf`
+  
+```{r}
+USET %>% features(Employed, feat_pacf)
+FC %>% features(monthly.returns, features=feat_pacf)
+```
+
+## Unit Roots
+  
+The stationarity issue from earlier is given much attention.  Can we reasonably think of characteristics as fixed?  There are three means of assessment with details to Chapter 9.
+
+```{r}
+USET %>% features(Employed, features=list(unitroot_kpss, unitroot_pp, unitroot_ndiffs, unitroot_nsdiffs)) %>% knitr::kable(format="html")
+FC %>% features(monthly.returns, features=list(unitroot_kpss, unitroot_pp, unitroot_ndiffs, unitroot_nsdiffs))
+```
+
+# Tiling
+  
+[A reminder](https://davisvaughan.github.io/slider/)
+
+```{r}
+USET %>% features(Employed, features=list(var_tiled_mean, var_tiled_var))
+FC %>% features(monthly.returns, features=list(var_tiled_mean, var_tiled_var))
+```
+
+## Detecting Shifts
+  
+```{r}
+USET %>% features(Employed, features=list(shift_level_max, shift_var_max, shift_kl_max)) %>% kable(format="html")
+FC %>% features(monthly.returns, features=list(shift_level_max, shift_var_max, shift_kl_max)) %>% kable(format="html")
+```
+
+## Crossings and Flat Spots
+  
+```{r}
+USET %>% features(Employed, features=list(n_crossing_points, longest_flat_spot)) %>% kable(format="html")
+FC %>% features(monthly.returns, features=list(n_crossing_points, longest_flat_spot)) %>% kable(format="html")
+```
+
+## ARCH
+  
+What proportion of the current squared residual is explained by the prior squared residual?  This reports $R^2$; if the variance explained is large, volatility is persistent.  **There is a chi-square statistic also.**
+  
+```{r}
+USET %>% features(Employed, features=stat_arch_lm) %>% kable(format="html")
+FC %>% features(monthly.returns, features=stat_arch_lm) %>% kable(format="html")
+```
+
+## The Box-Cox
+  
+```{r}
+USET %>% features(Employed, features=guerrero) %>% kable(format="html")
+FC %>% features(monthly.returns, features=guerrero) %>% kable(format="html")
+```
+
+
+
+```{r}
+USET %>% features(Employed, features=guerrero)
+```
+
+## Filtered Manufacturing
+  
+```{r}
+USET %>% filter(Title=="Manufacturing") %>% mutate(Filt = box_cox(Employed, 1.0369662)) %>% select(YM,Filt,Employed) %>% pivot_longer(c(Filt,Employed)) %>% autoplot(value)
+```
+
+
+```{r}
+USET %>% filter(Title=="Financial Activities") %>% autoplot(box_cox(Employed, 0.9481456))
+```
+
+```{r}
+USET %>% filter(Title=="Retail Trade") %>% autoplot(box_cox(Employed, 1.1860464))
+```
+
+```{r}
+FC %>% features(monthly.returns, features=guerrero)
+FC %>% autoplot(box_cox(monthly.returns, 0.6857523))
+```
+
+# Australian Tourism
+  
+[The example is great.](https://otexts.com/fpp3/exploring-australian-tourism-data.html)
+
+
+# Principal Components
+  
+Lets walk through this example.
+
+![Ex. PC](./img/Screen Shot 2022-10-31 at 3.09.12 PM.png)
