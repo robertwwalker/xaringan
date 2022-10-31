@@ -1123,7 +1123,7 @@ Panel data.  Multiple time series are often described as a panel, a cross-sectio
 US.Employment <- map_dfr(
 c(rownames(table(us_employment$Series_ID))), ~fredr::fredr_series_observations(.))
 save(US.Employment, file="USEmployment.RData")
-load(url("https://github.com/robertwwalker/xaringan/CMF-Week-9/raw/main/USEmployment.RData"))
+load(url("https://github.com/robertwwalker/xaringan/raw/master/CMF-Week-9/USEmployment.RData"))
 ```
 
 ```{r}
