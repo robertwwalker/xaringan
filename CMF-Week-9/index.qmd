@@ -1325,18 +1325,16 @@ USET8k <- left_join(NUSET8k, US.Employment.T) %>% as_tsibble(., index=YM, key=Ti
 
 ## An Improvement on the Trend/Season
   
-```{r, cache=FALSE, results='hide', echo=FALSE}
+```{r, echo=FALSE}
 library(plotly); library(widgetframe)
 USET8k %>%
   features(Employed, feat_stl) %>%
   ggplot(aes(x = trend_strength, y = seasonal_strength_year, text = Title)) +
   geom_point() -> jj
 k <- ggplotly(jj)
-htmltools::save_html(k, file="st.html")
+k
 ```
 
-<iframe src="./st.html" width="800" height="500" seamless="seamless" frameBorder="0"> </iframe>
-  
 ---
 
 The details are at the bottom [for other statistics](https://otexts.com/fpp3/stlfeatures.html).
