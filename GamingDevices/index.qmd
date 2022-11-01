@@ -1,0 +1,346 @@
+---
+title: "Hiring Diagnostics"
+subtitle: "Introducing Multiple Regression"  
+author: "Robert W. Walker"
+format: 
+   revealjs:
+     theme: [custom.scss]
+     scrollable: true
+     logo: AGSMlogo.jpeg
+     footer: "DADM: Gaming Devices"
+     self-contained: true
+     html-math-method: katex
+     incremental: true
+     slide-number: c/t
+     transition: zoom
+     multiplex: true
+     preview-links: true
+---
+
+# Multiple Regression
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=TRUE, comment=NA, prompt=FALSE, fig.height=6, fig.width=6.5, fig.retina = 3, dev = 'svg', dev.args = list(bg = "white"), eval=TRUE)
+library(tidyverse)
+```
+
+## Setup Environment
+
+```
+install.packages(c("effects","car","stargazer"))
+```
+
+## The Problem
+
+The HR Department needs a hiring diagnostic for choosing among applicants for employment.  The goal is to maximize the productivity of chosen future employees by building and deploying a model for predicting and explaining worker productivity.  We are to explain **With** as a function, potentially, of:
+
+```{r TheData, echo=FALSE, eval=TRUE}
+Hiring <- structure(list(Subject = 1:36, General = c(239L, 230L, 213L, 
+211L, 150L, 258L, 90L, 164L, 135L, 179L, 245L, 224L, 198L, 103L, 
+226L, 137L, 194L, 101L, 120L, 269L, 122L, 209L, 194L, 119L, 247L, 
+228L, 215L, 211L, 152L, 262L, 149L, 118L, 133L, 137L, 196L, 86L
+), Dexterity = c(230L, 212L, 210L, 202L, 179L, 228L, 124L, 156L, 
+142L, 158L, 254L, 148L, 236L, 86L, 204L, 166L, 160L, 126L, 144L, 
+226L, 148L, 194L, 192L, 226L, 226L, 208L, 218L, 86L, 184L, 236L, 
+122L, 140L, 134L, 150L, 168L, 116L), Without = c(116L, 112L, 
+109L, 107L, 107L, 123L, 85L, 94L, 99L, 94L, 117L, 114L, 107L, 
+91L, 115L, 89L, 104L, 91L, 95L, 136L, 90L, 114L, 105L, 72L, 117L, 
+113L, 108L, 119L, 103L, 121L, 92L, 96L, 100L, 101L, 101L, 87L
+), With = c(124L, 119L, 114L, 114L, 109L, 129L, 89L, 99L, 104L, 
+104L, 124L, 119L, 109L, 94L, 119L, 104L, 109L, 94L, 99L, 134L, 
+99L, 114L, 109L, 84L, 124L, 119L, 114L, 114L, 109L, 129L, 94L, 
+99L, 104L, 104L, 109L, 89L)), .Names = c("Subject", "General", 
+"Dexterity", "Without", "With"), class = "data.frame", row.names = c(NA, 
+-36L))
+library(kableExtra)
+```
+
+- Dexterity:  a diagnostic based on manual dexterity
+- General:  a diagnostic based on general aptitude
+- Without: measured productivity over a four week period prior to introducing the device.
+- **With**: measured productivity over a four week period with the handheld device.
+
+## Summary Statistics
+
+
+```{r}
+library(car); library(tidyverse)
+library(skimr)
+skim(Hiring) %>% kable()
+```
+
+## What can we say?
+
+:::: {.columns}
+
+::: {.column width="50%"}
+With the device?
+
+```{r}
+t.test(Hiring$With)
+```
+:::
+
+::: {.column width="50%"}
+Without the device?
+
+```{r}
+t.test(Hiring$Without)
+```
+:::
+
+- The means *could* be the same though we have ignored the pairing.
+
+::::
+
+## But That Is Not Really the Question
+
+```{r}
+My.Data <- Hiring %>% select(With,Without) %>% stack()
+My.Data$Subject <- c(Hiring$Subject,Hiring$Subject)
+ggplot(My.Data) +
+ aes(x = Subject, y = values, colour = ind) +
+ geom_point(size = 3, alpha=0.75) +
+ scale_color_viridis_d() + labs(y="Productivity", color="Device?") +
+ theme_minimal()
+```
+
+## We Can Be Creative at The Command Line
+
+```{r}
+Diff.G.0 <- (Hiring$With - Hiring$Without > 0)
+ggplot(Hiring, aes(x=Subject, ymin=Without, ymax=With)) + geom_linerange(aes(color=Diff.G.0)) + geom_point(aes(x=Subject, y=With), color="green", size=2, alpha=0.3) +  geom_point(aes(x=Subject, y=Without), color="red", size=2, alpha=0.3) + theme_minimal() + labs(color="With Bigger?")
+```
+
+## A Paired t
+
+So the device works.  It generates 3.76 to 6.24 units per period above and beyond `Without`.  That means, at most, 3.14 periods.
+
+```{r}
+t.test(Hiring$With-Hiring$Without)
+t.test(Hiring$With-Hiring$Without, alternative = "greater")$conf.int[[1]]
+100/(t.test(Hiring$With-Hiring$Without, alternative = "greater")$conf.int[[1]]*8)
+```
+
+
+## The Workflow
+
+Let's get a feel for the data.  How about correlation?  It's pretty but not that useful.
+
+
+```{r}
+library(corrr)
+Hiring %>% 
+  correlate() %>% 
+  focus(-Subject, mirror = TRUE) %>% 
+  network_plot()
+```
+
+## Simple
+
+Remove `Subject` and we are good to go.
+
+```{r}
+Hiring %>% select(-Subject) %>% cor(.)
+```
+
+
+
+## Scatterplot Matrix
+
+Our focus will be the bottom row.
+
+```{r, echo=FALSE}
+scatterplotMatrix(~Dexterity+General+With+Without, reg.line=lm, 
+   smooth=FALSE, spread=FALSE, span=0.5, ellipse=FALSE, levels=c(.5, .9), 
+   id.n=0, diagonal = 'density', data=Hiring)
+```
+
+## Honing In [the Old World]
+
+```{r}
+summary(lm(Without~General, data=Hiring))
+```
+
+## A Picture
+
+```{r}
+ggplot(Hiring, aes(x=General, y=Without)) + geom_point() + geom_smooth(method="lm")
+```
+
+## Honing In [the Old World, Part II]
+
+```{r}
+summary(lm(Without~Dexterity, data=Hiring))
+```
+
+## A Picture
+
+```{r}
+ggplot(Hiring, aes(x=Dexterity, y=Without)) + geom_point() + geom_smooth(method="lm")
+```
+
+## What Does Better?
+
+A few answers.  What's the question?
+
+- If predictive accuracy is the goal, the residual standard error is larger for *dexterity* than *general*.
+
+- If explanatory power is the goal, the $r^2$ is much smaller for *dexterity* than *general*.
+
+- The graphics suggest that *general* provides a better fit; note that the points are typically closer to the line [in vertical distance and implies both of the above observations]
+
+## Now Some F
+
+Let's look up F.  In the above example, it is proportional to $R^2$.  That's because there is only one input.
+
+## How is F built?
+
+It is a ratio of two $\chi^2$; or two appropriately scaled normals.  Since we are looking at the same variable with a constant metric, this problem can be solved.  In the simplest of terms, $F$ will have the ratio of the average explained over the average unexplained.  What are we averaging over?  Degrees of freedom, from a baseline of $n-1$.
+
+- **Why?**  Every slope must pass through the intersection of the mean of x and the mean of y.  That's a restriction on the lines we can draw and the restriction limits freely moving parts -- degrees of freedom -- by one for each estimated slope.
+
+---
+
+```{r}
+Model.Dex <- lm(Without ~ Dexterity, data=Hiring)
+Model.Gen <- lm(Without ~ General, data=Hiring)
+anova(Model.Dex)
+anova(Model.Gen)
+```
+
+
+## Some Basic Regressions {.smaller}
+
+```{r Table, echo=FALSE, results='asis'}
+library(stargazer)
+Mod.DW <- lm(With~Dexterity+Without, data=Hiring)
+Mod.GW <- lm(With~General+Without, data=Hiring)
+Mod.DG <- lm(With~General+Dexterity, data=Hiring)
+stargazer(Mod.DG,Mod.DW,Mod.GW, type="html")
+```
+
+## Residuals
+
+**All are plausibly normal**
+
+```{r Resids}
+# Dexterity and General
+shapiro.test(Mod.DG$residuals)
+# Dexterity and Without
+shapiro.test(Mod.DW$residuals)
+# General and Without
+shapiro.test(Mod.GW$residuals)
+```
+
+
+## Why It Matters?
+
+If residuals are not normal, then the slopes are not $t$ and ratios of variance are not $F$.  Everything we might want to use the regression for falls apart.  For now at least.
+
+## The Plots  [Seems Fine]
+
+```{r Plots, echo=FALSE}
+par(mfrow=c(2,2))
+qqPlot(Mod.DG$residuals, dist="norm")
+qqPlot(Mod.DW$residuals, dist="norm")
+qqPlot(Mod.GW$residuals, dist="norm")
+#plot(x=NA,y=NA, xlim=c(0,1), ylim=c(0,1), axes=FALSE)
+```
+
+## Formal Evidence
+
+```{r}
+library(gvlma)
+gvlma(Mod.DG)
+gvlma(Mod.DW)
+gvlma(Mod.GW)
+```
+
+
+## Which to Choose?
+
+- **Without and General** provide the best explanation.
+- **Without and Dexterity** are a close second.
+- **General and Dexterity** explain almost 90% but trail far behind.
+
+From our chosen model, a few cool things....
+
+## A Plot
+
+```{r Plot1}
+library(effects)
+plot(allEffects(Mod.GW))
+```
+
+## A Prediction
+
+```{r Pred1}
+Pred.Data <- data.frame(General=119, Without=86)
+Pred.Data  # Newdata
+predict(Mod.GW, newdata=Pred.Data, interval="confidence", level=.95, 
+  se.fit=FALSE)
+predict(Mod.GW, newdata=Pred.Data, interval="prediction", level=.95, 
+  se.fit=FALSE)
+```
+
+## Black Boxes
+
+```{r BBM, echo=FALSE}
+black.box.maker <- function(mod1) {
+            d1 <- dim(mod1$model)[[1]]
+            sumsq1 <- var(mod1$model[,1], na.rm=TRUE)*(d1-1)
+            rt1 <- sqrt(sumsq1)
+            sumsq2 <- var(mod1$fitted.values, na.rm=TRUE)*(d1-1)
+            rsquare <- round(sumsq2/sumsq1, digits=4)
+            rt2 <- sqrt(sumsq2)
+            plot(x=NA, y=NA, xlim=c(0,rt1), ylim=c(0,rt1), main=paste("R-squared:",rsquare), xlab="", ylab="", bty="n", cex=0.5)
+            polygon(x=c(0,0,rt1,rt1), y=c(0,rt1,rt1,0), col="black")
+            polygon(x=c(0,0,rt2,rt2), y=c(0,rt2,rt2,0), col="white")
+}
+par(mfrow=c(1,3))
+black.box.maker(Mod.DG)
+black.box.maker(Mod.DW)
+black.box.maker(Mod.GW)
+```
+
+
+## F has an accompanying visual
+
+It is the ratio of two boxes where each one is normalized by the degrees of freedom.
+
+
+## It Also Has a Marginal Interpretation
+
+```{r}
+Mod.WithWithout <- lm(With~Without , data=Hiring)
+anova(Mod.WithWithout, lm(With~Without+General, data=Hiring))
+anova(Mod.WithWithout, lm(With~Without+Dexterity, data=Hiring))
+```
+
+## Both Add Something at the Margin
+
+And there is still something to be learned at the margins.
+
+```{r}
+anova(lm(With~Without+General, data=Hiring),lm(With~Without+General+Dexterity, data=Hiring))
+```
+
+## Visualizing Regression
+
+```{r}
+library(visreg)
+visreg2d(Mod.GW, "General", "Without")
+```
+
+A single plot for HR to deploy.
+
+## About the Purported Outlier?
+
+What should we do?  We could always reconstruct the analysis.  It is surprisingly easy; think about it for a second.
+
+- All we need to do is remove the outlier and recompile the document.  Reproducible analysis saves time.
+
+## A Summary [in One Graphic]
+
+![A 3D Graphic](https://github.com/robertwwalker/DADMStuff/raw/master/3DResult.JPG)
