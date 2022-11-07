@@ -275,6 +275,23 @@ k <- ggplotly(jj)
 k
 ```
 
+## Features
+
+:::: {.columns}
+
+::: {.column width="50%"}
+![Features 1](./img/Screen Shot 2022-11-07 at 3.46.47 PM.png)
+:::
+
+::: {.column width="50%"}
+![Features 2](./img/Screen Shot 2022-11-07 at 3.47.06 PM.png)
+:::
+
+::::
+
+
+
+
 ---
 
 The details are at the bottom [for other statistics](https://otexts.com/fpp3/stlfeatures.html).
