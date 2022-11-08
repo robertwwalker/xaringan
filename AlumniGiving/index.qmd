@@ -60,8 +60,20 @@ Special            | A Yes or No variable denoting schools that were involved in
 ## Load the data
 
 ```{r}
-load("./data/AlumniGiving.rdata")
+load(url("https://robertwwalker.github.io/xaringan/AlumniGiving/data/AlumniGiving.rdata"))
 ```
+
+:::: {.columns}
+
+::: {.column width="50%"}
+![Shot](./img/Screen Shot 2022-11-08 at 3.29.50 PM.png)
+:::
+
+::: {.column width="50%"}
+![Shot 2](./img/Screen Shot 2022-11-08 at 3.31.35 PM.png)
+:::
+
+::::
 
 ## Automagic Data Analysis
 
