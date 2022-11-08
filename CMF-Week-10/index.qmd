@@ -427,6 +427,23 @@ Lets walk through this example.
 
 ![Ex. PC](./img/Screen Shot 2022-10-31 at 3.09.12 PM.png)
 
+## Principal Components
+
+```{r}
+tourism_features <- tourism %>%
+  features(Trips, feature_set(pkgs = "feasts"))
+library(broom)
+pcs <- tourism_features %>%
+  select(-State, -Region, -Purpose) %>%
+  prcomp(scale = TRUE) %>%
+  augment(tourism_features)
+pcs %>%
+  ggplot(aes(x = .fittedPC1, y = .fittedPC2, col = Purpose)) +
+  geom_point() +
+  theme(aspect.ratio = 1)
+```
+
+
 ## The Forecasting Workflow
 
 ![Diagram](./img/Screen Shot 2022-11-07 at 12.51.46 PM.png)
