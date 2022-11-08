@@ -426,6 +426,7 @@ FC %>% autoplot(box_cox(monthly.returns, 0.6857523))
 Lets walk through this example.
 
 ![Ex. PC](./img/Screen Shot 2022-10-31 at 3.09.12 PM.png)
+
 ## The Forecasting Workflow
 
 ![Diagram](./img/Screen Shot 2022-11-07 at 12.51.46 PM.png)
