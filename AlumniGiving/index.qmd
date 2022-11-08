@@ -1,0 +1,309 @@
+---
+title: "Alumni Giving"
+author: "Robert W. Walker"
+format: 
+   revealjs:
+     theme: [custom.scss]
+     scrollable: true
+     logo: AGSMlogo.jpeg
+     footer: "Multiple Regression and Model Selection"
+     self-contained: true
+     html-math-method: katex
+     incremental: true
+     slide-number: c/t
+     transition: convex
+     multiplex: true
+     preview-links: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=TRUE, tidy=TRUE, comment=NA, prompt=FALSE, fig.height=6, fig.width=6.5, fig.retina = 3, dev = 'svg', eval=TRUE)
+library(tidyverse)
+library(patchwork)
+library(gganimate)
+library(radiant)
+options(
+  digits = 3,
+  width = 75,
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis",
+  ggplot2.discrete.colour = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442"),
+  ggplot2.discrete.fill = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442")
+)
+```
+
+
+# Alumni Giving
+
+## The setup
+
+The director of development at a large state university is under pressure to raise giving rates to conform to US News and World Reports ranking that place an important weight on the average alumni giving rate - a metric that is a heavy component of their overall ranking of institutions.  The institution's current rate of 8% is in the low category and raising it could play a key role in raising the overall ranking of the university from the current ranking in the mid 130s.  You have the following data available for a sample of schools that fielded football teams in the NCAA Football Bowl Subdivision [this is the sampling criterion because it includes almost all big state universities and big private institutions].  There is no reason to believe that this is unrepresentative for our purposes.
+
+## Data
+
+You have the following data available for a sample of schools that fielded football teams in the NCAA Football Bowl Subdivision [this is the sampling criterion because it includes almost all big state universities and big private institutions].  There is no reason to believe that this is unrepresentative for our purposes.  Of course, the goal is to explain giving rates in GivingRates.RData.
+
+## Description
+
+Variable           | Description  
+-------------------|------------------------------------
+ID                 | An identifier of the school running from 1 to 125.
+School             | The name of the school.
+SFR                | the Student to Faculty ratio [the number of students divided by the number of faculty]
+Small.Classes      | Percentage of classes with fewer than 20 students.
+Big.Classes        | Percentage of classes with greater than 50 students.
+Graduation.Rate    | the six year rate of graduation.
+Freshman.Retention | the Freshman retention rate or the rate at which first year students are retained into the second year.
+Giving             | the average alumni giving rate for the institution.
+Special            | A Yes or No variable denoting schools that were involved in special giving campaigns tied to the football program.
+
+## Load the data
+
+```{r}
+load("./data/AlumniGiving.rdata")
+```
+
+## Automagic Data Analysis
+
+```
+install.packages("SmartEDA")
+library(SmartEDA)
+ExpReport(AlumniGiving, Target="Giving", op_file="EDA-Giving.html")
+```
+
+## Question 1
+
+Provide an instructive graphic with interpretation for rates of giving.  Discuss the symmetry, the center, and the spread.  In addition, provide a 95% confidence interval for average giving.  **The data are quite skewed to the right with a few seemingly large and outlying values.  The lower half [below the median] spans a much smaller range than the upper half even without considering those values.**
+
+```{r}
+AlumniGiving %>% ggplot() + aes(x=Giving) + geom_boxplot()
+```
+
+## A Note on Special
+
+With 95% confidence, what is the difference among special and non-special schools in terms of giving?  **Comparing `independent` samples, 0.1 to 0.34 higher for Special schools with 95% confidence.**
+
+```{r}
+t.test(Giving~Special, data=AlumniGiving)
+```
+
+## Question 2
+
+Is there a difference or no difference between the percentage of big classes and the percentage of small classes with 95% confidence?  Provide a 95% confidence interval for the average difference and interpret the interval.  **With 95% confidence, the average school has 0.24 to 0.30 more small classes than big classes.**
+
+```{r}
+t.test(AlumniGiving$Small.Classes,AlumniGiving$Big.Classes, paired=TRUE)
+```
+
+## Question 3
+
+```{r}
+GGally::ggpairs({AlumniGiving %>% select(-School)})
+```
+
+
+## Question 4
+
+Estimate and report a regression using all of the potential predictors [except the ID of course, and Special] to explain Giving. With 95% confidence, what factors seem to explain giving?  **Only Small.Classes.**  Interpret the residual standard error to summarize how well the regression with all predictors fits.  **The residual standard error is 0.056; on average, the regression is off for a particular school by 0.056.**  Does the model predict variance?  **Yes, 54% of the variance in alumni giving can be accounted for by these factors.  The F-statistic is far too large for this quantity of variance to be explained by give factors by chance alone.**
+
+---
+
+```{r}
+# Model.LM <- lm(Giving~SFR+Small.Classes+Big.Classes+Graduation.Rate+Freshman.Retention, data=AlumniGiving)
+# summary(Model.LM)
+# AlumniGiving$ResidsNoS <- residuals(Model.LM)
+result <- regress(
+  AlumniGiving, 
+  rvar = "Giving", 
+  evar = c(
+    "SFR", "Small.Classes", "Big.Classes", "Graduation.Rate", 
+    "Freshman.Retention"
+  )
+)
+summary(result, sum_check = "sumsquares")
+AlumniGiving <- store(AlumniGiving, result, name = "ResidsNoS")
+```
+
+## Question 5
+
+Are the residuals from the previous regression normal?  **No.  There are a few schools that are quite poorly explained with large amounts of excess giving given the model.  Note the long right tail on the residuals.**  Provide convincing evidence that they are.  Or Fix it with Special?
+
+**It is hard to say definitively, most everything conforms but there is also a disquieting pattern of large positive residuals; more than the quantile-quantile plot would suggest there should be.**
+
+---
+
+```
+May need to install:
+install.packages("gvlma")
+```
+
+Use gvlma
+
+```{r}
+library(gvlma)
+gvlma(result$model)
+# gvlma(Model.LM)
+# Null is normal.  Here that's very unlikely to be true; they are non-normal.
+shapiro.test(AlumniGiving$ResidsNoS)
+```
+
+Nope.
+
+## Question 6
+
+Reexamine a regression but now use all of the predictors except for the School and ID to explain Giving. With 95% confidence, what factors seem to explain giving?  **Special and Small.Classes** Interpret the residual standard error to summarize how well the regression with all predictors fits.  **We can predict Giving Rates in the sample to within 0.048, on average.** Does the model predict variance?  **Yes**
+
+```{r fig.width = 7, fig.height = 8.08, dpi = 96}
+# Model.S <- lm(Giving~SFR+Small.Classes+Big.Classes+Graduation.Rate+Freshman.Retention, data=AlumniGiving)
+# summary(Model.S)
+# AlumniGiving$ResidsS <- residuals(Model.S)
+result <- regress(
+  AlumniGiving, 
+  rvar = "Giving", 
+  evar = c(
+    "SFR", "Small.Classes", "Big.Classes", "Graduation.Rate", 
+    "Freshman.Retention", "Special"
+  )
+)
+summary(result, sum_check = c("rmse", "sumsquares", "confint"))
+plot(result, plots = "dashboard", lines = "line", nrobs = -1, custom = FALSE)
+pred <- predict(result, pred_data = AlumniGiving)
+AlumniGiving <- store(AlumniGiving, result, name = "ResidsSpec")
+print(pred, n = 10)
+AlumniGiving <- store(AlumniGiving, pred, name = "pred_reg")
+```
+
+---
+
+**The model, as a whole and as shown by F, accounts for far more variance than would be expected by chance alone.  The p-value is less than 0.001.  Indeed, the value of F such that 99.9 percent of F-ratios are smaller is 4.05 while the F we obtain is 36.987.  The model almost surely explains far more than random varation.  Yet, of six plausible predictors, only Special and Small.Classes have non-zero slopes.**
+
+$$Giving = -0.186 - 0.001*SFR + 0.165*Small.Classes - 0.022*Big.Classes + 0.111*Graduation.Rate + 0.246*Freshman.Retention + 0.185(If Special is Yes) + error$$
+
+OR
+
+```{r}
+equatiomatic::extract_eq(result$model, use_coefs = TRUE, coef_digits = 4)
+```
+
+
+## Question 7
+
+Are the residuals from the previous regression normal?  Provide convincing evidence that they are.  Compare this to the previous model?
+
+They are certainly better as Special has pulled those extreme values of residual giving to the line.
+
+```{r}
+library(gvlma)
+gvlma(result$model)
+# gvlma(Model.S)
+```
+
+## Question 8
+
+Given the information in the regression with all predictors, which schools have the most and least unexplained giving given the characteristics of the school?
+
+```{r}
+AlumniGiving %>% arrange(ResidsSpec) %>% select(School, ResidsSpec) %>% head
+AlumniGiving %>% arrange(desc(ResidsSpec)) %>% select(School, ResidsSpec) %>% head
+```
+
+
+**USC most/highest residual giving and the Air Force Academy least/highest (in absolute value) negative residual giving.**
+
+## Question 9
+
+```{r}
+confint(result$model)
+```
+
+## Question 10
+
+Our school is not Special, has a graduation rate of 0.67, a student to faculty ratio of 17 (SFR), 0.34 of the classes have fewer than 20 students (Small.Classes), 0.23 of the classes have over 50 students (Big.Classes), and a freshman retention rate of 0.77.  The school's giving rate is 8%. Assess their performance on average and for a specific year.  What does this say about the performance of the development office?
+
+---
+
+Two ways to do this.  
+
+- Type in the values?
+- Upload a spreadsheet and predict with that.
+
+---
+
+We are just barely within the 95% interval for average giving given the characteristics of our school.
+
+```{r fig.width = 7, fig.height = 5.38, dpi = 96}
+pred <- predict(
+  result, 
+  pred_cmd = c(
+    "Graduation.Rate=0.67", 
+    "Small.Classes=0.34", 
+    "Big.Classes=0.23", "Special='No'", 
+    "Freshman.Retention=0.77"
+  ), 
+  conf_lev = 0.9
+)
+plot(pred, xvar = "Special", conf_lev = 0.9)
+print(pred, n = 10)
+```
+
+## Predicting the Data
+
+```{r}
+pred <- predict(
+  result, 
+  pred_cmd = c(
+    "Graduation.Rate=0.67", 
+    "Small.Classes=0.34", 
+    "Big.Classes=0.23", "Special='No'", 
+    "Freshman.Retention=0.77"
+  ), 
+  conf_lev = 0.9, interval="prediction"
+)
+# plot(pred, xvar = "Special", conf_lev = 0.9)
+print(pred, n = 10)
+```
+
+
+## Question 11
+
+What factors matter? We will think about this in two ways. First, by adding predictors that clearly explain variation. Second, by starting with all reasonable predictors and removing them if they do not have non-zero slopes, using a stepwise procedure.
+
+**This is stepwise**
+
+---
+
+```{r fig.width = 7, fig.height = 8.08, dpi = 96}
+# step(Model.S, direction="both")
+result <- regress(
+  AlumniGiving, 
+  rvar = "Giving", 
+  evar = c(
+    "SFR", "Small.Classes", "Big.Classes", "Graduation.Rate", 
+    "Freshman.Retention", "Special"
+  ), 
+  check = "stepwise-backward"
+)
+summary(result, sum_check = c("rmse", "sumsquares", "confint"), conf_lev = 0.9)
+```
+
+## On VIF
+
+It manages to remove two variables for having insufficient associated squares; we lose 0.002 when measured in R-squared.  Though we cannot be certain that Graduation.Rate and Freshman.Retention do not have zero slopes, this largely results from the relationship among them.
+
+```{r}
+# car::vif(Model.S)
+```
+
+## Question 12
+
+If you could recommend one or two operational factors to improve giving, what would they be?  Think carefully about which factors can and cannot be controlled by the relevant decision makers.
+
+**The overarching evidence provided by Small.Classes, Graduation.Rate, and Freshman.Retention suggests that the ability to deliver more personalized experiences as opposed to greater bureaucratization of the university might be a solution; administrative creep is a well known phenomenon in higher education.**
+
+## Some Additional Interpretation: Plots
+
+```{r}
+pred <- predict(result, pred_cmd = "Small.Classes=seq(0,0.7, by=0.01)")
+plot(pred, xvar = "Small.Classes")
+```
+
