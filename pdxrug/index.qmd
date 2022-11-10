@@ -62,6 +62,74 @@ Two versions are rendered.
 - Or you can roll your own
 ![from quarto docs](./img/Screen Shot 2022-11-09 at 9.40.36 PM.png)
 
-## Does This Work?
+## tabsets
 
-[RStudio Server](https://s8.sytes.net/rstudio/)
+My students tell me this doesn't work very well.
+
+::: {.panel-tabset}
+
+### Fragment
+
+```{r}
+#| output-location: fragment
+#| tidy: true
+ggplot(airquality) + 
+  aes(Temp, Ozone) + 
+  geom_point() + 
+  geom_smooth(method = "loess")
+```
+
+### Slide
+
+```{r}
+#| output-location: slide
+ggplot(airquality) + 
+  aes(Temp, Ozone) + 
+  geom_point() + 
+  geom_smooth(method = "loess")
+```
+
+### Column
+
+```{r}
+#| output-location: column
+#| tidy: true
+ggplot(airquality) + 
+  aes(Temp, Ozone) + 
+  geom_point() + 
+  geom_smooth(method = "loess")
+```
+
+### Column-Fragment
+
+```{r}
+#| output-location: column-fragment
+#| tidy: true
+ggplot(airquality) + 
+  aes(Temp, Ozone) + 
+  geom_point() + 
+  geom_smooth(method = "loess")
+```
+
+:::
+
+## Code
+
+```{r}
+#| output-location: column-fragment
+ggplot(airquality) + 
+  aes(Temp, Ozone) + 
+  geom_point() + 
+  geom_smooth(method = "loess")
+```
+
+## Fenced Code
+
+```{r}
+#| echo: fenced
+#| output-location: column-fragment
+ggplot(airquality) + 
+  aes(Temp, Ozone) + 
+  geom_point() + 
+  geom_smooth(method = "loess")
+```
