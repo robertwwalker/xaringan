@@ -1,0 +1,67 @@
+---
+title: "Much Love for Multiverse: \n How 15 Characters Removed the Dread of Hybrid Instruction"
+author: "Robert W. Walker"
+format: 
+   revealjs:
+     multiplex: true
+     preview-links: true
+     theme: [custom.scss]
+     scrollable: true
+     logo: AGSMlogo.jpeg
+     footer: "PDX R Users Group Multiverse Talk 2022-11-10"
+     embed-resources: true
+     html-math-method: katex
+     incremental: true
+     slide-number: c/t
+     transition: convex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=TRUE, tidy=TRUE, comment=NA, prompt=FALSE, fig.height=6, fig.width=6.5, fig.retina = 3, dev = 'svg', eval=TRUE)
+library(tidyverse)
+options(
+  digits = 3,
+  width = 75,
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis",
+  ggplot2.discrete.colour = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442"),
+  ggplot2.discrete.fill = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442")
+)
+```
+
+# TLDR: The 15 Characters
+
+```
+multiplex: true
+```
+
+## The Problem(s)
+
+- Screen shares on Zoom [and competitors] aren't copy-pasteable.
+- Latency issues and interference often require that in-person learners are in the physical but not the virtual meeting.
+- **Ultimately, this is an equity issue.**
+
+## The Solution is Really That Easy
+
+![multiplex: true](./img/Screen Shot 2022-11-09 at 9.31.37 PM.png)
+
+## How Does it Work?
+
+Two versions are rendered.
+
+- {filename}.html [A link to provide to users]
+- {filename}-speaker.html [A link for the presenter]
+
+- [The Details](https://quarto.org/docs/presentations/revealjs/presenting.html#multiplex-server)
+
+## Behind The Scenes
+
+- They are linked together via a server provided by the Revealjs team.
+![from quarto docs](./img/Screen Shot 2022-11-09 at 9.36.26 PM.png)
+
+- Or you can roll your own
+![from quarto docs](./img/Screen Shot 2022-11-09 at 9.40.36 PM.png)
+
+## Does This Work?
+
+[RStudio Server](https://s8.sytes.net/rstudio/)
