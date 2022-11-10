@@ -9,7 +9,7 @@ format:
      scrollable: true
      logo: AGSMlogo.jpeg
      footer: "PDX R Users Group Multiverse Talk 2022-11-10"
-     embed-resources: true
+     chalkboard: true
      html-math-method: katex
      incremental: true
      slide-number: c/t
@@ -29,17 +29,19 @@ options(
 )
 ```
 
-# TLDR: The 15 Characters
+## TLDR: The 15 Characters
 
-```
-multiplex: true
-```
+::: {.r-fit-text}
+`multiplex: true`
+:::
+
+- technically, 14 characters and a space
 
 ## The Problem(s)
 
 - Screen shares on Zoom [and competitors] aren't copy-pasteable.
 - Latency issues and interference often require that in-person learners are in the physical but not the virtual meeting.
-- **Ultimately, this is an equity issue.**
+- **Ultimately, this is an equal access issue.**
 
 ## The Solution is Really That Easy
 
@@ -49,8 +51,11 @@ multiplex: true
 
 Two versions are rendered.
 
-- {filename}.html [A link to provide to users]
-- {filename}-speaker.html [A link for the presenter]
+- {filename}.html 
+A link to provide to users
+
+- {filename}-speaker.html 
+A link for the presenter
 
 - [The Details](https://quarto.org/docs/presentations/revealjs/presenting.html#multiplex-server)
 
@@ -64,7 +69,7 @@ Two versions are rendered.
 
 ## tabsets
 
-My students tell me this doesn't work very well.
+The interaction with multiplex and tabset doesn't work perfectly^[an observation, not a complaint]
 
 ::: {.panel-tabset}
 
@@ -133,3 +138,13 @@ ggplot(airquality) +
   geom_point() + 
   geom_smooth(method = "loess")
 ```
+
+## This only scratches the surface
+
+There are many other cool features:
+
+- the chalkboard
+- the canvas
+- text animations
+- the `slide-tone` from `xaringanExtra`
+- zoom
