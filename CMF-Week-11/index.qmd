@@ -1784,4 +1784,10 @@ tibble(
   | ETS(A,N,A)    | ARIMA(0,0,$m$)(0,1,0)$_m$   |                                      |
   | ETS(A,A,A)    | ARIMA(0,1,$m+1$)(0,1,0)$_m$ |                                      |
   | ETS(A,A\damped,A)    | ARIMA(1,0,$m+1$)(0,1,0)$_m$ |                                      |
-  
+
+## Save Stuff
+
+```{r}
+save.image("./data/FullWorkspace.RData")
+```
+
