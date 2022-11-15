@@ -54,8 +54,22 @@ beer <- aus_production %>%
   filter(year(Quarter) >= 1992)
 ```
 
+# Housekeeping
 
-# Decomposition forecasting
+All of the data for today can be acquired using 
+
+```
+load(url("https://github.com/robertwwalker/xaringan/raw/main/CMF-Week-11/data/FullWorkspace.RData"))
+```
+
+# Plan
+
+1. Finish last time's work
+2. Regression [on the quick]
+3. Exponential Smoothing Models
+4. ARIMA Models
+
+## Decomposition forecasting
 
 The `decomposition_model` function allows for a separate approach to the seasonal and seasonally adjusted components.  The latter is often combined with a model covered later including Holt's method or ARIMA models.
 
