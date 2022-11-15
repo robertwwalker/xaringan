@@ -1636,7 +1636,7 @@ For the GDP data (from `global_economy`):
   
   where $m =$ number of observations per year.
 
-## Seasonal ARIMA models
+## Seasonal ARIMA models {.smaller}
 
 E.g., ARIMA $(1, 1, 1)(1, 1, 1)_{4}$ model (without constant)
 
@@ -1677,7 +1677,7 @@ ARIMA(0,0,0)(1,0,0)$_{12}$ will show:
 ```{r, echo=TRUE, fig.height=3.5}
 usmelec %>% autoplot(
   log(Generation)
-)
+) + theme_ipsum_rc()
 ```
 
 ## US electricity production
@@ -1685,7 +1685,7 @@ usmelec %>% autoplot(
 ```{r, echo=TRUE, fig.height=3.5}
 usmelec %>% autoplot(
   log(Generation) %>% difference(12)
-)
+) + theme_ipsum_rc()
 ```
 
 ## US electricity production
@@ -1693,7 +1693,7 @@ usmelec %>% autoplot(
 ```{r, echo=TRUE, fig.height=3.5}
 usmelec %>% autoplot(
   log(Generation) %>% difference(12) %>% difference()
-)
+) + theme_ipsum_rc()
 ```
 
 ## US electricity production
@@ -1747,16 +1747,16 @@ augment(fit) %>%
 usmelec %>%
   model(arima = ARIMA(log(Generation))) %>%
   forecast(h = "3 years") %>%
-  autoplot(usmelec)
+  autoplot(usmelec) + theme_ipsum_rc()
 ```
 
 ## US electricity production
 
-```{r usmelec4, echo=TRUE, fig.height=3.2, eval=FALSE}
+```{r usmelec4, echo=TRUE, fig.height=3.2}
 usmelec %>%
   model(arima = ARIMA(log(Generation))) %>%
   forecast(h = "3 years") %>%
-  autoplot(filter(usmelec$Generation, year(Month) >= 2005))
+  autoplot({usmelec %>% filter(year(index) > 2010)}) + theme_ipsum_rc()
 ```
 
 # ARIMA vs ETS
@@ -1800,7 +1800,7 @@ tibble(
   guides(col=FALSE, fill=FALSE) +  theme_void()
 ```
 
-## Equivalences
+## Equivalences {.smaller}
 
 |**ETS model**  | **ARIMA model**             | **Parameters**                       |
   | :------------ | :-------------------------- | :----------------------------------- |
