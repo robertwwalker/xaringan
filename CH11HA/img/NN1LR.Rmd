@@ -1,0 +1,503 @@
+---
+title: "Time Series: Advanced Methods"
+subtitle: "FPP3, Chapter 11"
+author: "Robert W. Walker"
+institute: "AGSM"
+date: "`r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    css: xaringan-themer.css
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(fig.retina=3, fig.width=8, fig.height=5, warning=FALSE, message=FALSE, comment='', cache=TRUE)
+library(tidyverse)
+library(fpp3)
+library(purrr)
+library(gganimate)
+library(tsibble)
+options(scipen=4)
+library(tidyquant)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringan)
+library(xaringanthemer)
+style_mono_accent(base_color = "#43418A", text_font_google   = google_font("Fira Sans", "300", "300i"))
+```
+
+# An Overview
+
+Expanding the space of relevant models still operates in the circle of chapter 5.
+
+![Forecasting Diagram](img/Workflow.PNG)
+
+---
+### An Overview
+
+Expanding the space of relevant models still operates in the circle of chapter 5.
+
++ Linear Models: tidying up  
++ Univariate 1: Exponential Smoothing
++ Univariate 2: ARIMA models
++ Dynamic Regression **Tying it Together**
++ Advanced Forecasting **Extending the ties**
+
+![Forecasting Diagram](img/Workflow.PNG)
+
+---
+
+## Packages
+
+Getting started
+
+```{r}
+library(forecast)
+library(tidyverse)
+library(fpp3)
+library(purrr)
+library(gganimate)
+library(seasonal)
+library(tidyquant)
+library(magrittr)
+vic_elec_daily <- vic_elec %>%
+  filter(year(Time) == 2014) %>%
+  index_by(Date = date(Time)) %>%
+  summarise(
+    Demand = sum(Demand)/1e3,
+    Temperature = max(Temperature),
+    Holiday = any(Holiday)
+  ) %>%
+  mutate(Day_Type = case_when(
+    Holiday ~ "Holiday",
+    wday(Date) %in% 2:6 ~ "Weekday",
+    TRUE ~ "Weekend"
+  ))
+```
+---
+
+# The magic of `forecast`
+
+The method:
+1. Tidy  
+2. Visualise  
+3. Model  
+  a. Specify  
+  b. Estimate  
+  c. Evaluate  
+  d. Visualize  
+4. Forecast
+
+---
+
+# Models
+
+```
+3. Model  
+  a. Specify  
+  b. Estimate  
+  c. Evaluate  
+  d. Visualize  
+```
+
+---
+# Complex seasonality
+
+
+---
+## Examples
+
+```{r gasolinedata}
+gasoline <- as_tsibble(fpp2::gasoline)
+gasoline %>% autoplot(value) +
+  labs(x = "Year", y = "Thousands of barrels per day",
+       title = "Weekly US finished motor gasoline products")
+```
+
+---
+## Examples
+
+```{r callsdata, message=FALSE, warning=FALSE, eval=FALSE}
+calls <- read_tsv("http://robjhyndman.com/data/callcenter.txt") %>%
+  gather("date", "volume", -X1) %>% transmute(
+    time = X1, date = as.Date(date, format = "%d/%m/%Y"),
+    datetime = as_datetime(date) + time, volume) %>%
+  as_tsibble(index = datetime)
+calls %>%
+  fill_gaps() %>%
+  autoplot(volume) +
+  labs(x = "Weeks", y = "Call volume",
+       title = "5 minute call volume at North American bank")
+```
+
+---
+## Examples
+
+```{r callsdata2, message=FALSE, warning=FALSE, echo=FALSE}
+calls <- read_tsv("http://robjhyndman.com/data/callcenter.txt") %>%
+  gather("date", "volume", -X1) %>% transmute(
+    time = X1, date = as.Date(date, format = "%d/%m/%Y"),
+    datetime = as_datetime(date) + time, volume) %>%
+  as_tsibble(index = datetime)
+calls %>%
+  fill_gaps() %>%
+  autoplot(volume) +
+  labs(x = "Weeks", y = "Call volume",
+       title = "5 minute call volume at North American bank")
+```
+
+---
+## Examples
+
+```{r, fig.height=5, eval=FALSE}
+library(sugrrants)
+calls %>%
+  filter(yearmonth(date) == yearmonth("2003 August")) %>%
+  ggplot(aes(x = time, y = volume)) +
+  geom_line() +
+  facet_calendar(date) +
+  labs(x = "Weeks", y = "Call volume",
+       title = "5 minute call volume at North American bank")
+```
+
+---
+## Examples
+
+```{r, fig.height=5, echo=FALSE}
+library(sugrrants)
+calls %>%
+  filter(yearmonth(date) == yearmonth("2003 August")) %>%
+  ggplot(aes(x = time, y = volume)) +
+  geom_line() +
+  facet_calendar(date) +
+  labs(x = "Weeks", y = "Call volume",
+       title = "5 minute call volume at North American bank")
+```
+
+---
+## Examples
+
+```{r turk, eval=FALSE}
+telec <- read_csv(url("https://raw.githubusercontent.com/robjhyndman/ETC3550Slides/eba103c4c86c0634df6cf3ee4a81dc2803c198b6/data/turkey_elec.csv"), col_names = "Demand")
+turkey_elec <- telec %>%
+  mutate(Date = seq(ymd("2000-01-01"), ymd("2008-12-31"), by = "day")) %>%
+  as_tsibble(index = Date)
+turkey_elec %>% autoplot(Demand) +
+  labs(title = "Turkish daily electricity demand",
+       x = "Year", y = "Electricity Demand (GW)")
+```
+
+---
+## Examples
+
+```{r turk2, echo=FALSE}
+telec <- read_csv(url("https://raw.githubusercontent.com/robjhyndman/ETC3550Slides/eba103c4c86c0634df6cf3ee4a81dc2803c198b6/data/turkey_elec.csv"), col_names = "Demand")
+turkey_elec <- telec %>%
+  mutate(Date = seq(ymd("2000-01-01"), ymd("2008-12-31"), by = "day")) %>%
+  as_tsibble(index = Date)
+turkey_elec %>% autoplot(Demand) +
+  labs(title = "Turkish daily electricity demand",
+       x = "Year", y = "Electricity Demand (GW)")
+```
+
+---
+## TBATS model
+
+TBATS
+
+$\textbf{T}$rigonometric terms for seasonality
+
+$\textbf{B}$ox-Cox transformations for heterogeneity
+
+$\textbf{A}$RMA errors for short-term dynamics
+
+$\textbf{T}$rend (possibly damped)
+
+$\textbf{S}$easonal (including multiple and non-integer periods)
+
+
+---
+## TBATS model
+
+$$
+y_t = \text{observation at time $t$}
+$$
+
+Box-Cox
+
+If $\omega \neq 0$ then 
+$$y_t^{(\omega)} = (y_t^\omega-1)/\omega$$
+Else
+$$\log y_t$$
+
+
+
+---
+## TBATS model
+
+$$
+y_t = \text{observation at time $t$}
+$$
+
+Box-Cox:
+
+If $\omega \neq 0$ then 
+$y_t^{(\omega)} = (y_t^\omega-1)/\omega$ Else
+$\log y_t$
+
+$M$ seasonal periods:
+$$y_t^{(\omega)} = \ell_{t-1} + \phi b_{t-1} + \sum_{i=1}^M s_{t-m_i}^{(i)} + d_t$$
+
+---
+## TBATS model
+
+$$
+y_t = \text{observation at time $t$}
+$$
+
+Box-Cox:
+If $\omega \neq 0$ then 
+$y_t^{(\omega)} = (y_t^\omega-1)/\omega$ Else
+$\log y_t$
+
+$M$ seasonal periods:
+$$y_t^{(\omega)} = \ell_{t-1} + \phi b_{t-1} + \sum_{i=1}^M s_{t-m_i}^{(i)} + d_t$$
+
+
+Local and global trends:
+$$\ell_t = \ell_{t-1} + \phi b_{t-1} + \alpha d_t\\
+b_t = (1-\phi) b + \phi b_{t-1} + \beta d_{t}$$
+
+---
+## TBATS model
+
+$$
+y_t = \text{observation at time $t$}
+$$
+
+Box-Cox:
+
+If $\omega \neq 0$ then $y_t^{(\omega)} = (y_t^\omega-1)/\omega$ Else $\log y_t$
+
+$M$ seasonal periods:
+$$y_t^{(\omega)} = \ell_{t-1} + \phi b_{t-1} + \sum_{i=1}^M s_{t-m_i}^{(i)} + d_t$$
+
+
+Local and global trends:
+$$\ell_t = \ell_{t-1} + \phi b_{t-1} + \alpha d_t\\
+b_t = (1-\phi) b + \phi b_{t-1} + \beta d_{t}$$
+
+ARMA Errors:
+$$d_t = \sum_{i=1}^p \phi_i d_{t-i} + \sum_{j=1}^q \theta_j \varepsilon_{t-j} + \varepsilon_t\\
+s_t^{(i)} = \sum_{j=1}^{k_i} s_{j,t}^{(i)}$$
+
+---
+## TBATS model
+
+$$y_t = \text{observation at time $t$}$$
+
+Box-Cox: If $\omega \neq 0$ then 
+$y_t^{(\omega)} = (y_t^\omega-1)/\omega$ Else
+$\log y_t$
+
+$M$ seasonal periods: $$y_t^{(\omega)} = \ell_{t-1} + \phi b_{t-1} + \sum_{i=1}^M s_{t-m_i}^{(i)} + d_t$$
+
+
+Local and global trends:
+$$\ell_t = \ell_{t-1} + \phi b_{t-1} + \alpha d_t\\
+b_t = (1-\phi) b + \phi b_{t-1} + \beta d_{t}$$
+
+ARMA Errors:
+$$d_t = \sum_{i=1}^p \phi_i d_{t-i} + \sum_{j=1}^q \theta_j \varepsilon_{t-j} + \varepsilon_t\\
+s_t^{(i)} = \sum_{j=1}^{k_i} s_{j,t}^{(i)}$$
+
+Fourier seasonal terms:
+$$s_{j,t}^{(i)} = \phantom{-}s_{j,t-1}^{(i)}\cos \lambda_j^{(i)} + s_{j,t-1}^{*(i)}\sin \lambda_j^{(i)} + \gamma_1^{(i)} d_t \\
+s_{j,t}^{(i)} &= -s_{j,t-1}^{(i)}\sin \lambda_j^{(i)} + s_{j,t-1}^{*(i)}\cos \lambda_j^{(i)} + \gamma_2^{(i)} d_t$$
+
+
+---
+## Complex seasonality
+
+```{r gasoline, echo=TRUE, fig.height=4, eval = FALSE}
+fpp2::gasoline %>% tbats() %>% forecast() %>% autoplot()
+```
+
+---
+## Complex seasonality
+
+```{r gasoline2, eval=TRUE, fig.height=4, echo = FALSE}
+fpp2::gasoline %>% tbats() %>% forecast() %>% autoplot()
+```
+
+
+---
+## Complex seasonality
+
+```{r callcentref, echo=TRUE, fig.height=4}
+fpp2::calls %>% tbats() %>% forecast() %>% autoplot()
+```
+
+---
+## Complex seasonality
+
+```{r callcentref2, eval=TRUE, fig.height=4, echo = FALSE}
+fpp2::calls %>% tbats() %>% forecast() %>% autoplot()
+```
+
+
+---
+## Complex seasonality
+
+```{r telecf, echo=TRUE, fig.height=4, eval = FALSE}
+telec <- ts(telec, start=as.Date("2000-01-01"), frequency=1)
+telec %>% tbats() %>% forecast() %>% autoplot()
+```
+
+---
+## Complex seasonality
+
+```{r telecf2, eval=TRUE, fig.height=4, echo = FALSE}
+telec <- ts(telec, start=as.Date("2000-01-01"), frequency=1)
+telec %>% tbats() %>% forecast() %>% autoplot()
+```
+
+
+---
+## TBATS model
+
+TBATS
+$\textbf{T}$rigonometric terms for seasonality\\
+$\textbf{B}$ox-Cox transformations for heterogeneity\\
+$\textbf{A}$RMA errors for short-term dynamics\\
+$\textbf{T}$rend (possibly damped)\\
+$\textbf{S}$easonal (including multiple and non-integer periods)
+
+* Handles non-integer seasonality, multiple seasonal periods.
+* Entirely automated
+* Prediction intervals often too wide
+* Very slow on long series
+
+
+---
+# Vector autoregression
+
+---
+# Neural network models
+
+---
+## Neural network models
+
+![]()
+
+## Neural network models
+
+\alert{Nonlinear model with one hidden layer}
+
+$$\begin{tikzpicture}[shorten >=1pt,->,draw=black!50, node distance=2.5cm]
+    \tikzstyle{every pin edge}=[<-,shorten <=1pt]
+    \tikzstyle{neuron}=[circle,fill=black!25,minimum size=17pt,inner sep=0pt]
+    \tikzstyle{input neuron}=[neuron, fill=green!50];
+    \tikzstyle{output neuron}=[neuron, fill=red!50];
+    \tikzstyle{hidden neuron}=[neuron, fill=blue!50];
+    \tikzstyle{annot} = [text width=4em, text centered]
+    % Draw the input layer nodes
+    \foreach \name / \y in {1,...,4}
+    % This is the same as writing \foreach \name / \y in {1/1,2/2,3/3,4/4}
+        \node[input neuron, pin=left:Input \#\y] (I-\name) at (0,-\y) {};
+    % Draw the hidden layer nodes
+    \foreach \name / \y in {1,...,3}
+        \path[yshift=-.5cm]
+            node[hidden neuron] (H-\name) at (2.5cm,-\y cm) {};
+    % Draw the output layer node
+    \node[output neuron,pin={[pin edge={->}]right:Output}, right of=H-2] (O) {};
+    % Connect every node in the input layer with every node in the
+    % hidden layer.
+    \foreach \source in {1,...,4}
+        \foreach \dest in {1,...,3}
+            \path (I-\source) edge (H-\dest);
+    % Connect every node in the hidden layer with the output layer
+    \foreach \source in {1,...,3}
+        \path (H-\source) edge (O);
+    % Annotate the layers
+    \node[annot,above of=H-2, node distance=2.5cm] (hl) {Hidden layer};
+    \node[annot,left of=hl] {Input layer};
+    \node[annot,right of=hl] {Output layer};
+\end{tikzpicture}$$
+\pause\vspace*{-0.1cm}\fontsize{13}{13}\sf
+* A **multilayer feed-forward network** where each layer of nodes receives inputs from the previous layers.
+* Inputs to each node combined using linear combination.
+* Result modified by nonlinear function before being output.
+
+---
+## Neural network models
+
+Inputs to hidden neuron $j$ linearly combined:
+$$
+z_j = b_j + \sum_{i=1}^4 w_{i,j} x_i.
+$$
+Modified using nonlinear function such as a sigmoid:
+$$
+s(z) = \frac{1}{1+e^{-z}},
+$$
+This tends to reduce the effect of extreme input values, thus making the network somewhat robust to outliers.
+
+---
+## Neural network models
+
+* Weights take random  values to begin with, which are then updated using the observed data.
+* There is an element of randomness in the predictions. So the network is usually trained several times using different random starting points, and the results are averaged.
+* Number of hidden layers, and the number of nodes in each hidden layer, must be specified in advance.
+
+---
+## NNAR models
+
+* Lagged values of the time series can be used as inputs to a neural network.
+* NNAR($p,k$): $p$ lagged inputs and $k$ nodes in the single hidden layer.
+* NNAR($p,0$) model is equivalent to an ARIMA($p,0,0$) model but without stationarity restrictions.
+* Seasonal NNAR($p,P,k$): inputs $(y_{t-1},y_{t-2},\dots,y_{t-p},y_{t-m},y_{t-2m},y_{t-Pm})$ and $k$ neurons in the hidden layer.
+* NNAR($p,P,0$)$_m$ model is equivalent to an ARIMA($p,0,0$)($P$,0,0)$_m$ model but without stationarity restrictions.
+
+---
+## NNAR models in R
+
+* The `nnetar()` function fits an NNAR($p,P,k$)$_m$ model.
+* If $p$ and $P$ are not specified, they are automatically selected.
+* For non-seasonal time series, default $p=$ optimal number of lags (according to the AIC) for a linear AR($p$) model.
+* For seasonal time series, defaults are $P=1$ and $p$ is chosen from the optimal linear model fitted to the seasonally adjusted data.
+* Default $k=(p+P+1)/2$ (rounded to the nearest integer).
+
+
+---
+## Sunspots
+
+* Surface of the sun contains magnetic regions that appear as dark spots.
+* These affect the propagation of radio waves and so telecommunication companies like to predict sunspot activity in order to plan for any future difficulties.
+* Sunspots follow a cycle of length between 9 and 14 years.
+
+---
+## NNAR(9,5) model for sunspots
+
+```{r sunspot-nnetar, echo=TRUE, fig.height=4}
+sunspots <- as_tsibble(fpp2::sunspotarea)
+fit <- sunspots %>% model(NNETAR(value))
+fit %>% forecast(h=20, times = 1) %>%
+  autoplot(sunspots, level = NULL)
+```
+
+---
+## Prediction intervals by simulation
+
+```{r sunspot-nnetar-pi, echo=TRUE, fig.height=4}
+fit %>% forecast(h=20) %>%
+  autoplot(sunspots)
+```
+
+---
+# Bootstrapping and bagging

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Time Series: Practical Issues</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Robert W. Walker" />
+    <meta name="date" content="2021-04-09" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Time Series: Practical Issues
+## FPP3, Chapter 13
+### Robert W. Walker
+### AGSM
+### 2021-04-09
+
+---
+
+
+
+
+
+
+---
+# Practical Issues in Forecasting
+
+## Models for different frequencies
+
+---
+### Models for annual data
+
+ * ETS, ARIMA, Dynamic regression
+
+---
+### Models for quarterly data
+
+ * ETS, ARIMA/SARIMA, Dynamic regression, Dynamic harmonic regression, STL+ETS, STL+ARIMA
+
+---
+### Models for monthly data
+
+ * ETS, ARIMA/SARIMA, Dynamic regression, Dynamic harmonic regression, STL+ETS, STL+ARIMA
+
+---
+### Models for weekly data
+
+ * ARIMA/SARIMA, Dynamic regression, Dynamic harmonic regression, STL+ETS, STL+ARIMA, TBATS
+
+---
+### Models for daily, hourly and other sub-daily data
+
+ * ARIMA/SARIMA, Dynamic regression, Dynamic harmonic regression, STL+ETS, STL+ARIMA, TBATS
+
+---
+# Ensuring forecasts stay within limits
+
+---
+## Positive forecasts: Use logs
+
+
+```r
+library(fpp3)
+eggs &lt;- as_tsibble(fma::eggs)
+eggs %&gt;%
+  model(ETS(log(value) ~ error("A") + trend("A") + season("N"))) %&gt;%
+  forecast(h=50) %&gt;%
+  autoplot(eggs)
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-1-1.png" width="576" /&gt;
+
+---
+# Combining Forecasts
+## Forecast combinations
+### Clemen (1989)
+
+"The results have been virtually unanimous: combining multiple forecasts leads to increased forecast accuracy. `\(\dots\)` In many cases one can make dramatic performance improvements by simply averaging the forecasts."
+
+---
+## Forecast combinations
+
+
+```r
+aus_cafe &lt;- aus_retail %&gt;%
+  filter(Industry == "Cafes, restaurants and catering services") %&gt;%
+  summarise(Turnover = sum(Turnover))
+fc &lt;- aus_cafe %&gt;%
+  filter(Month &lt;= yearmonth("2013 Sep")) %&gt;%
+  model(
+    ETS = ETS(Turnover),
+    ARIMA = ARIMA(Turnover)
+  ) %&gt;%
+  mutate(
+    Combination = (ETS + ARIMA)/2
+  ) %&gt;%
+  forecast(h = "5 years")
+```
+
+
+---
+## Forecast combinations
+
+
+```r
+fc %&gt;% autoplot(aus_cafe, level = NULL) +
+  labs(x = "Year", y = "$ billion",
+       title = "Australian monthly expenditure on eating out")
+```
+
+&lt;img src="index_files/figure-html/combineplot-1.png" width="576" /&gt;
+
+---
+## Forecast combinations
+
+
+```r
+fc %&gt;% accuracy(aus_cafe)
+```
+
+```
+# A tibble: 3 x 10
+  .model      .type    ME  RMSE   MAE   MPE  MAPE  MASE RMSSE  ACF1
+  &lt;chr&gt;       &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1 ARIMA       Test   112.  122.  112.  5.44  5.44  1.80  1.50 0.510
+2 Combination Test   120.  125.  120.  5.81  5.81  1.93  1.55 0.382
+3 ETS         Test   128.  133.  128.  6.18  6.18  2.06  1.64 0.324
+```
+
+---
+# Missing Values
+
+**Functions which can handle missing values**
+
+ * `ARIMA()`
+ * `TSLM()`
+ * `NNETAR()`
+ * `VAR()`
+ * `FASSTER()`
+
+**Models which cannot handle missing values**
+
+ * `ETS()`
+ * `STL()`
+ * `TBATS()`
+ 
+---
+### What to do?
+
+ 1. Model section of data after last missing value.
+ 2. Estimate missing values with `interpolate()`.
+ 
+---
+## Missing values
+
+
+```r
+gold &lt;- as_tsibble(forecast::gold)
+gold %&gt;% autoplot(value)
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-3-1.png" width="576" /&gt;
+
+---
+## Missing values
+
+
+```r
+gold_complete &lt;- gold %&gt;%
+  model(ARIMA(value)) %&gt;%
+  interpolate(gold)
+gold_complete %&gt;%
+  autoplot(value, colour = "red") +
+  autolayer(gold, value)
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-4-1.png" width="576" /&gt;
+
+---
+## Outliers
+
+
+```r
+fit &lt;- gold %&gt;%
+  model(ARIMA(value))
+augment(fit) %&gt;%
+  mutate(stdres = .resid/sd(.resid, na.rm=TRUE)) %&gt;%
+  filter(abs(stdres) &gt; 10)
+```
+
+```
+# A tsibble: 2 x 7 [1]
+# Key:       .model [1]
+  .model       index value .fitted .resid .innov stdres
+  &lt;chr&gt;        &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+1 ARIMA(value)   770  594.    499.   94.7   94.7   16.4
+2 ARIMA(value)   771  487.    562.  -74.8  -74.8  -12.9
+```
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

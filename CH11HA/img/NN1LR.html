@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Time Series: Advanced Methods</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Robert W. Walker" />
+    <meta name="date" content="2021-04-02" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Time Series: Advanced Methods
+## FPP3, Chapter 11
+### Robert W. Walker
+### AGSM
+### 2021-04-02
+
+---
+
+
+
+
+
+
+# An Overview
+
+Expanding the space of relevant models still operates in the circle of chapter 5.
+
+![Forecasting Diagram](img/Workflow.PNG)
+
+---
+### An Overview
+
+Expanding the space of relevant models still operates in the circle of chapter 5.
+
++ Linear Models: tidying up  
++ Univariate 1: Exponential Smoothing
++ Univariate 2: ARIMA models
++ Dynamic Regression **Tying it Together**
++ Advanced Forecasting **Extending the ties**
+
+![Forecasting Diagram](img/Workflow.PNG)
+
+---
+
+## Packages
+
+Getting started
+
+
+```r
+library(forecast)
+library(tidyverse)
+library(fpp3)
+library(purrr)
+library(gganimate)
+library(seasonal)
+library(tidyquant)
+library(magrittr)
+vic_elec_daily &lt;- vic_elec %&gt;%
+  filter(year(Time) == 2014) %&gt;%
+  index_by(Date = date(Time)) %&gt;%
+  summarise(
+    Demand = sum(Demand)/1e3,
+    Temperature = max(Temperature),
+    Holiday = any(Holiday)
+  ) %&gt;%
+  mutate(Day_Type = case_when(
+    Holiday ~ "Holiday",
+    wday(Date) %in% 2:6 ~ "Weekday",
+    TRUE ~ "Weekend"
+  ))
+```
+---
+
+# The magic of `forecast`
+
+The method:
+1. Tidy  
+2. Visualise  
+3. Model  
+  a. Specify  
+  b. Estimate  
+  c. Evaluate  
+  d. Visualize  
+4. Forecast
+
+---
+
+# Models
+
+```
+3. Model  
+  a. Specify  
+  b. Estimate  
+  c. Evaluate  
+  d. Visualize  
+```
+
+---
+# Complex seasonality
+
+
+---
+## Examples
+
+
+```r
+gasoline &lt;- as_tsibble(fpp2::gasoline)
+gasoline %&gt;% autoplot(value) +
+  labs(x = "Year", y = "Thousands of barrels per day",
+       title = "Weekly US finished motor gasoline products")
+```
+
+&lt;img src="NN1LR_files/figure-html/gasolinedata-1.png" width="576" /&gt;
+
+---
+## Examples
+
+
+```r
+calls &lt;- read_tsv("http://robjhyndman.com/data/callcenter.txt") %&gt;%
+  gather("date", "volume", -X1) %&gt;% transmute(
+    time = X1, date = as.Date(date, format = "%d/%m/%Y"),
+    datetime = as_datetime(date) + time, volume) %&gt;%
+  as_tsibble(index = datetime)
+calls %&gt;%
+  fill_gaps() %&gt;%
+  autoplot(volume) +
+  labs(x = "Weeks", y = "Call volume",
+       title = "5 minute call volume at North American bank")
+```
+
+---
+## Examples
+
+&lt;img src="NN1LR_files/figure-html/callsdata2-1.png" width="576" /&gt;
+
+---
+## Examples
+
+
+```r
+library(sugrrants)
+calls %&gt;%
+  filter(yearmonth(date) == yearmonth("2003 August")) %&gt;%
+  ggplot(aes(x = time, y = volume)) +
+  geom_line() +
+  facet_calendar(date) +
+  labs(x = "Weeks", y = "Call volume",
+       title = "5 minute call volume at North American bank")
+```
+
+---
+## Examples
+
+&lt;img src="NN1LR_files/figure-html/unnamed-chunk-3-1.png" width="576" /&gt;
+
+---
+## Examples
+
+
+```r
+telec &lt;- read_csv(url("https://raw.githubusercontent.com/robjhyndman/ETC3550Slides/eba103c4c86c0634df6cf3ee4a81dc2803c198b6/data/turkey_elec.csv"), col_names = "Demand")
+turkey_elec &lt;- telec %&gt;%
+  mutate(Date = seq(ymd("2000-01-01"), ymd("2008-12-31"), by = "day")) %&gt;%
+  as_tsibble(index = Date)
+turkey_elec %&gt;% autoplot(Demand) +
+  labs(title = "Turkish daily electricity demand",
+       x = "Year", y = "Electricity Demand (GW)")
+```
+
+---
+## Examples
+
+&lt;img src="NN1LR_files/figure-html/turk2-1.png" width="576" /&gt;
+
+---
+## TBATS model
+
+TBATS
+
+`\(\textbf{T}\)`rigonometric terms for seasonality
+
+`\(\textbf{B}\)`ox-Cox transformations for heterogeneity
+
+`\(\textbf{A}\)`RMA errors for short-term dynamics
+
+`\(\textbf{T}\)`rend (possibly damped)
+
+`\(\textbf{S}\)`easonal (including multiple and non-integer periods)
+
+
+---
+## TBATS model
+
+$$
+y_t = \text{observation at time `\(t\)`}
+$$
+
+Box-Cox
+
+If `\(\omega \neq 0\)` then 
+`$$y_t^{(\omega)} = (y_t^\omega-1)/\omega$$`
+Else
+`$$\log y_t$$`
+
+
+
+---
+## TBATS model
+
+$$
+y_t = \text{observation at time `\(t\)`}
+$$
+
+Box-Cox:
+
+If `\(\omega \neq 0\)` then 
+`\(y_t^{(\omega)} = (y_t^\omega-1)/\omega\)` Else
+`\(\log y_t\)`
+
+`\(M\)` seasonal periods:
+`$$y_t^{(\omega)} = \ell_{t-1} + \phi b_{t-1} + \sum_{i=1}^M s_{t-m_i}^{(i)} + d_t$$`
+
+---
+## TBATS model
+
+$$
+y_t = \text{observation at time `\(t\)`}
+$$
+
+Box-Cox:
+If `\(\omega \neq 0\)` then 
+`\(y_t^{(\omega)} = (y_t^\omega-1)/\omega\)` Else
+`\(\log y_t\)`
+
+`\(M\)` seasonal periods:
+`$$y_t^{(\omega)} = \ell_{t-1} + \phi b_{t-1} + \sum_{i=1}^M s_{t-m_i}^{(i)} + d_t$$`
+
+
+Local and global trends:
+`$$\ell_t = \ell_{t-1} + \phi b_{t-1} + \alpha d_t\\
+b_t = (1-\phi) b + \phi b_{t-1} + \beta d_{t}$$`
+
+---
+## TBATS model
+
+$$
+y_t = \text{observation at time `\(t\)`}
+$$
+
+Box-Cox:
+
+If `\(\omega \neq 0\)` then `\(y_t^{(\omega)} = (y_t^\omega-1)/\omega\)` Else `\(\log y_t\)`
+
+`\(M\)` seasonal periods:
+`$$y_t^{(\omega)} = \ell_{t-1} + \phi b_{t-1} + \sum_{i=1}^M s_{t-m_i}^{(i)} + d_t$$`
+
+
+Local and global trends:
+`$$\ell_t = \ell_{t-1} + \phi b_{t-1} + \alpha d_t\\
+b_t = (1-\phi) b + \phi b_{t-1} + \beta d_{t}$$`
+
+ARMA Errors:
+`$$d_t = \sum_{i=1}^p \phi_i d_{t-i} + \sum_{j=1}^q \theta_j \varepsilon_{t-j} + \varepsilon_t\\
+s_t^{(i)} = \sum_{j=1}^{k_i} s_{j,t}^{(i)}$$`
+
+---
+## TBATS model
+
+`$$y_t = \text{observation at time `\(t\)`}$$`
+
+Box-Cox: If `\(\omega \neq 0\)` then 
+`\(y_t^{(\omega)} = (y_t^\omega-1)/\omega\)` Else
+`\(\log y_t\)`
+
+`\(M\)` seasonal periods: `$$y_t^{(\omega)} = \ell_{t-1} + \phi b_{t-1} + \sum_{i=1}^M s_{t-m_i}^{(i)} + d_t$$`
+
+
+Local and global trends:
+`$$\ell_t = \ell_{t-1} + \phi b_{t-1} + \alpha d_t\\
+b_t = (1-\phi) b + \phi b_{t-1} + \beta d_{t}$$`
+
+ARMA Errors:
+`$$d_t = \sum_{i=1}^p \phi_i d_{t-i} + \sum_{j=1}^q \theta_j \varepsilon_{t-j} + \varepsilon_t\\
+s_t^{(i)} = \sum_{j=1}^{k_i} s_{j,t}^{(i)}$$`
+
+Fourier seasonal terms:
+`$$s_{j,t}^{(i)} = \phantom{-}s_{j,t-1}^{(i)}\cos \lambda_j^{(i)} + s_{j,t-1}^{*(i)}\sin \lambda_j^{(i)} + \gamma_1^{(i)} d_t \\
+s_{j,t}^{(i)} &amp;= -s_{j,t-1}^{(i)}\sin \lambda_j^{(i)} + s_{j,t-1}^{*(i)}\cos \lambda_j^{(i)} + \gamma_2^{(i)} d_t$$`
+
+
+---
+## Complex seasonality
+
+
+```r
+fpp2::gasoline %&gt;% tbats() %&gt;% forecast() %&gt;% autoplot()
+```
+
+---
+## Complex seasonality
+
+&lt;img src="NN1LR_files/figure-html/gasoline2-1.png" width="576" /&gt;
+
+
+---
+## Complex seasonality
+
+
+```r
+fpp2::calls %&gt;% tbats() %&gt;% forecast() %&gt;% autoplot()
+```
+
+&lt;img src="NN1LR_files/figure-html/callcentref-1.png" width="576" /&gt;
+
+---
+## Complex seasonality
+
+&lt;img src="NN1LR_files/figure-html/callcentref2-1.png" width="576" /&gt;
+
+
+---
+## Complex seasonality
+
+
+```r
+telec &lt;- ts(telec, start=as.Date("2000-01-01"), frequency=1)
+telec %&gt;% tbats() %&gt;% forecast() %&gt;% autoplot()
+```
+
+---
+## Complex seasonality
+
+&lt;img src="NN1LR_files/figure-html/telecf2-1.png" width="576" /&gt;
+
+
+---
+## TBATS model
+
+TBATS
+`\(\textbf{T}\)`rigonometric terms for seasonality\\
+`\(\textbf{B}\)`ox-Cox transformations for heterogeneity\\
+`\(\textbf{A}\)`RMA errors for short-term dynamics\\
+`\(\textbf{T}\)`rend (possibly damped)\\
+`\(\textbf{S}\)`easonal (including multiple and non-integer periods)
+
+* Handles non-integer seasonality, multiple seasonal periods.
+* Entirely automated
+* Prediction intervals often too wide
+* Very slow on long series
+
+
+---
+# Vector autoregression
+
+---
+# Neural network models
+
+---
+## Neural network models
+
+![]()
+
+## Neural network models
+
+\alert{Nonlinear model with one hidden layer}
+
+`$$\begin{tikzpicture}[shorten &gt;=1pt,-&gt;,draw=black!50, node distance=2.5cm]
+    \tikzstyle{every pin edge}=[&lt;-,shorten &lt;=1pt]
+    \tikzstyle{neuron}=[circle,fill=black!25,minimum size=17pt,inner sep=0pt]
+    \tikzstyle{input neuron}=[neuron, fill=green!50];
+    \tikzstyle{output neuron}=[neuron, fill=red!50];
+    \tikzstyle{hidden neuron}=[neuron, fill=blue!50];
+    \tikzstyle{annot} = [text width=4em, text centered]
+    % Draw the input layer nodes
+    \foreach \name / \y in {1,...,4}
+    % This is the same as writing \foreach \name / \y in {1/1,2/2,3/3,4/4}
+        \node[input neuron, pin=left:Input \#\y] (I-\name) at (0,-\y) {};
+    % Draw the hidden layer nodes
+    \foreach \name / \y in {1,...,3}
+        \path[yshift=-.5cm]
+            node[hidden neuron] (H-\name) at (2.5cm,-\y cm) {};
+    % Draw the output layer node
+    \node[output neuron,pin={[pin edge={-&gt;}]right:Output}, right of=H-2] (O) {};
+    % Connect every node in the input layer with every node in the
+    % hidden layer.
+    \foreach \source in {1,...,4}
+        \foreach \dest in {1,...,3}
+            \path (I-\source) edge (H-\dest);
+    % Connect every node in the hidden layer with the output layer
+    \foreach \source in {1,...,3}
+        \path (H-\source) edge (O);
+    % Annotate the layers
+    \node[annot,above of=H-2, node distance=2.5cm] (hl) {Hidden layer};
+    \node[annot,left of=hl] {Input layer};
+    \node[annot,right of=hl] {Output layer};
+\end{tikzpicture}$$`
+\pause\vspace*{-0.1cm}\fontsize{13}{13}\sf
+* A **multilayer feed-forward network** where each layer of nodes receives inputs from the previous layers.
+* Inputs to each node combined using linear combination.
+* Result modified by nonlinear function before being output.
+
+---
+## Neural network models
+
+Inputs to hidden neuron `\(j\)` linearly combined:
+$$
+z_j = b_j + \sum_{i=1}^4 w_{i,j} x_i.
+$$
+Modified using nonlinear function such as a sigmoid:
+$$
+s(z) = \frac{1}{1+e^{-z}},
+$$
+This tends to reduce the effect of extreme input values, thus making the network somewhat robust to outliers.
+
+---
+## Neural network models
+
+* Weights take random  values to begin with, which are then updated using the observed data.
+* There is an element of randomness in the predictions. So the network is usually trained several times using different random starting points, and the results are averaged.
+* Number of hidden layers, and the number of nodes in each hidden layer, must be specified in advance.
+
+---
+## NNAR models
+
+* Lagged values of the time series can be used as inputs to a neural network.
+* NNAR($p,k$): `\(p\)` lagged inputs and `\(k\)` nodes in the single hidden layer.
+* NNAR($p,0$) model is equivalent to an ARIMA($p,0,0$) model but without stationarity restrictions.
+* Seasonal NNAR($p,P,k$): inputs `\((y_{t-1},y_{t-2},\dots,y_{t-p},y_{t-m},y_{t-2m},y_{t-Pm})\)` and `\(k\)` neurons in the hidden layer.
+* NNAR($p,P,0$)$_m$ model is equivalent to an ARIMA($p,0,0$)($P$,0,0)$_m$ model but without stationarity restrictions.
+
+---
+## NNAR models in R
+
+* The `nnetar()` function fits an NNAR($p,P,k$)$_m$ model.
+* If `\(p\)` and `\(P\)` are not specified, they are automatically selected.
+* For non-seasonal time series, default `\(p=\)` optimal number of lags (according to the AIC) for a linear AR($p$) model.
+* For seasonal time series, defaults are `\(P=1\)` and `\(p\)` is chosen from the optimal linear model fitted to the seasonally adjusted data.
+* Default `\(k=(p+P+1)/2\)` (rounded to the nearest integer).
+
+
+---
+## Sunspots
+
+* Surface of the sun contains magnetic regions that appear as dark spots.
+* These affect the propagation of radio waves and so telecommunication companies like to predict sunspot activity in order to plan for any future difficulties.
+* Sunspots follow a cycle of length between 9 and 14 years.
+
+---
+## NNAR(9,5) model for sunspots
+
+
+```r
+sunspots &lt;- as_tsibble(fpp2::sunspotarea)
+fit &lt;- sunspots %&gt;% model(NNETAR(value))
+fit %&gt;% forecast(h=20, times = 1) %&gt;%
+  autoplot(sunspots, level = NULL)
+```
+
+&lt;img src="NN1LR_files/figure-html/sunspot-nnetar-1.png" width="576" /&gt;
+
+---
+## Prediction intervals by simulation
+
+
+```r
+fit %&gt;% forecast(h=20) %&gt;%
+  autoplot(sunspots)
+```
+
+&lt;img src="NN1LR_files/figure-html/sunspot-nnetar-pi-1.png" width="576" /&gt;
+
+---
+# Bootstrapping and bagging
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

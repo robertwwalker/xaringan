@@ -1,0 +1,176 @@
+---
+title: "Time Series: Practical Issues"
+subtitle: "FPP3, Chapter 13"
+author: "Robert W. Walker"
+institute: "AGSM"
+date: "`r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    css: xaringan-themer.css
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(fig.retina=3, fig.width=8, fig.height=5, warning=FALSE, message=FALSE, comment='', cache=TRUE)
+library(tidyverse)
+library(fpp3)
+library(purrr)
+library(gganimate)
+library(tsibble)
+options(scipen=4)
+library(tidyquant)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringan)
+library(xaringanthemer)
+style_mono_accent(base_color = "#43418A", text_font_google   = google_font("Fira Sans", "300", "300i"))
+```
+
+---
+# Practical Issues in Forecasting
+
+## Models for different frequencies
+
+---
+### Models for annual data
+
+ * ETS, ARIMA, Dynamic regression
+
+---
+### Models for quarterly data
+
+ * ETS, ARIMA/SARIMA, Dynamic regression, Dynamic harmonic regression, STL+ETS, STL+ARIMA
+
+---
+### Models for monthly data
+
+ * ETS, ARIMA/SARIMA, Dynamic regression, Dynamic harmonic regression, STL+ETS, STL+ARIMA
+
+---
+### Models for weekly data
+
+ * ARIMA/SARIMA, Dynamic regression, Dynamic harmonic regression, STL+ETS, STL+ARIMA, TBATS
+
+---
+### Models for daily, hourly and other sub-daily data
+
+ * ARIMA/SARIMA, Dynamic regression, Dynamic harmonic regression, STL+ETS, STL+ARIMA, TBATS
+
+---
+# Ensuring forecasts stay within limits
+
+---
+## Positive forecasts: Use logs
+
+```{r, fig.height=3.8}
+library(fpp3)
+eggs <- as_tsibble(fma::eggs)
+eggs %>%
+  model(ETS(log(value) ~ error("A") + trend("A") + season("N"))) %>%
+  forecast(h=50) %>%
+  autoplot(eggs)
+```
+
+---
+# Combining Forecasts
+## Forecast combinations
+### Clemen (1989)
+
+"The results have been virtually unanimous: combining multiple forecasts leads to increased forecast accuracy. $\dots$ In many cases one can make dramatic performance improvements by simply averaging the forecasts."
+
+---
+## Forecast combinations
+
+```{r}
+aus_cafe <- aus_retail %>%
+  filter(Industry == "Cafes, restaurants and catering services") %>%
+  summarise(Turnover = sum(Turnover))
+fc <- aus_cafe %>%
+  filter(Month <= yearmonth("2013 Sep")) %>%
+  model(
+    ETS = ETS(Turnover),
+    ARIMA = ARIMA(Turnover)
+  ) %>%
+  mutate(
+    Combination = (ETS + ARIMA)/2
+  ) %>%
+  forecast(h = "5 years")
+```
+
+
+---
+## Forecast combinations
+
+```{r combineplot, echo=TRUE, fig.height=4.2}
+fc %>% autoplot(aus_cafe, level = NULL) +
+  labs(x = "Year", y = "$ billion",
+       title = "Australian monthly expenditure on eating out")
+```
+
+---
+## Forecast combinations
+
+```{r combineaccuracy, dependson="combine1"}
+fc %>% accuracy(aus_cafe)
+```
+
+---
+# Missing Values
+
+**Functions which can handle missing values**
+
+ * `ARIMA()`
+ * `TSLM()`
+ * `NNETAR()`
+ * `VAR()`
+ * `FASSTER()`
+
+**Models which cannot handle missing values**
+
+ * `ETS()`
+ * `STL()`
+ * `TBATS()`
+ 
+---
+### What to do?
+
+ 1. Model section of data after last missing value.
+ 2. Estimate missing values with `interpolate()`.
+ 
+---
+## Missing values
+
+```{r}
+gold <- as_tsibble(forecast::gold)
+gold %>% autoplot(value)
+```
+
+---
+## Missing values
+
+```{r, fig.height=3}
+gold_complete <- gold %>%
+  model(ARIMA(value)) %>%
+  interpolate(gold)
+gold_complete %>%
+  autoplot(value, colour = "red") +
+  autolayer(gold, value)
+```
+
+---
+## Outliers
+
+```{r, fig.height=3.4}
+fit <- gold %>%
+  model(ARIMA(value))
+augment(fit) %>%
+  mutate(stdres = .resid/sd(.resid, na.rm=TRUE)) %>%
+  filter(abs(stdres) > 10)
+```
+
