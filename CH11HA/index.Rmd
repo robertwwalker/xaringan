@@ -153,9 +153,9 @@ calls %>%
 ---
 ## Examples
 
-```{r callsdata2, message=FALSE, warning=FALSE, echo=FALSE}
+```{r callsdata2, message=FALSE, warning=FALSE, echo=FALSE, eval=FALSE}
 calls <- read_tsv("http://robjhyndman.com/data/callcenter.txt") %>%
-  gather("date", "volume", -X1) %>% transmute(
+  gather("date", "volume", -...1) %>% transmute(
     time = X1, date = as.Date(date, format = "%d/%m/%Y"),
     datetime = as_datetime(date) + time, volume) %>%
   as_tsibble(index = datetime)
@@ -183,7 +183,7 @@ calls %>%
 ---
 ## Examples
 
-```{r, fig.height=5, echo=FALSE}
+```{r, fig.height=5, echo=FALSE, eval=FALSE}
 library(sugrrants)
 calls %>%
   filter(yearmonth(date) == yearmonth("2003 August")) %>%
@@ -477,17 +477,17 @@ This tends to reduce the effect of extreme input values, thus making the network
 ---
 ## NNAR(9,5) model for sunspots
 
-```{r sunspot-nnetar, echo=TRUE, fig.height=4}
+```{r sunspot-nnetar, echo=TRUE, fig.height=4, eval=FALSE}
 sunspots <- as_tsibble(fpp2::sunspotarea)
 fit <- sunspots %>% model(NNETAR(value))
-fit %>% forecast(h=20, times = 1) %>%
+fit %>% forecast(h=20) %>%
   autoplot(sunspots, level = NULL)
 ```
 
 ---
 ## Prediction intervals by simulation
 
-```{r sunspot-nnetar-pi, echo=TRUE, fig.height=4}
+```{r sunspot-nnetar-pi, echo=TRUE, fig.height=4, eval=FALSE}
 fit %>% forecast(h=20) %>%
   autoplot(sunspots)
 ```

@@ -4,7 +4,7 @@
     <title>Time Series: Reconciliation and Advanced Methods</title>
     <meta charset="utf-8" />
     <meta name="author" content="Robert W. Walker" />
-    <meta name="date" content="2021-04-02" />
+    <meta name="date" content="2022-11-28" />
     <script src="libs/header-attrs/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
   </head>
@@ -12,11 +12,21 @@
     <textarea id="source">
 class: center, middle, inverse, title-slide
 
+.title[
 # Time Series: Reconciliation and Advanced Methods
+]
+.subtitle[
 ## FPP3, Chapter 11 and 12
+]
+.author[
 ### Robert W. Walker
+]
+.institute[
 ### AGSM
-### 2021-04-02
+]
+.date[
+### 2022-11-28
+]
 
 ---
 
@@ -52,29 +62,6 @@ Expanding the space of relevant models still operates in the circle of chapter 5
 Getting started
 
 
-```r
-library(forecast)
-library(tidyverse)
-library(fpp3)
-library(purrr)
-library(gganimate)
-library(seasonal)
-library(tidyquant)
-library(magrittr)
-vic_elec_daily &lt;- vic_elec %&gt;%
-  filter(year(Time) == 2014) %&gt;%
-  index_by(Date = date(Time)) %&gt;%
-  summarise(
-    Demand = sum(Demand)/1e3,
-    Temperature = max(Temperature),
-    Holiday = any(Holiday)
-  ) %&gt;%
-  mutate(Day_Type = case_when(
-    Holiday ~ "Holiday",
-    wday(Date) %in% 2:6 ~ "Weekday",
-    TRUE ~ "Weekend"
-  ))
-```
 ---
 
 # The magic of `forecast`
@@ -121,76 +108,37 @@ Three approaches:
 ---
 ## Examples
 
-
-```r
-gasoline &lt;- as_tsibble(fpp2::gasoline)
-gasoline %&gt;% autoplot(value) +
-  labs(x = "Year", y = "Thousands of barrels per day",
-       title = "Weekly US finished motor gasoline products")
-```
-
-&lt;img src="index_files/figure-html/gasolinedata-1.png" width="576" /&gt;
+&lt;img src="index_files/figure-html/gasolinedata-1.png" width="1152" /&gt;
 
 ---
 ## Examples
 
 
-```r
-calls &lt;- read_tsv("http://robjhyndman.com/data/callcenter.txt") %&gt;%
-  gather("date", "volume", -X1) %&gt;% transmute(
-    time = X1, date = as.Date(date, format = "%d/%m/%Y"),
-    datetime = as_datetime(date) + time, volume) %&gt;%
-  as_tsibble(index = datetime)
-calls %&gt;%
-  fill_gaps() %&gt;%
-  autoplot(volume) +
-  labs(x = "Weeks", y = "Call volume",
-       title = "5 minute call volume at North American bank")
-```
-
----
-## Examples
-
-&lt;img src="index_files/figure-html/callsdata2-1.png" width="576" /&gt;
 
 ---
 ## Examples
 
 
-```r
-library(sugrrants)
-calls %&gt;%
-  filter(yearmonth(date) == yearmonth("2003 August")) %&gt;%
-  ggplot(aes(x = time, y = volume)) +
-  geom_line() +
-  facet_calendar(date) +
-  labs(x = "Weeks", y = "Call volume",
-       title = "5 minute call volume at North American bank")
-```
-
----
-## Examples
-
-&lt;img src="index_files/figure-html/unnamed-chunk-3-1.png" width="576" /&gt;
 
 ---
 ## Examples
 
 
-```r
-telec &lt;- read_csv(url("https://raw.githubusercontent.com/robjhyndman/ETC3550Slides/eba103c4c86c0634df6cf3ee4a81dc2803c198b6/data/turkey_elec.csv"), col_names = "Demand")
-turkey_elec &lt;- telec %&gt;%
-  mutate(Date = seq(ymd("2000-01-01"), ymd("2008-12-31"), by = "day")) %&gt;%
-  as_tsibble(index = Date)
-turkey_elec %&gt;% autoplot(Demand) +
-  labs(title = "Turkish daily electricity demand",
-       x = "Year", y = "Electricity Demand (GW)")
-```
 
 ---
 ## Examples
 
-&lt;img src="index_files/figure-html/turk2-1.png" width="576" /&gt;
+
+
+---
+## Examples
+
+
+
+---
+## Examples
+
+&lt;img src="index_files/figure-html/turk2-1.png" width="1152" /&gt;
 
 ---
 ## TBATS model
@@ -292,7 +240,7 @@ fpp2::gasoline %&gt;% tbats() %&gt;% forecast() %&gt;% autoplot()
 ---
 ## Complex seasonality
 
-&lt;img src="index_files/figure-html/gasoline2-1.png" width="576" /&gt;
+&lt;img src="index_files/figure-html/gasoline2-1.png" width="1152" /&gt;
 
 
 ---
@@ -303,12 +251,12 @@ fpp2::gasoline %&gt;% tbats() %&gt;% forecast() %&gt;% autoplot()
 fpp2::calls %&gt;% tbats() %&gt;% forecast() %&gt;% autoplot()
 ```
 
-&lt;img src="index_files/figure-html/callcentref-1.png" width="576" /&gt;
+&lt;img src="index_files/figure-html/callcentref-1.png" width="1152" /&gt;
 
 ---
 ## Complex seasonality
 
-&lt;img src="index_files/figure-html/callcentref2-1.png" width="576" /&gt;
+&lt;img src="index_files/figure-html/callcentref2-1.png" width="1152" /&gt;
 
 
 ---
@@ -323,7 +271,7 @@ telec %&gt;% tbats() %&gt;% forecast() %&gt;% autoplot()
 ---
 ## Complex seasonality
 
-&lt;img src="index_files/figure-html/telecf2-1.png" width="576" /&gt;
+&lt;img src="index_files/figure-html/telecf2-1.png" width="1152" /&gt;
 
 
 ---
@@ -367,10 +315,6 @@ where `\(g\)` is piecewise linear *growth*; `\(s\)` is Fourier seasonal terms; a
 
 Using `fpp3` type syntax.  It requires using the `fpp2` style.
 
-
-```r
-VAR(fpp2::uschange[,c(1:2)])
-```
 
 ```
             Consumption    Income
@@ -458,11 +402,9 @@ This tends to reduce the effect of extreme input values, thus making the network
 ```r
 sunspots &lt;- as_tsibble(fpp2::sunspotarea)
 fit &lt;- sunspots %&gt;% model(NNETAR(value))
-fit %&gt;% forecast(h=20, times = 1) %&gt;%
+fit %&gt;% forecast(h=20) %&gt;%
   autoplot(sunspots, level = NULL)
 ```
-
-&lt;img src="index_files/figure-html/sunspot-nnetar-1.png" width="576" /&gt;
 
 ---
 ## Prediction intervals by simulation
@@ -472,8 +414,6 @@ fit %&gt;% forecast(h=20, times = 1) %&gt;%
 fit %&gt;% forecast(h=20) %&gt;%
   autoplot(sunspots)
 ```
-
-&lt;img src="index_files/figure-html/sunspot-nnetar-pi-1.png" width="576" /&gt;
 
 ---
 # Bootstrapping and bagging
@@ -524,6 +464,19 @@ if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
     deleted = true;
   });
 })();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
 (function() {
   "use strict"
   // Replace <script> tags in slides area to make them executable

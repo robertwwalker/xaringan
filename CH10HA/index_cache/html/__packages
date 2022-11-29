@@ -1,4 +1,3 @@
-base
 tidyverse
 ggplot2
 tibble
@@ -27,3 +26,13 @@ xaringanthemer
 seasonal
 magrittr
 sugrrants
+timechange
+radiant.data
+mvtnorm
+radiant.design
+radiant.basics
+radiant.model
+radiant.multivariate
+radiant
+shiny
+nnet
