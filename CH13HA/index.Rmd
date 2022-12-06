@@ -68,11 +68,11 @@ style_mono_accent(base_color = "#43418A", text_font_google   = google_font("Fira
 ---
 ## Positive forecasts: Use logs
 
-```{r, fig.height=3.8}
+```{r, fig.height=3.8, eval=FALSE}
 library(fpp3)
-eggs <- as_tsibble(fma::eggs)
-eggs %>%
-  model(ETS(log(value) ~ error("A") + trend("A") + season("N"))) %>%
+recent_prices <- fpp3::prices %>% filter(!is.na(eggs)) %>% as_tsibble(index=year) %>% select(year, eggs)
+recent_prices %>%
+  model(ETS(log(eggs) ~ error("A") + trend("A") + season("N"))) %>%
   forecast(h=50) %>%
   autoplot(eggs)
 ```
@@ -100,14 +100,14 @@ fc <- aus_cafe %>%
   mutate(
     Combination = (ETS + ARIMA)/2
   ) %>%
-  forecast(h = "5 years")
+  forecast(h = 60)
 ```
 
 
 ---
 ## Forecast combinations
 
-```{r combineplot, echo=TRUE, fig.height=4.2}
+```{r combineplot, echo=TRUE, fig.height=4.2, eval=FALSE}
 fc %>% autoplot(aus_cafe, level = NULL) +
   labs(x = "Year", y = "$ billion",
        title = "Australian monthly expenditure on eating out")
@@ -116,7 +116,7 @@ fc %>% autoplot(aus_cafe, level = NULL) +
 ---
 ## Forecast combinations
 
-```{r combineaccuracy, dependson="combine1"}
+```{r combineaccuracy, eval=FALSE}
 fc %>% accuracy(aus_cafe)
 ```
 

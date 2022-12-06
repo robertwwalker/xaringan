@@ -4,7 +4,7 @@
     <title>Time Series: Practical Issues</title>
     <meta charset="utf-8" />
     <meta name="author" content="Robert W. Walker" />
-    <meta name="date" content="2021-04-09" />
+    <meta name="date" content="2022-12-05" />
     <script src="libs/header-attrs/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
   </head>
@@ -12,11 +12,21 @@
     <textarea id="source">
 class: center, middle, inverse, title-slide
 
+.title[
 # Time Series: Practical Issues
+]
+.subtitle[
 ## FPP3, Chapter 13
+]
+.author[
 ### Robert W. Walker
+]
+.institute[
 ### AGSM
-### 2021-04-09
+]
+.date[
+### 2022-12-05
+]
 
 ---
 
@@ -64,14 +74,12 @@ class: center, middle, inverse, title-slide
 
 ```r
 library(fpp3)
-eggs &lt;- as_tsibble(fma::eggs)
-eggs %&gt;%
-  model(ETS(log(value) ~ error("A") + trend("A") + season("N"))) %&gt;%
+recent_prices &lt;- fpp3::prices %&gt;% filter(!is.na(eggs)) %&gt;% as_tsibble(index=year) %&gt;% select(year, eggs)
+recent_prices %&gt;%
+  model(ETS(log(eggs) ~ error("A") + trend("A") + season("N"))) %&gt;%
   forecast(h=50) %&gt;%
   autoplot(eggs)
 ```
-
-&lt;img src="index_files/figure-html/unnamed-chunk-1-1.png" width="576" /&gt;
 
 ---
 # Combining Forecasts
@@ -97,7 +105,7 @@ fc &lt;- aus_cafe %&gt;%
   mutate(
     Combination = (ETS + ARIMA)/2
   ) %&gt;%
-  forecast(h = "5 years")
+  forecast(h = 60)
 ```
 
 
@@ -111,23 +119,12 @@ fc %&gt;% autoplot(aus_cafe, level = NULL) +
        title = "Australian monthly expenditure on eating out")
 ```
 
-&lt;img src="index_files/figure-html/combineplot-1.png" width="576" /&gt;
-
 ---
 ## Forecast combinations
 
 
 ```r
 fc %&gt;% accuracy(aus_cafe)
-```
-
-```
-# A tibble: 3 x 10
-  .model      .type    ME  RMSE   MAE   MPE  MAPE  MASE RMSSE  ACF1
-  &lt;chr&gt;       &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
-1 ARIMA       Test   112.  122.  112.  5.44  5.44  1.80  1.50 0.510
-2 Combination Test   120.  125.  120.  5.81  5.81  1.93  1.55 0.382
-3 ETS         Test   128.  133.  128.  6.18  6.18  2.06  1.64 0.324
 ```
 
 ---
@@ -247,6 +244,19 @@ if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
     deleted = true;
   });
 })();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
 (function() {
   "use strict"
   // Replace <script> tags in slides area to make them executable
