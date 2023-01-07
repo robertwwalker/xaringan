@@ -46,7 +46,7 @@ style_mono_light(base_color = "#7d07f8",
 ---
 # A syllabus
 
-[Let's walk through that.](https://wise.willamette.edu/access/content/group/GSMPR-622-P3-23_FA/Syllabus/Syllabus-SP23-P3-622.pdf)
+[Let's walk through that.](https://wise.willamette.edu/access/content/group/GSMPR-622-P2-23_FA/Syllabus/Syllabus-SP23-P2-622.pdf)
 
 ---
 # First Day Work
