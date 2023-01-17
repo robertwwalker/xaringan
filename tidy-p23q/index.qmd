@@ -138,10 +138,11 @@ curl::curl_download(url, destfile)
 ## Some Crash R
 
 Operators:
-- +
-- -
-- *
-- /
+
+- `+`
+- `-`
+- `*`
+- `/`
 - and many others.
 - We will also be concerned with the difference between equals as assigning and equals in math [denoted with two equals signs in succession].
 
@@ -188,8 +189,11 @@ mean(FastFood$protein)
 
 **Though there is only one missing datum, that is enough to render the result missing.**
 
-# How to Adjust for NA?
+## How to Adjust for NA?
 
+:::: {.columns}
+
+::: {.column width="50%"}
 Now let's try that for protein.
 
 ```{r}
@@ -203,10 +207,29 @@ If we wish to fix this, we need, from `?mean`:
 ```{r}
 mean(FastFood$protein, na.rm=TRUE)
 ```
+:::
 
-. . .
+::: {.column width="50%"}
+![mean](img/Screenshot 2023-01-17 at 1.04.30 AM.png)
+:::
+
+::::
+
+
+## Deviations about the mean sum to zero
 
 By definition, the sum of the deviations about the average must be zero.
+
+
+```{r}
+sum(FastFood$protein - mean(FastFood$protein, na.rm=TRUE))
+```
+
+I tried to operate on a missing value.  Let's fix that for sum, also.  **NB: Floating point arithmetic**
+
+```{r}
+sum(FastFood$protein - mean(FastFood$protein, na.rm=TRUE), na.rm=TRUE)
+```
 
 ## On Summaries
 
