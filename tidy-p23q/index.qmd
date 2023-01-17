@@ -251,7 +251,7 @@ The most frequent value.  If it is unique, it is meaningful but it is often not 
 
 # Variation
 
-With means, we describe the standard deviation.  Note, it is singular; it implies the two sides of the center are the same -- symmetry.  Because the deviations sum to zero, to measure variation, we can't use untransformed deviation from an average.  We work with squares or the square root of squares [to maintain the original metric].
+With means, we describe the standard deviation.  Note, it is singular; it implies the two sides of the center are the same -- symmetry.  Because the deviations sum to zero, to measure variation, we can't use untransformed deviation from an average.  We work with squares [variance, in the squared metric] or the square root of squares [to maintain the original metric].
 
 $$s=\sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(x_{i}-\overline{x})^2}$$
 
