@@ -53,7 +53,6 @@ style_mono_accent(base_color = "#43418A", text_font_google   = google_font("Fira
 
 
 ---
-class: inverse
 
 # My Primitive: A canvas
 
@@ -84,7 +83,7 @@ plot(x=rnorm(100),y=rnorm(100), pch="", bty="n", xlab="x", ylab="y", xlim=c(-2,2
 
 
 ---
-class: inverse, tada
+class: tada
 # One Important Caveat
 
 There is one notable and widely seen exception to this charaterization.  
@@ -105,7 +104,7 @@ WCdata %>% mutate(word=leader, freq=TenC) %>% wordcloud2(data=., color="random-d
 ]
 
 ---
-class: inverse,heartBeat
+class: heartBeat
 
 ## The Illustration
 
@@ -118,7 +117,7 @@ Coordinates are arbitrary.
 
 
 ---
-class: inverse, center, middle
+class: center, middle
 
 # A Simple Example to Cement our Thinking
 
@@ -157,7 +156,7 @@ class: inverse
 For now, just my GPS coordinates.
 
 ```{r}
-Me <- data.frame(lat=45.5116, lon=-122.67940)
+Me <- data.frame(lat=45.5115834, lon=-122.6783126)
 ```
 
 ![](https://media.giphy.com/media/tFV89pJJz3MoU/giphy.gif)
@@ -216,7 +215,7 @@ Bonds:
 Bonds %>% 
   skim_without_charts() %>% 
   kableExtra::kable() %>% 
-  kableExtra::scroll_box(height="400px", width="800px")
+  kableExtra::scroll_box(height="300px", width="800px")
 ```
 
 ```{r SummaryT, eval=FALSE}

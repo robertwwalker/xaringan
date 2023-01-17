@@ -1,0 +1,231 @@
+---
+title: "Data Files and Variable Types"
+subtitle: "DADM"
+author: "Robert W. Walker"
+institute: "AGSM/Willamette"
+date: "2020/08/27 (updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+library(tidyverse)
+```
+
+# Data are Ubiquitous
+
+We can talk about them in terms of formats and types.  
+
+**A format describes a machine readable method for storing and transporting data.**  Examples include .csv, .tsv, .dta, .xls, .xlsx, .por and many, many others.
+
+**A type (or better, a storage type) describes the language of machine readability for any given variable.**  Examples include dates and times, numeric [double/float/single], integer, character, factor, logical [TRUE/FALSE], and complex [combining real and imaginary parts].
+
+---
+
+# Formats
+
+Proprietary software often has a unique data format.  Stata has *.dta*  SAS files and SPSS .sav and .por files can be imported.
+
+We will work with `.xls` and `.xlsx` formats most.  These are Excel's spreadsheet formats.  These are not generally human readable.
+
+I often use .csv files; these are basic text files where a comma *delimits* -- separates -- cells.  These are human readable.  **I prefer that in the name of transparency.**
+
+---
+## Importing Data
+
+The action is here [and it works for both URL and local files]:
+
+![](https://github.com/robertwwalker/DADMStuff/raw/master/ImportFile.png)
+
+---
+
+## Import from Excel
+
+```{r ExcelRead}
+library(readxl)
+url <- "https://github.com/robertwwalker/DADMStuff/raw/master/AnimalCrossing.xlsx"
+destfile <- "ACrossing.xlsx"
+curl::curl_download(url, destfile)
+Critic <- read_excel(destfile, sheet="critic")
+Items <- read_excel(destfile, sheet="Items")
+Villagers <- read_excel(destfile, sheet="Villagers")
+User_reviews <- read_excel(destfile, sheet="User_reviews")
+```
+
+Cool.  The url for the images are in the data so RMarkdown can access them.
+
+![admiral](`r Villagers$url[1]`)
+
+![angus](`r Villagers$url[13]`)
+
+---
+## Importing from .csv
+
+They are text files.  Let's actually look at brexit.csv.  Three variables: date, percent right, percent wrong.  Separated by commas.  The comma is the 'delimiter'.
+
+![](https://github.com/robertwwalker/DADMStuff/raw/master/CSV.png)
+
+---
+# Importing .csv
+
+Grab the economist data.
+
+```{r}
+brexit <- read.csv("https://github.com/robertwwalker/DADMStuff/raw/master/brexit.csv")
+corbyn <- read.csv("https://github.com/robertwwalker/DADMStuff/raw/master/corbyn.csv")
+eu_balance <- read.csv("https://github.com/robertwwalker/DADMStuff/raw/master/eu_balance.csv")
+pensions <- read.csv("https://github.com/robertwwalker/DADMStuff/raw/master/pensions.csv")
+dogs <- read.csv("https://github.com/robertwwalker/DADMStuff/raw/master/dogs.csv")
+trade <- read.csv("https://github.com/robertwwalker/DADMStuff/raw/master/trade.csv")
+women_research <- read.csv("https://github.com/robertwwalker/DADMStuff/raw/master/women_research.csv")
+```
+
+---
+# brexit in R
+
+```{r, echo=TRUE, eval=FALSE}
+brexit
+```
+
+```{r, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+library(kableExtra)
+brexit %>% kable(., "html") %>% kable_styling() %>% scroll_box(height="400px", width="80%")
+```
+
+---
+# Fixing the Dates
+
+Dates are difficult.  Generically, they need to scale to hours, minutes, seconds, and perhaps worst, time zones.  In addition, they can be formatted in myriad ways.
+
+```{r}
+brexit <- brexit %>% mutate(date = as.Date(date, format="%d/%m/%y")) # These are dd/mm/yy
+```
+
+This is important, particularly if we wish to sequence them according to time, and we do when we visualize them.
+
+---
+# To Esquisse
+
+I will need to reorganize the data; I need to make it `tidy`.  This is known as **pivoting**.
+
+```{r, eval=FALSE, echo=TRUE}
+brexitL <- brexit %>% pivot_longer(., c(percent_responding_right,percent_responding_wrong), names_to = "Choice", values_to="Percent")
+```
+
+```{r, echo=FALSE, eval=TRUE}
+brexitL <- brexit %>% pivot_longer(., c(percent_responding_right,percent_responding_wrong), names_to = "Choice", values_to="Percent")
+kable(brexitL) %>% kable_styling() %>% scroll_box(height="400px")
+```
+
+---
+# A Plot
+
+```{r, eval=FALSE}
+ggplot(brexitL) +
+ aes(x = date, y = Percent, colour = Choice) +
+ geom_line(linewidth = 1L) + geom_point() +
+ scale_color_viridis_d(option = "cividis") +
+ ggthemes::theme_tufte() +
+ labs(title="Brexit: Right or Wrong?")
+```
+
+---
+
+```{r, echo=FALSE}
+ggplot(brexitL) +
+ aes(x = date, y = Percent, colour = Choice) +
+ geom_line(linewidth = 1L) + geom_point() +
+ scale_color_viridis_d(option = "cividis") +
+ ggthemes::theme_tufte() +
+ labs(title="Brexit: Right or Wrong?")
+```
+
+---
+# Better
+
+```{r, eval=FALSE}
+ggplot(brexitL) +
+ aes(x = date, y = Percent, colour = Choice) +
+ geom_smooth() + geom_point() +
+ scale_color_viridis_d(option = "cividis") +
+  ggthemes::theme_tufte() +
+ labs(title="Brexit: Right or Wrong?")
+```
+
+---
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(brexitL) +
+ aes(x = date, y = Percent, colour = Choice) +
+ geom_smooth(se = FALSE) + geom_point() +
+ scale_color_viridis_d(option = "cividis") +
+  ggthemes::theme_tufte() +
+ labs(title="Brexit: Right or Wrong?")
+```
+
+---
+# Pensions
+
+```{r, eval=FALSE}
+ggplot(pensions) +
+ aes(x = pop_65_percent, y = gov_spend_percent_gdp) +
+ geom_point(size = 1L, colour = "#0c4c8a") +
+ labs(x = "Population 65+
+", y = "Government Spending to GDP") +
+ theme_minimal()
+```
+
+---
+
+```{r, echo=FALSE}
+ggplot(pensions) +
+ aes(x = pop_65_percent, y = gov_spend_percent_gdp) +
+ geom_point(size = 1L, colour = "#0c4c8a") +
+ labs(x = "Population 65+
+", y = "Government Spending to GDP") +
+ theme_minimal()
+```
+
+
+---
+# Better [label and geom_text]
+
+```{r, eval=FALSE}
+ggplot(pensions) +
+ aes(x = pop_65_percent, y = gov_spend_percent_gdp, label = country) +
+ geom_text() +
+ labs(x = "Population 65+
+", y = "Government Spending to GDP") +
+ theme_minimal()
+```
+
+---
+# Better [label and geom_text]
+
+```{r, echo=FALSE}
+ggplot(pensions) +
+ aes(x = pop_65_percent, y = gov_spend_percent_gdp, label = country) +
+ geom_text() +
+ labs(x = "Population 65+
+", y = "Government Spending to GDP") +
+ theme_minimal()
+```
+
+---
+# Best [label and geom_label_repel]
+
+```{r, echo=FALSE}
+library(ggrepel)
+ggplot(pensions) +
+ aes(x = pop_65_percent, y = gov_spend_percent_gdp, label = country) +
+ geom_label_repel() +
+ labs(x = "Population 65+
+", y = "Government Spending to GDP") +
+ theme_minimal()
+```
