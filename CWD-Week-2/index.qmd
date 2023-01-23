@@ -137,11 +137,16 @@ The first three are crucial.  Four and five depend on the analytical task.  For 
 ## On a Portfolio
 
 Preliminary questions: 
+
 1. where do you want to host it?  Do you need a fancy domain name?
 2. Setting up rendering?
-3. Templates
-    - [Alison Presmanes Hill's pdx-rug workshop]](https://github.com/apreshill/blogdown-workshop). You can pull the template.
-    - Quarto websites and blogs
+3. Templates 
+   - [Alison Presmanes Hill's pdx-rug workshop](https://github.com/apreshill/blogdown-workshop). You can pull the template.
+   - Also, quarto websites and blogs.
+
+## A Very Quick One
+
+I can get a something up in only a few minutes.  Let's walk through that.
 
 ## For Next Time
 
