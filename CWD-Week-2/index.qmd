@@ -1,0 +1,148 @@
+---
+title: "Week 2"
+author: "Robert W. Walker"
+format: 
+   revealjs:
+     multiplex: true
+     preview-links: true
+     theme: [custom.scss]
+     scrollable: true
+     logo: AGSMlogo.jpeg
+     footer: "Communicating With Data: Week 2 (23 Jan 2023)"
+     chalkboard: true
+     html-math-method: katex
+     incremental: true
+     slide-number: c/t
+     transition: convex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=TRUE, tidy=TRUE, comment=NA, prompt=FALSE, fig.height=6, fig.width=6.5, fig.retina = 3, dev = 'svg', eval=TRUE)
+library(tidyverse)
+options(
+  digits = 3,
+  width = 75,
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis",
+  ggplot2.discrete.colour = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442"),
+  ggplot2.discrete.fill = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442")
+)
+```
+
+# Overview
+
+1. On Git in a Bit More Detail
+2. AMA
+3. RMarkdown Driven Development
+4. Building a Portfolio with Quarto, Distil, or Blogdown
+
+
+## On GitHub and git
+
+As mentioned last time, Github is a widely used tool in the data science world.  While the primary purpose is software development, data science has made heavy use of the environment with all of the advantages (and potential headaches).
+
+## The Assignment for this week
+
+Was a minimal collaboration using Github.  There were two ways to accomplish it.  [My example contains elements of both, first 2 then 1.](https://github.com/RW-Squared/CWDHW/commits/main)
+
+1. Issues/pull requests with maintenance responsibility.  
+2. Commit/push/merge
+
+## Discussing the Methods
+
+At least one group tried it both ways.  Let's talk this through.
+
+## Setting up Github and RStudio
+
+- Personal Access Tokens
+- Limitations of RStudio's interface
+   - **Pull with rebase**
+   
+![Image](./img/Screenshot 2023-01-23 at 12.32.04 PM.png)
+[Source:](https://www.atlassian.com/git/tutorials/rewriting-history/git-rebase)
+
+## Other Alternatives
+
+There are tons.  I tend to use GitKraken because it was the first thing that I tried and it works.  YMMV.
+
+## `usethis`
+
+- [The main page:](https://github.com/r-lib/usethis)
+- [The served version](https://usethis.r-lib.org/index.html)
+- [PAT's](https://usethis.r-lib.org/reference/github-token.html)
+
+Setting this up makes interacting with `Git` far easier from RStudio.
+
+## A Typical Workflow [1]
+
+1. Fork the repository.
+2. Make changes to the fork.
+3. Issue a pull request to integrate the changes in the fork into the main branch.
+
+## A Typical Workflow [2]
+
+1. Open the project.
+2. Make whatever changes you wish to make to completion.
+3. Commit the changes
+4. Push your changes.
+
+## AMA
+
+1. `#tidyTuesday` as a source of data and an awesome collection of neat visualizations
+2. Resources: `stackoverflow` and [Posit Community](https://community.rstudio.com/)
+
+## The Structure of an RMarkdown/Quarto document
+
+1. The top stuff in between three dashes is YAML [YAML is not a Markup Language]
+2. The markdown syntax
+3. Code chunks and options within them [the indicated methods differ a little between RMarkdown and Quarto but the old/RMarkdown method works]
+
+## Developing in RMarkdown
+
+![Overview](./img/Screenshot 2023-01-23 at 2.19.22 PM.png)
+
+## Taking out the Trash
+
+- Do not hardcode passwords.
+- Do not hardcode values, especially late in the script.
+- Do not hardcode absolute file paths. [here is magic for this]
+- Do not do complicated database queries. [Cache or localize]
+- Don’t litter.
+- Don’t load unneccesary libraries.
+
+## Organization is Bliss
+
+Tips: `echo=FALSE` and `results="hide"`, `include=FALSE`
+
+![Organization Diagrams](./img/Screenshot 2023-01-23 at 2.24.25 PM.png)
+
+## Functions Save Time and Energy
+
+![The function workflow](./img/Screenshot 2023-01-23 at 2.26.38 PM.png)
+
+## Conversion to Projects
+
+![Project Structure](./img/Screenshot 2023-01-23 at 2.28.55 PM.png)
+
+## Project to Package
+
+![Project -> Package](./img/Screenshot 2023-01-23 at 2.29.46 PM.png)
+
+## Takeaways
+
+The first three are crucial.  Four and five depend on the analytical task.  For throwaways, this is overkill.  For repeated tasks, going at least through four is ideal.  For oft-repeated tasks, all of them make sense.
+
+[Emily's Talk at RStudio::conf 2020 is definitely worth checking out.](https://resources.rstudio.com/rstudio-conf-2020/rmarkdown-driven-development-emily-riederer)
+
+## On a Portfolio
+
+Preliminary questions: 
+1. where do you want to host it?  Do you need a fancy domain name?
+2. Setting up rendering?
+3. Templates
+    - [Alison Presmanes Hill's pdx-rug workshop]](https://github.com/apreshill/blogdown-workshop). You can pull the template.
+    - Quarto websites and blogs
+
+## For Next Time
+
+Let's build at least a barebones portfolio.  I don't care which method you choose though I have used `blogdown` for years and am somewhat new to `quarto`.
