@@ -153,3 +153,5 @@ I can get a something up in only a few minutes.  Let's walk through that.
 Let's build at least a barebones portfolio.  I don't care which method you choose though I have used `blogdown` for years and am somewhat new to `quarto`.
 
 If you want to use blogdown, I would strongly encourage you to basically follow along [here](https://www.apreshill.com/slides/blogdown-workshop-slides.html).  It is a nice walkthrough.
+
+Partly for next week's assignment, browse the tidyTuesday archives, find a visualization, and try a modification of it in a post.  Or some other post of interest. So that we know how to extend it.  We are going to add to it from here.
