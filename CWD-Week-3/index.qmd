@@ -14,6 +14,8 @@ format:
      incremental: true
      slide-number: c/t
      transition: convex
+     code-fold: true
+     code-tools: true
 ---
 
 ```{r setup, include=FALSE}
