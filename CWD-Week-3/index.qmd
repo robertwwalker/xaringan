@@ -1,0 +1,161 @@
+---
+title: "Week 3"
+author: "Robert W. Walker"
+format: 
+   revealjs:
+     multiplex: true
+     preview-links: true
+     theme: [custom.scss]
+     scrollable: true
+     logo: AGSMlogo.jpeg
+     footer: "Communicating With Data: Week 3 (30 Jan 2023)"
+     chalkboard: true
+     html-math-method: katex
+     incremental: true
+     slide-number: c/t
+     transition: convex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=TRUE, tidy=TRUE, comment=NA, prompt=FALSE, fig.height=6, fig.width=6.5, fig.retina = 3, dev = 'svg', eval=TRUE)
+library(tidyverse)
+theme_set(hrbrthemes::theme_ipsum_rc())
+options(
+  digits = 3,
+  width = 75,
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis",
+  ggplot2.discrete.colour = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442"),
+  ggplot2.discrete.fill = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442")
+)
+```
+
+# Overview
+
+1. AMA
+2. Quarto Things
+3. Essential Differences between Quarto and RMarkdown
+4. Adding to a Portfolio with Quarto, Distil, or Blogdown
+
+## The Assignment for this week
+
+Create a minimal portfolio.  Three ways.  Let's talk about them.
+
+## `usethis`
+
+- [The main page:](https://github.com/r-lib/usethis)
+- [The served version](https://usethis.r-lib.org/index.html)
+- [PAT's](https://usethis.r-lib.org/reference/github-token.html)
+
+Setting this up makes interacting with `Git` far easier from RStudio.
+
+## Snippets
+
+:::: {.columns}
+::: {.column width="50%"}
+Check out my snippet
+
+- Activate them with [Shift]+[Tab]
+- I learned they require arguments
+- [RStudio Forums](https://community.rstudio.com/t/snippet-for-multicolumn-in-quarto-markdown/158654)
+:::
+::: {.column width="50%"}
+![Snippet-tool](img/Screenshot 2023-01-30 at 3.01.24 PM.png)        
+:::
+::::
+
+## AMA
+
+1. `#tidyTuesday` as a source of data and an awesome collection of neat visualizations
+2. Resources: `stackoverflow` and [Posit Community](https://community.rstudio.com/)
+
+## An Example
+
+:::: {.columns}
+
+::: {.column width="30%"}
+
+Note: requires `hrbrthemes`
+
+```{r C1, echo=TRUE, eval=FALSE, tidy=TRUE}
+mtcars %>% 
+  ggplot() + 
+  aes(x=disp, y=mpg, color=cyl) + 
+  geom_point()
+```
+:::
+
+::: {.column width="70%"}
+```{r C2, eval=TRUE, echo=FALSE}
+mtcars %>% ggplot() + aes(x=disp, y=mpg, color=cyl) + geom_point()
+```
+:::
+::::
+
+
+
+
+## The Structure of an RMarkdown/Quarto document
+
+1. The top stuff in between three dashes is YAML [YAML is not a Markup Language]
+2. The markdown syntax
+3. Code chunks and options within them [the indicated methods differ a little between RMarkdown and Quarto but the old/RMarkdown method works]
+
+They are nearly identical but quarto has some amazing features.
+
+## On a Portfolio
+
+Preliminary questions: 
+
+1. Where do you want to host it?  Do you need a fancy domain name?
+   - The github main page trick [this is not well documented that I can find]
+2. Setting up rendering?
+3. Templates 
+   - Also, quarto websites and blogs.
+
+## Quarto things
+
+- [The Documents](https://quarto.org/docs/websites/)
+- [Blogs are largely a subset](https://quarto.org/docs/websites/website-blog.html)
+- The Amazing Quarto thread
+
+## Essential Differences
+
+1. Quarto is probably more reliable long-term.
+2. There are remarkably few differences and most are in YAML
+3. Quarto YAML is literate.
+4. Quarto code chunk options follow a new format.
+
+## Some of the most important for your portfolio
+
+Code folding:
+
+![Fold](img/Screenshot 2023-01-30 at 2.56.52 PM.png)
+
+## Default Theming
+
+**NEVER USE DEFAULT THEMES**
+
+1. They're ugly.
+2. It makes people wonder if you understand theming.
+
+[A blog post](https://robertwwalker.github.io/DADM-FAQ/posts/default-ggplot-theme-set/)
+
+```
+theme_set(theme_minimal())
+```
+
+## Let's explore those in turn
+
+## The `pdxrug` talk
+
+Though it is about presentations, all kinds of things can be done.
+
+
+## on tidyTuesday
+
+For next week's assignment, browse the tidyTuesday archives, find a visualization, and try a modification of it in a post.  Or some other post of interest. So that we know how to extend it.  We are going to add to it from here.
+
+## Adding to the Portfolio
+
+Once the workflow is correct, it should be straightforward.  I typically just copy a post, delete all the stuff, and use that as a template.
