@@ -151,6 +151,7 @@ theme_set(theme_minimal())
 
 Though it is about presentations, all kinds of things can be done.
 
+![pdxrug](https://robertwwalker.github.io/pdxrug/)
 
 ## on tidyTuesday
 
